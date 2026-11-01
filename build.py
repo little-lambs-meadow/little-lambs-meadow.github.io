@@ -30,7 +30,7 @@ def fix_css(css):
     css=re.sub(r'var\((--[\w-]+)\)',lambda m:vars[m.group(1)].strip(),css)
     css=re.sub(r'#([0-9a-fA-F]{8}|[0-9a-fA-F]{4})(?![0-9a-fA-F])',hex2rgba,css)
     return css+"""
-@supports not (display:grid){.kids,.grid{display:flex;flex-wrap:wrap}.kid{width:140px;margin:4px}}
+@supports not (display:grid){.kids,.grid{display:flex;flex-wrap:wrap}.kid{width:6.5em;margin:.2em}}
 @supports not (gap:1px){.row>*,.items>*,.btns>*,.checks>*,.who>*,nav>*,.actions>*{margin:3px}}
 """
 html=re.sub(r'<style>(.*?)</style>',lambda m:'<style>'+fix_css(m.group(1))+'</style>',html,count=1,flags=re.S)
