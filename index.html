@@ -76,6 +76,8 @@ th{font-size:12px;color:#7a7068;font-weight:600}
 .kid .n{font-size:18px;font-weight:700}
 .kid .p{font-size:13px;color:#7a7068}
 .kid.here{border-color:#2e9b5a;background:#effaf3}
+.kid.here.late{border-color:#c9711c;background:#fff1df}
+.kid.got{box-shadow:0 0 0 3px #e2572a inset}
 .kid.pop{animation:pop .4s}
 @keyframes pop{50%{transform:scale(1.12);background:#fff4c2}}
 .items{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
@@ -168,6 +170,28 @@ function _iterableToArrayLimit(r, t) { var e = null == r ? null : "undefined" !=
 /* ============ 資料層（之後換成 Google 試算表 / Firebase 只需改這裡） ============ */
 var DEFAULT_RULES = ['上課時專心聽老師說話', '想說話先舉手', '愛護身邊的朋友，不推、不打、不罵人', '愛惜教室和教材，用完放回原位', '一起敬拜、一起學習神的話'];
 var DEFAULT_PRAYER = '親愛的天父，謝謝祢今天帶領我們一起學習祢的話語。求祢幫助每一位小朋友把今天學到的放在心裡，這一週平平安安。奉主耶穌基督的名禱告，阿們。';
+var DEFAULT_ITEMS = [{
+  name: '認真唱歌',
+  pts: 2
+}, {
+  name: '認真上課',
+  pts: 2
+}, {
+  name: '朗誦英文經句',
+  pts: 1
+}, {
+  name: '背誦英文經句',
+  pts: 2
+}, {
+  name: '上台複寫經句',
+  pts: 1
+}, {
+  name: '默寫金句',
+  pts: 2
+}, {
+  name: '當天值日生',
+  pts: 1
+}];
 var KEY = 'little_lambs_meadow_v1';
 var uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 var today = () => {
@@ -185,6 +209,12 @@ var DB = {
           if (d.settings.auth === undefined) d.settings.auth = false;
           if (!d.settings.rules) d.settings.rules = DEFAULT_RULES.slice();
           if (!d.settings.prayer) d.settings.prayer = DEFAULT_PRAYER;
+          if (!d.settings.cutoff) {
+            d.settings.cutoff = '10:30';
+            d.settings.onPts = 2;
+            d.settings.latePts = 1;
+          }
+          if ((d.settings.items || []).map(x => x.name).join() === '背金句,帶聖經,幫忙收拾,熱心參與') d.settings.items = DEFAULT_ITEMS.map(x => Object.assign({}, x));
           var dm = demo();
           (d.lessons || []).forEach(l => {
             var x = dm.lessons.find(y => y.title === l.title && y.video === l.video);
@@ -230,20 +260,10 @@ function demo() {
       auth: false,
       teacherNames: ['王老師', '李老師'],
       requireLogin: false,
-      attendPts: 1,
-      items: [{
-        name: '背金句',
-        pts: 2
-      }, {
-        name: '帶聖經',
-        pts: 1
-      }, {
-        name: '幫忙收拾',
-        pts: 1
-      }, {
-        name: '熱心參與',
-        pts: 1
-      }],
+      cutoff: '10:30',
+      onPts: 2,
+      latePts: 1,
+      items: DEFAULT_ITEMS.map(x => Object.assign({}, x)),
       rewards: [{
         name: '貼紙',
         cost: 5
@@ -1030,17 +1050,39 @@ function tSong() {
 function canPoint() {
   return !(authOn() && D.settings.requireLogin && !user);
 }
+function nowHM() {
+  var t = new Date();
+  return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
+}
+function ciLabel(on) {
+  return D.settings.cutoff + (on ? '前報到' : '後報到');
+}
+function todayOf(id) {
+  var d = today();
+  return D.ledger.filter(x => x.kidId === id && x.date === d);
+}
 function tPoints() {
   if (!canPoint()) return `<div class="card empty">目前設定為「加點需要老師登入」<br><br><button class="blue" onclick="loginDlg()">老師登入</button></div>`;
-  var d = today();
+  var S = D.settings,
+    d = today();
   var at = D.attend[d] || {};
   var kids = D.kids.filter(k => k.active).sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'));
-  return `<div class="stage"><div class="stephead"><h2>⭐ ${d} 點名加點</h2><span class="sp"></span><span class="muted">出席 ${Object.keys(at).length} 人</span></div>
-  <div class="fill"><div class="tbar items"><button class="${pickItem === null ? 'on' : ''}" onclick="pickItem=null;render()">✅ 點名（+${D.settings.attendPts}）</button>
-   ${D.settings.items.map((it, i) => `<button class="${pickItem === i ? 'on' : ''}" onclick="pickItem=${i};render()">${h(it.name)} +${it.pts}</button>`).join('')}
-   <span class="sp"></span><span class="muted">${pickItem === null ? '點名字＝簽到' : '點名字＝加「' + h(D.settings.items[pickItem].name) + '」'}</span></div>
-  <div class="fit kidsfit" data-max="28"><div class="kids">${kids.map(k => `<div class="kid ${at[k.id] ? 'here' : ''}" id="k_${k.id}" onclick="tapKid('${k.id}')"><div class="n">${h(k.name)}</div><div class="p">⭐ ${bal(k.id)}</div></div>`).join('')}</div></div></div>
-  <div class="row" style="margin-top:8px;flex-shrink:0"><input id="newKid" class="sp" placeholder="新朋友的名字" onkeydown="if(event.key==='Enter')quickKid()"><button class="pri" onclick="quickKid()">＋加入</button>
+  var auto = nowHM() < S.cutoff;
+  var hint = pickItem === null ? `點名字＝報到（現在 ${nowHM()}，${auto ? '準時 +' + S.onPts : '晚到 +' + S.latePts}）` : pickItem === 'on' ? '點名字＝準時報到 +' + S.onPts : pickItem === 'late' ? '點名字＝晚到報到 +' + S.latePts : '點名字＝「' + h(S.items[pickItem].name) + '」，再點一次取消';
+  return `<div class="stage"><div class="stephead"><h2>⭐ ${d} 點名加點</h2><span class="sp"></span><span class="muted">報到 ${Object.keys(at).length} 人</span></div>
+  <div class="fill"><div class="tbar items">
+   <button class="${pickItem === null ? 'on' : ''}" onclick="pickItem=null;render()">✅ 報到（自動判斷）</button><button class="${pickItem === 'on' ? 'on' : ''}" onclick="pickItem='on';render()">準時 +${S.onPts}</button><button class="${pickItem === 'late' ? 'on' : ''}" onclick="pickItem='late';render()">晚到 +${S.latePts}</button>
+   <span style="width:12px"></span>
+   ${S.items.map((it, i) => `<button class="${pickItem === i ? 'on' : ''}" onclick="pickItem=${i};render()">${h(it.name)} +${it.pts}</button>`).join('')}</div>
+  <div class="muted" style="flex-shrink:0;margin-bottom:6px">${hint}</div>
+  <div class="fit kidsfit" data-max="28"><div class="kids">${kids.map(k => {
+    var t = todayOf(k.id);
+    var tp = t.reduce((a, x) => a + x.pts, 0);
+    var ci = t.find(x => x.id === at[k.id]);
+    var done = pickItem !== null && typeof pickItem === 'number' && t.some(x => x.reason === S.items[pickItem].name);
+    return `<div class="kid ${ci ? ci.reason === ciLabel(true) ? 'here' : 'here late' : ''} ${done ? 'got' : ''}" id="k_${k.id}" onclick="tapKid('${k.id}')"><div class="n">${h(k.name)}</div><div class="p">今日 +${tp}</div><div class="p">⭐ ${bal(k.id)}</div></div>`;
+  }).join('')}</div></div></div>
+  <div class="row" style="margin-top:8px;flex-shrink:0"><input id="newKid" class="sp" style="font-size:16px" placeholder="新朋友的名字" onkeydown="if(event.key==='Enter')quickKid()"><button class="pri" onclick="quickKid()">＋加入並報到</button>
    <button class="ghost" onclick="undo()" ${undoStack.length ? '' : 'disabled'}>↶ 復原</button></div></div>`;
 }
 function addPts(kidId, pts, reason) {
@@ -1056,20 +1098,26 @@ function addPts(kidId, pts, reason) {
   D.ledger.push(e);
   return e;
 }
+function delLedger(lid) {
+  D.ledger = D.ledger.filter(x => x.id !== lid);
+  undoStack = undoStack.filter(u => u.lid !== lid);
+}
 function tapKid(id) {
-  var d = today();
+  var S = D.settings,
+    d = today();
   D.attend[d] = D.attend[d] || {};
   var k = kid(id);
-  if (pickItem === null) {
-    if (D.attend[d][id]) {
-      var lid = D.attend[d][id];
-      D.ledger = D.ledger.filter(x => x.id !== lid);
+  if (pickItem === null || pickItem === 'on' || pickItem === 'late') {
+    var on = pickItem === null ? nowHM() < S.cutoff : pickItem === 'on';
+    var old = D.ledger.find(x => x.id === D.attend[d][id]);
+    if (old && (pickItem === null || old.reason === ciLabel(on))) {
+      delLedger(old.id);
       delete D.attend[d][id];
-      undoStack = undoStack.filter(u => u.lid !== lid);
       save();
-      toast('取消 ' + k.name + ' 的簽到');
+      toast('取消 ' + k.name + ' 的報到');
     } else {
-      var e = addPts(id, D.settings.attendPts, '出席');
+      if (old) delLedger(old.id);
+      var e = addPts(id, on ? S.onPts : S.latePts, ciLabel(on));
       D.attend[d][id] = e.id;
       undoStack.push({
         lid: e.id,
@@ -1077,16 +1125,23 @@ function tapKid(id) {
         d
       });
       save();
-      toast(k.name + ' 簽到 +' + e.pts);
+      toast(k.name + ' ' + e.reason + ' +' + e.pts);
     }
   } else {
-    var it = D.settings.items[pickItem];
-    var _e = addPts(id, it.pts, it.name);
-    undoStack.push({
-      lid: _e.id
-    });
-    save();
-    toast(k.name + ' ' + it.name + ' +' + it.pts);
+    var it = S.items[pickItem];
+    var _old = todayOf(id).find(x => x.reason === it.name);
+    if (_old) {
+      delLedger(_old.id);
+      save();
+      toast('取消 ' + k.name + ' 的「' + it.name + '」');
+    } else {
+      var _e = addPts(id, it.pts, it.name);
+      undoStack.push({
+        lid: _e.id
+      });
+      save();
+      toast(k.name + ' ' + it.name + ' +' + it.pts);
+    }
   }
   render();
   var el = document.getElementById('k_' + id);
@@ -1123,7 +1178,7 @@ function quickKid() {
   tapKid(k.id);
   pickItem = p;
   render();
-  toast('歡迎 ' + n + '！已簽到');
+  toast('歡迎 ' + n + '！已報到');
 }
 function tRank() {
   var ks = D.kids.filter(k => k.active).map(k => ({
@@ -1694,8 +1749,8 @@ function pSettings() {
  <label class="f">⑧ 預設結束禱告<textarea id="st_pray">${h(S.prayer || '')}</textarea></label>
  ${authOn() ? '' : `<label class="f">老師名單（一行一位，用於上課紀錄與會議）<textarea id="st_tn">${h((S.teacherNames || []).join('\n'))}</textarea></label>`}
  ${authOn() ? `<label class="f"><input type="checkbox" id="st_r" ${S.requireLogin ? 'checked' : ''}> 教學模式點名加點需要老師登入</label>` : ''}
- <label class="f">出席點數<input id="st_a" type="number" value="${S.attendPts}"></label>
- <label class="f">加分項目（一行一個：名稱 | 點數）<textarea id="st_i">${h(S.items.map(i => i.name + ' | ' + i.pts).join('\n'))}</textarea></label>
+ <div class="row"><label class="f">報到截止時間<input id="st_cut" type="time" value="${h(S.cutoff)}"></label><label class="f">準時報到點數<input id="st_on" type="number" value="${S.onPts}"></label><label class="f">晚到報到點數<input id="st_late" type="number" value="${S.latePts}"></label></div><p class="muted">準時與晚到不重複計算；其他項目每人每天各算一次。</p>
+ <label class="f">其他加分項目（一行一個：名稱 | 點數）<textarea id="st_i">${h(S.items.map(i => i.name + ' | ' + i.pts).join('\n'))}</textarea></label>
  <label class="f">獎勵（一行一個：名稱 | 所需點數）<textarea id="st_w">${h(S.rewards.map(i => i.name + ' | ' + i.cost).join('\n'))}</textarea></label>
  <div class="actions"><button class="blue" onclick="saveSettings()">儲存設定</button></div></div>
  ${authOn() ? myAccount() : ''}
@@ -1780,7 +1835,9 @@ function saveSettings() {
   if (r) S.requireLogin = r.checked;
   var tn = document.getElementById('st_tn');
   if (tn) S.teacherNames = tn.value.split('\n').map(x => x.trim()).filter(Boolean);
-  S.attendPts = Number(v('st_a')) || 1;
+  S.cutoff = v('st_cut') || '10:30';
+  S.onPts = Number(v('st_on')) || 2;
+  S.latePts = Number(v('st_late')) || 1;
   S.items = pairs(v('st_i').split('\n')).map(p => ({
     name: p[0],
     pts: Number(p[1]) || 1
