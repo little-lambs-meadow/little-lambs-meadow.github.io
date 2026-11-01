@@ -204,36 +204,47 @@ var DB = {
       var s = localStorage.getItem(KEY);
       if (s) {
         var d = JSON.parse(s);
-        if (d && d.settings) {
-          d.invites = d.invites || [];
-          if (d.settings.auth === undefined) d.settings.auth = false;
-          if (!d.settings.rules) d.settings.rules = DEFAULT_RULES.slice();
-          if (!d.settings.prayer) d.settings.prayer = DEFAULT_PRAYER;
-          if (!d.settings.cutoff) {
-            d.settings.cutoff = '10:30';
-            d.settings.onPts = 2;
-            d.settings.latePts = 1;
-          }
-          if ((d.settings.items || []).map(x => x.name).join() === '背金句,帶聖經,幫忙收拾,熱心參與') d.settings.items = DEFAULT_ITEMS.map(x => Object.assign({}, x));
-          var dm = demo();
-          (d.lessons || []).forEach(l => {
-            var x = dm.lessons.find(y => y.title === l.title && y.video === l.video);
-            if (x) {
-              ['intro', 'iceName', 'prayer'].forEach(k => {
-                if (!l[k]) l[k] = x[k];
-              });
-            }
-          });
-          (d.songs || []).forEach(sg => {
-            if (sg.title === '（示範）本季主題詩歌' && sg.theme === undefined) sg.theme = true;
-          });
-          d.settings.teacherNames = d.settings.teacherNames || ['王老師', '李老師'];
-          d.teachers = (d.teachers || []).filter(t => t.pwHash);
-          return d;
-        }
+        if (d && d.settings) return DB.fix(d);
       }
     } catch (e) {}
     return demo();
+  },
+  fix(d) {
+    {
+      {
+        d.invites = d.invites || [];
+        (d.log || []).forEach(l => {
+          if (!l.id) {
+            l.id = uid();
+            l.t = l.t || 0;
+          }
+        });
+        if (d.settings.auth === undefined) d.settings.auth = false;
+        if (!d.settings.rules) d.settings.rules = DEFAULT_RULES.slice();
+        if (!d.settings.prayer) d.settings.prayer = DEFAULT_PRAYER;
+        if (!d.settings.cutoff) {
+          d.settings.cutoff = '10:30';
+          d.settings.onPts = 2;
+          d.settings.latePts = 1;
+        }
+        if ((d.settings.items || []).map(x => x.name).join() === '背金句,帶聖經,幫忙收拾,熱心參與') d.settings.items = DEFAULT_ITEMS.map(x => Object.assign({}, x));
+        var dm = demo();
+        (d.lessons || []).forEach(l => {
+          var x = dm.lessons.find(y => y.title === l.title && y.video === l.video);
+          if (x) {
+            ['intro', 'iceName', 'prayer'].forEach(k => {
+              if (!l[k]) l[k] = x[k];
+            });
+          }
+        });
+        (d.songs || []).forEach(sg => {
+          if (sg.title === '（示範）本季主題詩歌' && sg.theme === undefined) sg.theme = true;
+        });
+        d.settings.teacherNames = d.settings.teacherNames || ['王老師', '李老師'];
+        d.teachers = (d.teachers || []).filter(t => t.pwHash);
+        return d;
+      }
+    }
   },
   save(d) {
     try {
@@ -348,6 +359,8 @@ function who() {
 function save(act) {
   if (act) {
     D.log.unshift({
+      id: uid(),
+      t: Date.now(),
       ts: new Date().toLocaleString('zh-TW'),
       by: who(),
       act
@@ -355,6 +368,408 @@ function save(act) {
     D.log = D.log.slice(0, 300);
   }
   DB.save(D);
+  cloudSoon();
+}
+/* ============ 雲端同步（Google 試算表） ============ */
+var CLOUD_URL_DEFAULT = '';
+var CK = 'llm_cloud_v1';
+var Cloud = {
+  url: '',
+  pw: '',
+  ver: 0,
+  base: {},
+  snap: {},
+  busy: false,
+  state: 'off',
+  lastOk: 0,
+  needRebuild: false,
+  needRender: false,
+  skip: false,
+  t2: null
+};
+(function () {
+  var c = {};
+  try {
+    c = JSON.parse(localStorage.getItem(CK) || '{}');
+  } catch (e) {}
+  Cloud.url = c.url || CLOUD_URL_DEFAULT;
+  Cloud.pw = c.pw || '';
+  Cloud.ver = c.ver || 0;
+  Cloud.base = c.base || {};
+  Cloud.snap = Object.assign({}, Cloud.base);
+  Cloud.skip = !!c.skip;
+})();
+function cloudPersist() {
+  try {
+    localStorage.setItem(CK, JSON.stringify({
+      url: Cloud.url,
+      pw: Cloud.pw,
+      ver: Cloud.bver || Cloud.ver,
+      base: Cloud.base,
+      skip: Cloud.skip
+    }));
+  } catch (e) {}
+}
+var COLS = ['teachers', 'invites', 'lessons', 'songs', 'shows', 'kids', 'ledger', 'sessions', 'log'];
+function toRecs(d) {
+  var r = {};
+  r['settings/main'] = JSON.stringify(d.settings);
+  COLS.forEach(c => (d[c] || []).forEach(x => {
+    var id = c === 'invites' ? x.code : x.id;
+    if (id) r[c + '/' + id] = JSON.stringify(x);
+  }));
+  (d.meetings || []).forEach(m => {
+    var o = Object.assign({}, m);
+    delete o.entries;
+    r['meetings/' + m.id] = JSON.stringify(o);
+    (m.entries || []).forEach(e => {
+      r['mentries/' + e.id] = JSON.stringify(Object.assign({
+        mid: m.id
+      }, e));
+    });
+  });
+  Object.keys(d.attend || {}).forEach(dt => Object.keys(d.attend[dt]).forEach(k => {
+    r['attend/' + dt + '|' + k] = JSON.stringify({
+      d: dt,
+      k: k,
+      lid: d.attend[dt][k]
+    });
+  }));
+  return r;
+}
+function fromRecs(r) {
+  var d = {
+    settings: null,
+    meetings: [],
+    attend: {}
+  };
+  COLS.forEach(c => d[c] = []);
+  var ents = [];
+  Object.keys(r).forEach(k => {
+    var c = k.slice(0, k.indexOf('/'));
+    var v;
+    try {
+      v = JSON.parse(r[k]);
+    } catch (e) {
+      return;
+    }
+    if (c === 'settings') d.settings = v;else if (c === 'meetings') {
+      v.entries = [];
+      d.meetings.push(v);
+    } else if (c === 'mentries') ents.push(v);else if (c === 'attend') (d.attend[v.d] = d.attend[v.d] || {})[v.k] = v.lid;else if (d[c]) d[c].push(v);
+  });
+  ents.sort((a, b) => (a.ts || 0) - (b.ts || 0)).forEach(e => {
+    var m = d.meetings.find(x => x.id === e.mid);
+    if (m) {
+      var o = Object.assign({}, e);
+      delete o.mid;
+      m.entries.push(o);
+    }
+  });
+  d.log.sort((a, b) => (b.t || 0) - (a.t || 0));
+  d.log = d.log.slice(0, 300);
+  if (!d.settings) d.settings = demo().settings;
+  return DB.fix(d);
+}
+function cloudDirty() {
+  var L = toRecs(D),
+    B = Cloud.base,
+    out = [];
+  Object.keys(L).forEach(k => {
+    if (L[k] !== B[k]) out.push({
+      k,
+      j: L[k]
+    });
+  });
+  Object.keys(B).forEach(k => {
+    if (!(k in L)) out.push({
+      k,
+      j: null
+    });
+  });
+  return out;
+}
+function cloudPost(body) {
+  var ctl = window.AbortController ? new AbortController() : null;
+  var tm = setTimeout(() => ctl && ctl.abort(), 20000);
+  return fetch(Cloud.url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify(body),
+    redirect: 'follow',
+    signal: ctl ? ctl.signal : undefined
+  }).then(r => r.json()).then(j => {
+    clearTimeout(tm);
+    return j;
+  }, e => {
+    clearTimeout(tm);
+    throw e;
+  });
+}
+function cloudSafe() {
+  return !document.getElementById('modal').classList.contains('on');
+}
+function cloudRebuild() {
+  var dirty = cloudDirty();
+  var m = Object.assign({}, Cloud.snap);
+  dirty.forEach(x => {
+    if (x.j === null) delete m[x.k];else m[x.k] = x.j;
+  });
+  D = fromRecs(m);
+  DB.save(D);
+  Cloud.base = Object.assign({}, Cloud.snap);
+  Cloud.bver = Cloud.ver;
+  Cloud.needRebuild = false;
+  cloudPersist();
+  cloudRender();
+}
+function cloudRender() {
+  var busyUI = document.querySelector('#app iframe') || document.fullscreenElement || document.webkitFullscreenElement;
+  if (busyUI) {
+    Cloud.needRender = true;
+    cloudBadgeUpdate();
+    return;
+  }
+  Cloud.needRender = false;
+  var keep = {};
+  document.querySelectorAll('#app input[id],#app textarea[id],#app select[id]').forEach(e => {
+    keep[e.id] = e.type === 'checkbox' ? e.checked : e.value;
+  });
+  var ae = document.activeElement,
+    fid = ae && ae.id && ae.closest && ae.closest('#app') ? ae.id : null,
+    sel = fid && ae.selectionStart != null ? [ae.selectionStart, ae.selectionEnd] : null;
+  render();
+  Object.keys(keep).forEach(id => {
+    var e = document.getElementById(id);
+    if (e) {
+      if (e.type === 'checkbox') e.checked = keep[id];else if (e.type !== 'file') e.value = keep[id];
+    }
+  });
+  if (fid) {
+    var e = document.getElementById(fid);
+    if (e) {
+      e.focus();
+      if (sel && e.setSelectionRange) try {
+        e.setSelectionRange(sel[0], sel[1]);
+      } catch (x) {}
+    }
+  }
+}
+function cloudSoon() {
+  if (!Cloud.pw) return;
+  clearTimeout(Cloud.t2);
+  Cloud.t2 = setTimeout(cloudTick, 250);
+}
+function cloudTick() {
+  if (!Cloud.url || !Cloud.pw || Cloud.busy) return;
+  var first = !Cloud.pulled && !Cloud.ver && !Object.keys(Cloud.base).length;
+  var recs = first ? [] : cloudDirty();
+  if (document.hidden && !recs.length) return;
+  Cloud.busy = true;
+  if (recs.length) Cloud.state = 'saving';
+  cloudBadgeUpdate();
+  cloudPost({
+    op: 'sync',
+    pw: Cloud.pw,
+    since: Cloud.ver,
+    recs: recs,
+    by: who()
+  }).then(res => {
+    Cloud.busy = false;
+    if (!res.ok) {
+      if (res.err === 'pw') {
+        Cloud.pw = '';
+        Cloud.state = 'pw';
+        cloudPersist();
+        cloudBadgeUpdate();
+        cloudPwDlg(false);
+      } else if (res.err === 'noinit') {
+        Cloud.state = 'pw';
+        cloudPwDlg(true);
+      } else {
+        Cloud.state = 'err';
+        cloudBadgeUpdate();
+      }
+      return;
+    }
+    Cloud.state = 'ok';
+    Cloud.lastOk = Date.now();
+    recs.forEach(x => {
+      if (x.j === null) {
+        delete Cloud.snap[x.k];
+        delete Cloud.base[x.k];
+      } else {
+        Cloud.snap[x.k] = x.j;
+        Cloud.base[x.k] = x.j;
+      }
+    });
+    var changed = false;
+    (res.recs || []).forEach(x => {
+      if (x.j === null) {
+        if (x.k in Cloud.snap) {
+          delete Cloud.snap[x.k];
+          changed = true;
+        }
+      } else if (Cloud.snap[x.k] !== x.j) {
+        Cloud.snap[x.k] = x.j;
+        changed = true;
+      }
+    });
+    Cloud.ver = res.ver;
+    Cloud.pulled = true;
+    if (first) {
+      if (Object.keys(Cloud.snap).length) {
+        try {
+          localStorage.setItem('llm_local_backup', JSON.stringify(D));
+        } catch (e) {}
+        Cloud.base = {};
+        D = fromRecs(Cloud.snap);
+        DB.save(D);
+        Cloud.base = Object.assign({}, Cloud.snap);
+        Cloud.bver = Cloud.ver;
+        cloudPersist();
+        cloudRender();
+        toast('☁️ 已從雲端載入資料');
+      } else {
+        Cloud.bver = 0;
+        cloudPersist();
+        toast('☁️ 第一次連線，正在上傳這台裝置的資料');
+        setTimeout(cloudTick, 50);
+      }
+      return;
+    }
+    if (changed) {
+      if (cloudSafe()) cloudRebuild();else Cloud.needRebuild = true;
+    } else {
+      if (!recs.length && !Cloud.needRebuild) {
+        Cloud.bver = Cloud.ver;
+      }
+      cloudPersist();
+    }
+    cloudBadgeUpdate();
+  }, () => {
+    Cloud.busy = false;
+    Cloud.state = 'off';
+    cloudBadgeUpdate();
+  });
+}
+function cloudBadge() {
+  if (!Cloud.url) return '';
+  var m = {
+    ok: ['☁️', '已同步'],
+    saving: ['⏳', '儲存中'],
+    off: ['⚠️', '離線'],
+    err: ['⚠️', '同步錯誤'],
+    pw: ['🔒', '需要密碼']
+  }[Cloud.pw ? Cloud.state : 'pw'] || ['☁️', ''];
+  return `<button class="sm" id="cloudBadge" style="background:rgba(255,255,255,.25);color:#fff" onclick="cloudDlg()">${m[0]} <span class="uname">${m[1]}</span></button>`;
+}
+function cloudBadgeUpdate() {
+  var b = document.getElementById('cloudBadge');
+  if (b) b.outerHTML = cloudBadge();
+}
+function cloudPwDlg(init) {
+  if (!cloudSafe() && !document.getElementById('cl_pw')) return;
+  openModal(`<h2>🔒 ${init ? '設定教會密碼' : '輸入教會密碼'}</h2>
+ <p class="muted">${init ? '第一次使用雲端同步，請設定一組教會密碼（至少 4 碼）。之後每台裝置第一次打開時輸入一次就好。' : '小羊樂園的資料存在教會的雲端，請輸入教會密碼。每台裝置只需要輸入一次。'}</p>
+ <label class="f">教會密碼<input id="cl_pw" type="password" onkeydown="if(event.key==='Enter'&&!${init})cloudPwOk(false)"></label>
+ ${init ? '<label class="f">再輸入一次<input id="cl_pw2" type="password"></label>' : ''}
+ <div class="actions"><button class="blue" onclick="cloudPwOk(${init})">確定</button><button class="ghost" onclick="Cloud.skip=true;cloudPersist();closeModal()">先不連線（只用這台裝置）</button></div>`);
+  setTimeout(() => {
+    var e = document.getElementById('cl_pw');
+    e && e.focus();
+  }, 50);
+}
+function cloudPwOk(init) {
+  var p = document.getElementById('cl_pw').value;
+  if (p.length < 4) {
+    toast('密碼至少 4 碼');
+    return;
+  }
+  if (init && p !== document.getElementById('cl_pw2').value) {
+    toast('兩次密碼不一樣');
+    return;
+  }
+  var go2 = () => cloudPost({
+    op: 'sync',
+    pw: p,
+    since: 0,
+    recs: []
+  }).then(r => {
+    if (!r.ok) {
+      toast(r.err === 'pw' ? '密碼不正確' : '連線失敗，請稍後再試');
+      return;
+    }
+    Cloud.pw = p;
+    Cloud.skip = false;
+    cloudPersist();
+    closeModal();
+    toast('☁️ 已連上雲端');
+    cloudTick();
+  }, () => toast('連線失敗，請檢查網路'));
+  if (init) cloudPost({
+    op: 'init',
+    newpw: p
+  }).then(r => {
+    if (r.ok || r.err === 'already') go2();else toast('設定失敗');
+  }, () => toast('連線失敗，請檢查網路'));else go2();
+}
+function cloudDlg() {
+  if (!Cloud.pw) {
+    Cloud.skip = false;
+    cloudPost({
+      op: 'sync',
+      pw: '',
+      since: 0
+    }).then(r => cloudPwDlg(r.err === 'noinit'), () => toast('連線失敗，請檢查網路'));
+    return;
+  }
+  var ago = Cloud.lastOk ? Math.round((Date.now() - Cloud.lastOk) / 1000) + ' 秒前' : '尚未成功';
+  openModal(`<h2>☁️ 雲端同步</h2>
+ <p>狀態：<b>${{
+    ok: '已同步',
+    saving: '儲存中',
+    off: '離線（資料先存在這台裝置，恢復網路後自動上傳）',
+    err: '同步錯誤',
+    pw: '需要密碼'
+  }[Cloud.state] || ''}</b><br><span class="muted">上次同步：${ago}・每 3 秒自動檢查更新</span></p>
+ <div class="actions"><button class="blue" onclick="closeModal();cloudTick()">🔄 立即同步</button>
+ <button class="ghost" onclick="cloudChangePw()">更改教會密碼</button>
+ <button class="ghost" onclick="if(confirm('這台裝置登出雲端？（資料不會刪除，下次需要重新輸入密碼）')){Cloud.pw='';Cloud.state='pw';cloudPersist();closeModal();render()}">這台裝置登出</button></div>`);
+}
+function cloudChangePw() {
+  var n = prompt('新的教會密碼（至少 4 碼）。改了之後，其他裝置都要重新輸入新密碼。');
+  if (n === null) return;
+  if (n.length < 4) {
+    toast('密碼至少 4 碼');
+    return;
+  }
+  cloudPost({
+    op: 'setpw',
+    pw: Cloud.pw,
+    newpw: n
+  }).then(r => {
+    if (r.ok) {
+      Cloud.pw = n;
+      cloudPersist();
+      toast('教會密碼已更改');
+      closeModal();
+    } else toast('更改失敗');
+  }, () => toast('連線失敗'));
+}
+function cloudStart() {
+  if (!Cloud.url) return;
+  setInterval(cloudTick, 3000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) cloudTick();
+  });
+  if (Cloud.pw) cloudTick();else if (!Cloud.skip) cloudPost({
+    op: 'sync',
+    pw: '',
+    since: 0
+  }).then(r => cloudPwDlg(r.err === 'noinit'), () => {});
 }
 
 /* ============ 狀態 ============ */
@@ -486,6 +901,7 @@ function openModal(html) {
 }
 function closeModal() {
   document.getElementById('modal').classList.remove('on');
+  if (Cloud.needRebuild) setTimeout(cloudRebuild, 0);
 }
 function lessonOpts(sel) {
   return sortedLessons().map(l => `<option value="${l.id}" ${l.id === sel ? 'selected' : ''}>${h(l.season)} 第${h(l.no)}課 ${h(l.title)}${l.date ? ' (' + l.date + ')' : ''}</option>`).join('');
@@ -571,7 +987,7 @@ function render() {
   hd.className = mode;
   var tabs = mode === 'teach' ? TEACH_TABS : STAFF_TABS;
   hd.innerHTML = `<div class="hrow"><h1>🐑 ${h(D.settings.church)}${mode === 'teach' ? ' · 教學' : ' · ' + h(user || '老師區')}</h1>
-  <div class="who">${user ? `<span class="uname">👤 ${h(user)}${isAdmin() ? '（主控）' : ''}</span>` : ''}
+  <div class="who">${cloudBadge()}${user ? `<span class="uname">👤 ${h(user)}${isAdmin() ? '（主控）' : ''}</span>` : ''}
    ${mode === 'teach' ? `<button class="sm" onclick="${user || !authOn() ? "setMode('staff')" : 'loginDlg()'}">${user || !authOn() ? '老師區' : '老師登入'}</button>` : `<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn() && user ? `<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>` : ''}`}</div></div>
   <nav>${tabs.map(_ref7 => {
     var _ref8 = _slicedToArray(_ref7, 2),
@@ -605,6 +1021,7 @@ function render() {
   layout();
 }
 function go(t) {
+  Cloud.needRender = false;
   tab = t;
   render();
   scrollTo(0, 0);
@@ -1801,9 +2218,9 @@ function pSettings() {
  <label class="f">獎勵（一行一個：名稱 | 所需點數）<textarea id="st_w">${h(S.rewards.map(i => i.name + ' | ' + i.cost).join('\n'))}</textarea></label>
  <div class="actions"><button class="blue" onclick="saveSettings()">儲存設定</button></div></div>
  ${authOn() ? myAccount() : ''}
- <div class="card"><h3>資料備份</h3><p class="muted">初版資料只存在這台裝置的瀏覽器裡，請定期匯出備份。</p>
+ <div class="card"><h3>資料備份</h3><p class="muted">${Cloud.pw ? '資料存在教會的 Google 試算表「小羊樂園資料庫」，所有老師共用。也可以另外匯出一份備份。' : '資料目前只存在這台裝置的瀏覽器裡，請定期匯出備份。'}</p>
  <div class="row"><button onclick="exportAll()">⬇ 匯出備份</button><label style="border:1px solid #e6ddd0;border-radius:8px;padding:7px 12px;cursor:pointer">⬆ 匯入備份<input type="file" accept=".json" style="display:none" onchange="importAll(this.files[0])"></label>
- <button class="danger" onclick="if(confirm('清除所有資料（含老師帳號）並恢復範例？此動作無法復原')){D=demo();setUser(null);save();setMode('teach')}">重置</button></div></div>
+ ${Cloud.pw ? '' : `<button class="danger" onclick="if(confirm('清除所有資料（含老師帳號）並恢復範例？此動作無法復原')){D=demo();setUser(null);save();setMode('teach')}">重置</button>`}</div></div>
  <div class="card"><h3>最近異動</h3><table>${D.log.slice(0, 30).map(l => `<tr><td class="muted" style="white-space:nowrap">${h(l.ts)}</td><td>${h(l.by)}</td><td>${h(l.act)}</td></tr>`).join('') || '<tr><td class="muted">無</td></tr>'}</table></div>`;
 }
 function enableAuth() {
@@ -1944,6 +2361,7 @@ document.getElementById('modal').addEventListener('click', e => {
   if (e.target.id === 'modal') closeModal();
 });
 render();
+cloudStart();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 
 
