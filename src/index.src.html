@@ -184,7 +184,7 @@ function save(act){if(act){D.log.unshift({ts:new Date().toLocaleString('zh-TW'),
 /* ============ 狀態 ============ */
 let user=null;try{user=sessionStorage.getItem('ss_user')}catch(e){}
 let mode=user?'staff':'teach', tab=user?'lessons':'rules';
-let curLesson=null, curSong=null, curMeeting=null, verseLang='both', hidden=new Set(), fontSize=26, pickItem=null, undoStack=[];
+let curLesson=null, curSong=null, curMeeting=null, verseLang='both', hidTok=new Set(), fontSize=26, pickItem=null, undoStack=[];
 
 /* ============ 工具 ============ */
 function h(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -347,9 +347,9 @@ function lessonPicker(onchange){const l=lessonById(curLesson)||thisWeek();curLes
 /* ===== 上課流程（每頁一個畫面，不用捲動） ===== */
 let qIdx=0, qAll=false, showLyrics=false;
 function stepIdx(){return STEPS.findIndex(x=>x[0]===tab)}
-function stepGo(d){const i=stepIdx();if(i<0)return;const n=i+d;if(n>=0&&n<STEPS.length){qIdx=0;hidden.clear();showLyrics=false;go(STEPS[n][0])}}
+function stepGo(d){const i=stepIdx();if(i<0)return;const n=i+d;if(n>=0&&n<STEPS.length){qIdx=0;hidTok.clear();showLyrics=false;go(STEPS[n][0])}}
 function cur(){const l=lessonById(curLesson)||thisWeek();curLesson=l&&l.id;return l||{}}
-function lsel(){return D.lessons.length?`<select class="lsel" onchange="curLesson=this.value;qIdx=0;hidden.clear();render()">${lessonOpts(curLesson)}</select>`:''}
+function lsel(){return D.lessons.length?`<select class="lsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(curLesson)}</select>`:''}
 function stepPage(body,needLesson){
  const i=stepIdx();const n=STEPS[i][1];const prev=STEPS[i-1],next=STEPS[i+1];const l=cur();
  return `<div class="stage"><div class="stephead"><div class="num">${i+1}</div><h2>${n}</h2><span class="sp"></span>${needLesson===false?'':lsel()}</div>
@@ -420,19 +420,19 @@ function tLesson(){const p=lessonPicker('');return `${p}<div class="card">${less
 
 function tokens(s,lang){return lang==='zh'?[...s]:s.split(/(\s+)/)}
 function isWord(t){return /[\p{L}\p{N}]/u.test(t)}
-function verseHtml(s,lang){return tokens(s,lang).map((t,i)=>isWord(t)?`<span class="tok ${hidden.has(lang+i)?'hid':''}" onclick="hidden.delete('${lang}${i}');render()">${h(t)}</span>`:h(t)).join('')}
+function verseHtml(s,lang){return tokens(s,lang).map((t,i)=>isWord(t)?`<span class="tok ${hidTok.has(lang+i)?'hid':''}" onclick="hidTok.delete('${lang}${i}');render()">${h(t)}</span>`:h(t)).join('')}
 function tVerse(){
  const l=cur();if(!l.id)return stepPage('');
- return stepPage(`<div class="tbar">${[['both','中英'],['zh','中文'],['en','English']].map(([k,n])=>`<button class="${verseLang===k?'pri':'ghost'}" onclick="verseLang='${k}';hidden.clear();render()">${n}</button>`).join('')}
-  <span class="sp"></span><button class="ghost" onclick="hideMore()">🙈 遮一些</button><button class="ghost" onclick="hidden.clear();render()">全部顯示</button><button class="ghost" onclick="fsEl('#proj')">⛶ 全螢幕</button></div>
+ return stepPage(`<div class="tbar">${[['both','中英'],['zh','中文'],['en','English']].map(([k,n])=>`<button class="${verseLang===k?'pri':'ghost'}" onclick="verseLang='${k}';hidTok.clear();render()">${n}</button>`).join('')}
+  <span class="sp"></span><button class="ghost" onclick="hideMore()">🙈 遮一些</button><button class="ghost" onclick="hidTok.clear();render()">全部顯示</button><button class="ghost" onclick="fsEl('#proj')">⛶ 全螢幕</button></div>
   <div class="proj fit" data-max="64" id="proj">
    ${verseLang!=='en'&&l.verseZh?`<div class="zh">${verseHtml(l.verseZh,'zh')}</div>`:''}
    ${verseLang!=='zh'&&l.verseEn?`<div class="en">${verseHtml(l.verseEn,'en')}</div>`:''}
    <div class="ref">${h(l.verseRef)}</div></div>`)}
 function hideMore(){const l=cur();const all=[];
- if(verseLang!=='en'&&l.verseZh)tokens(l.verseZh,'zh').forEach((t,i)=>isWord(t)&&!hidden.has('zh'+i)&&all.push('zh'+i));
- if(verseLang!=='zh'&&l.verseEn)tokens(l.verseEn,'en').forEach((t,i)=>isWord(t)&&!hidden.has('en'+i)&&all.push('en'+i));
- const n=Math.max(1,Math.ceil(all.length*.3));for(let i=0;i<n&&all.length;i++)hidden.add(all.splice(Math.floor(Math.random()*all.length),1)[0]);render()}
+ if(verseLang!=='en'&&l.verseZh)tokens(l.verseZh,'zh').forEach((t,i)=>isWord(t)&&!hidTok.has('zh'+i)&&all.push('zh'+i));
+ if(verseLang!=='zh'&&l.verseEn)tokens(l.verseEn,'en').forEach((t,i)=>isWord(t)&&!hidTok.has('en'+i)&&all.push('en'+i));
+ const n=Math.max(1,Math.ceil(all.length*.3));for(let i=0;i<n&&all.length;i++)hidTok.add(all.splice(Math.floor(Math.random()*all.length),1)[0]);render()}
 function tSong(){
  if(!D.songs.length)return '<div class="empty">還沒有詩歌</div>';
  const s=D.songs.find(x=>x.id===curSong)||D.songs[0];curSong=s.id;const yt=ytId(s.video);
