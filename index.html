@@ -13,8 +13,8 @@
 <style>
 :root{--bg:#f7f3ec;--card:#fff;--ink:#2b2622;--muted:#7a7068;--pri:#e2572a;--soft:#fde8df;--blue:#2a6fd6;--bsoft:#e3eefc;--ok:#2e9b5a;--warn:#c9711c;--wsoft:#fff1df;--line:#e6ddd0}
 *{box-sizing:border-box}
-body{margin:0;font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-tap-highlight-color:transparent}
-header{color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px #0002}
+body{margin:0;font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;background:#f7f3ec;color:#2b2622;line-height:1.6;-webkit-tap-highlight-color:transparent}
+header{color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.13)}
 header.teach{background:linear-gradient(135deg,#e2572a,#f2a128)}
 header.staff{background:linear-gradient(135deg,#2a5bd6,#3f8fe0)}
 .hrow{display:flex;gap:8px;align-items:center;justify-content:space-between;max-width:1100px;margin:auto;padding:10px 16px 4px}
@@ -23,24 +23,24 @@ header h1{margin:0;font-size:18px;white-space:nowrap;overflow:hidden;text-overfl
 @media(max-width:480px){.uname{display:none}}
 .who{font-size:13px;display:flex;gap:6px;align-items:center;flex-shrink:0;white-space:nowrap}
 nav{display:flex;gap:4px;overflow-x:auto;max-width:1100px;margin:auto;padding:4px 12px 8px}
-nav button{background:#ffffff26;color:#fff;white-space:nowrap}
-nav button.on{background:#fff;color:var(--ink);font-weight:700}
-button{font:inherit;font-size:14px;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;background:#fff;color:var(--ink)}
-button.pri{background:var(--pri);color:#fff}
-button.blue{background:var(--blue);color:#fff}
-button.ghost{background:transparent;border:1px solid var(--line)}
+nav button{background:rgba(255,255,255,0.15);color:#fff;white-space:nowrap}
+nav button.on{background:#fff;color:#2b2622;font-weight:700}
+button{font:inherit;font-size:14px;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;background:#fff;color:#2b2622}
+button.pri{background:#e2572a;color:#fff}
+button.blue{background:#2a6fd6;color:#fff}
+button.ghost{background:transparent;border:1px solid #e6ddd0}
 button.danger{color:#c33;border:1px solid #f0c4c4;background:#fff}
 button.sm{padding:4px 9px;font-size:13px}
 button:disabled{opacity:.4;cursor:not-allowed}
 main{max-width:1100px;margin:auto;padding:14px 16px 60px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card{background:#fff;border:1px solid #e6ddd0;border-radius:12px;padding:14px;margin-bottom:12px}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .sp{flex:1}
-.muted{color:var(--muted);font-size:13px}
+.muted{color:#7a7068;font-size:13px}
 h2{margin:0 0 6px;font-size:20px}
 h3{margin:0 0 6px;font-size:16px}
 .sec{margin-top:14px}
-.sec h4{margin:0 0 4px;font-size:14px;color:var(--pri);border-left:4px solid var(--pri);padding-left:8px}
+.sec h4{margin:0 0 4px;font-size:14px;color:#e2572a;border-left:4px solid #e2572a;padding-left:8px}
 .sec ol,.sec ul{margin:4px 0;padding-left:22px}
 .pre{white-space:pre-wrap}
 .video{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000}
@@ -49,18 +49,18 @@ h3{margin:0 0 6px;font-size:16px}
 .video .play{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;background:rgba(226,87,42,.9);color:#fff;font-size:38px;line-height:84px;text-align:center;pointer-events:none}
 .video{cursor:pointer}
 .video iframe{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;border:0}
-select,input,textarea{font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:#fff}
-label.f{display:block;margin-top:10px;font-size:13px;color:var(--muted)}
+select,input,textarea{font:inherit;padding:8px;border:1px solid #e6ddd0;border-radius:8px;color:#2b2622;background:#fff}
+label.f{display:block;margin-top:10px;font-size:13px;color:#7a7068}
 label.f>input:not([type=checkbox]),label.f>textarea,label.f>select{display:block;width:100%;margin-top:3px}
 textarea{min-height:70px;resize:vertical;width:100%}
 .checks{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
-.checks label{background:#f4f1ec;border-radius:16px;padding:3px 10px;color:var(--ink);font-size:14px}
+.checks label{background:#f4f1ec;border-radius:16px;padding:3px 10px;color:#2b2622;font-size:14px}
 .tag{display:inline-block;font-size:12px;border-radius:10px;padding:1px 8px;background:#eee;color:#555}
-.tag.d{background:#e2f5ea;color:var(--ok)}.tag.t{background:var(--wsoft);color:var(--warn)}.tag.o{background:var(--bsoft);color:var(--blue)}
-.flag{color:var(--warn);font-weight:700}
+.tag.d{background:#e2f5ea;color:#2e9b5a}.tag.t{background:#fff1df;color:#c9711c}.tag.o{background:#e3eefc;color:#2a6fd6}
+.flag{color:#c9711c;font-weight:700}
 table{width:100%;border-collapse:collapse;font-size:14px}
-td,th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{font-size:12px;color:var(--muted);font-weight:600}
+td,th{padding:7px 6px;border-bottom:1px solid #e6ddd0;text-align:left;vertical-align:top}
+th{font-size:12px;color:#7a7068;font-weight:600}
 /* 投影 */
 .proj{background:#1f1b2e;color:#fff;border-radius:16px;padding:28px 20px;text-align:center;min-height:260px;display:flex;flex-direction:column;justify-content:center}
 .proj .ref{color:#f2c46b;font-size:18px;margin-top:14px}
@@ -71,33 +71,36 @@ th{font-size:12px;color:var(--muted);font-weight:600}
 .lyrics{background:#1f1b2e;color:#fff;border-radius:16px;padding:24px;white-space:pre-wrap;text-align:center;line-height:1.8}
 /* 點名 */
 .kids{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
-.kid{background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;user-select:none;transition:transform .1s}
+.kid{background:#fff;border:2px solid #e6ddd0;border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;user-select:none;transition:transform .1s}
 .kid:active{transform:scale(.95)}
 .kid .n{font-size:18px;font-weight:700}
-.kid .p{font-size:13px;color:var(--muted)}
-.kid.here{border-color:var(--ok);background:#effaf3}
+.kid .p{font-size:13px;color:#7a7068}
+.kid.here{border-color:#2e9b5a;background:#effaf3}
 .kid.pop{animation:pop .4s}
 @keyframes pop{50%{transform:scale(1.12);background:#fff4c2}}
 .items{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.items button{border:2px solid var(--line)}
-.items button.on{border-color:var(--pri);background:var(--soft);font-weight:700}
-.rank li{font-size:20px;padding:6px 0;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between}
+.items button{border:2px solid #e6ddd0}
+.items button.on{border-color:#e2572a;background:#fde8df;font-weight:700}
+.rank li{font-size:20px;padding:6px 0;border-bottom:1px dashed #e6ddd0;display:flex;justify-content:space-between}
 .rank{list-style:none;padding:0;margin:0}
-.rank li b{color:var(--pri)}
+.rank li b{color:#e2572a}
 .medal{width:34px;display:inline-block}
-.modal{position:fixed;top:0;right:0;bottom:0;left:0;background:#0006;display:none;align-items:flex-start;justify-content:center;z-index:30;overflow-y:auto;padding:20px 10px}
+.modal{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.40);display:none;align-items:flex-start;justify-content:center;z-index:30;overflow-y:auto;padding:20px 10px}
 .modal.on{display:flex}
 .panel{background:#fff;border-radius:14px;max-width:720px;width:100%;padding:18px;position:relative}
 .close{position:absolute;top:10px;right:10px}
-.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px;border-top:1px solid #e6ddd0;padding-top:12px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2b2622;color:#fff;padding:8px 16px;border-radius:20px;z-index:40;opacity:0;transition:.25s;pointer-events:none}
 .toast.on{opacity:1}
-.entry{border-left:3px solid var(--line);padding:4px 10px;margin:6px 0}
-.entry.決議{border-color:var(--ok)}.entry.待辦{border-color:var(--warn)}
-.empty{text-align:center;color:var(--muted);padding:30px 10px}
-.notice{background:var(--wsoft);border-radius:10px;padding:10px 12px;font-size:14px}
-a{color:var(--blue)}
+.entry{border-left:3px solid #e6ddd0;padding:4px 10px;margin:6px 0}
+.entry.決議{border-color:#2e9b5a}.entry.待辦{border-color:#c9711c}
+.empty{text-align:center;color:#7a7068;padding:30px 10px}
+.notice{background:#fff1df;border-radius:10px;padding:10px 12px;font-size:14px}
+a{color:#2a6fd6}
 @media print{header,main,.actions,.close,.noprint{display:none!important}.modal{position:static;display:block!important;background:none;padding:0}.panel{max-width:none}}
+
+@supports not (display:grid){.kids,.grid{display:flex;flex-wrap:wrap}.kid{width:140px;margin:4px}}
+@supports not (gap:1px){.row>*,.items>*,.btns>*,.checks>*,.who>*,nav>*,.actions>*{margin:3px}}
 </style>
 </head>
 <body>
@@ -1163,7 +1166,7 @@ function kidHist(id) {
   var days = Object.keys(D.attend).filter(d => D.attend[d][id]).length;
   openModal(`<h2>${h(k.name)}</h2><div class="muted">累計 ⭐ ${bal(id)} · 出席 ${days} 次</div>
  ${notes.length ? `<div class="sec"><h4>老師備註</h4>${notes.map(n => `<div class="entry">${n.flag ? '⚠️ ' : ''}<b>${h(n.date)}</b> ${h(n.note)}</div>`).join('')}</div>` : ''}
- <div class="sec"><h4>點數紀錄</h4><table>${L.map(x => `<tr><td>${h(x.date)}</td><td>${h(x.reason)}</td><td style="color:${x.pts < 0 ? '#c33' : 'var(--ok)'}">${x.pts > 0 ? '+' : ''}${x.pts}</td><td class="muted">${h(x.by)}</td></tr>`).join('') || '<tr><td class="muted">無</td></tr>'}</table></div>`);
+ <div class="sec"><h4>點數紀錄</h4><table>${L.map(x => `<tr><td>${h(x.date)}</td><td>${h(x.reason)}</td><td style="color:${x.pts < 0 ? '#c33' : '#2e9b5a'}">${x.pts > 0 ? '+' : ''}${x.pts}</td><td class="muted">${h(x.by)}</td></tr>`).join('') || '<tr><td class="muted">無</td></tr>'}</table></div>`);
 }
 
 /* ============ 上課紀錄與交接 ============ */
@@ -1172,8 +1175,8 @@ function pSessions() {
   var last = ss[0];
   var flagged = D.kids.filter(k => k.flag && k.active);
   return `<div class="row" style="margin-bottom:10px"><h2 class="sp">上課紀錄與交接</h2><button class="blue" onclick="sessionDlg()">＋今天的紀錄</button></div>
- ${last ? `<div class="card" style="border-color:var(--blue)"><h3>📌 上次交接（${h(last.date)}，${h((last.teachers || []).join('、'))}）</h3><div class="pre">${h(last.handover) || '<span class="muted">（沒有寫交接）</span>'}</div></div>` : ''}
- ${flagged.length ? `<div class="card" style="border-color:var(--warn)"><h3>⚠️ 需要留意的孩子</h3>${flagged.map(k => `<div><b>${h(k.name)}</b> <span class="muted">${h(k.flagNote)}</span> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button></div>`).join('')}</div>` : ''}
+ ${last ? `<div class="card" style="border-color:#2a6fd6"><h3>📌 上次交接（${h(last.date)}，${h((last.teachers || []).join('、'))}）</h3><div class="pre">${h(last.handover) || '<span class="muted">（沒有寫交接）</span>'}</div></div>` : ''}
+ ${flagged.length ? `<div class="card" style="border-color:#c9711c"><h3>⚠️ 需要留意的孩子</h3>${flagged.map(k => `<div><b>${h(k.name)}</b> <span class="muted">${h(k.flagNote)}</span> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button></div>`).join('')}</div>` : ''}
  ${ss.map(s => {
     var l = lessonById(s.lessonId);
     return `<div class="card"><div class="row"><div class="sp"><b>${h(s.date)}</b> ${l ? h(l.title) : ''}<div class="muted">老師：${h((s.teachers || []).join('、'))} · 出席 ${(s.attendance || []).length} 人 · 記錄者 ${h(s.by)}</div></div><button class="sm ghost" onclick="sessionDlg('${s.id}')">編輯</button></div>
@@ -1417,7 +1420,7 @@ function pSettings() {
  <div class="actions"><button class="blue" onclick="saveSettings()">儲存設定</button></div></div>
  ${authOn() ? myAccount() : ''}
  <div class="card"><h3>資料備份</h3><p class="muted">初版資料只存在這台裝置的瀏覽器裡，請定期匯出備份。</p>
- <div class="row"><button onclick="exportAll()">⬇ 匯出備份</button><label style="border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer">⬆ 匯入備份<input type="file" accept=".json" style="display:none" onchange="importAll(this.files[0])"></label>
+ <div class="row"><button onclick="exportAll()">⬇ 匯出備份</button><label style="border:1px solid #e6ddd0;border-radius:8px;padding:7px 12px;cursor:pointer">⬆ 匯入備份<input type="file" accept=".json" style="display:none" onchange="importAll(this.files[0])"></label>
  <button class="danger" onclick="if(confirm('清除所有資料（含老師帳號）並恢復範例？此動作無法復原')){D=demo();setUser(null);save();setMode('teach')}">重置</button></div></div>
  <div class="card"><h3>最近異動</h3><table>${D.log.slice(0, 30).map(l => `<tr><td class="muted" style="white-space:nowrap">${h(l.ts)}</td><td>${h(l.by)}</td><td>${h(l.act)}</td></tr>`).join('') || '<tr><td class="muted">無</td></tr>'}</table></div>`;
 }

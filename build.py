@@ -19,5 +19,22 @@ cfg.write_text('{"presets":[["@babel/preset-env",{"targets":{"chrome":"47"},"exc
 out=subprocess.run(['npx','babel','in.js'],cwd=babel_dir,capture_output=True,text=True)
 if out.returncode: print(out.stderr); sys.exit(1)
 html=src[:m.start()]+'<script>\n'+POLY+out.stdout+'\n</script>'+src[m.end():]
+# ---- CSS 相容：舊瀏覽器不支援顏色變數、8 位色碼、grid、flex gap ----
+def hex2rgba(m):
+    h=m.group(1)
+    if len(h)==4: h=''.join(c*2 for c in h)
+    r,g,b,a=(int(h[i:i+2],16) for i in (0,2,4,6))
+    return 'rgba(%d,%d,%d,%.2f)'%(r,g,b,a/255)
+def fix_css(css):
+    vars=dict(re.findall(r'(--[\w-]+):([^;}]+)',re.search(r':root\{([^}]*)\}',css).group(1)))
+    css=re.sub(r'var\((--[\w-]+)\)',lambda m:vars[m.group(1)].strip(),css)
+    css=re.sub(r'#([0-9a-fA-F]{8}|[0-9a-fA-F]{4})(?![0-9a-fA-F])',hex2rgba,css)
+    return css+"""
+@supports not (display:grid){.kids,.grid{display:flex;flex-wrap:wrap}.kid{width:140px;margin:4px}}
+@supports not (gap:1px){.row>*,.items>*,.btns>*,.checks>*,.who>*,nav>*,.actions>*{margin:3px}}
+"""
+html=re.sub(r'<style>(.*?)</style>',lambda m:'<style>'+fix_css(m.group(1))+'</style>',html,count=1,flags=re.S)
+# 內嵌 style 屬性與程式裡的 var()
+html=html.replace("var(--ok)","#2e9b5a").replace("var(--blue)","#2a6fd6").replace("var(--warn)","#c9711c").replace("var(--line)","#e6ddd0")
 (root/'index.html').write_text(html)
 print('index.html 建置完成', len(html)//1024, 'KB')
