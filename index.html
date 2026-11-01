@@ -1068,8 +1068,8 @@ function tPoints() {
   var at = D.attend[d] || {};
   var kids = D.kids.filter(k => k.active).sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'));
   var auto = nowHM() < S.cutoff;
-  var hint = pickItem === null ? `點名字＝報到（現在 ${nowHM()}，${auto ? '準時 +' + S.onPts : '晚到 +' + S.latePts}）` : pickItem === 'on' ? '點名字＝準時報到 +' + S.onPts : pickItem === 'late' ? '點名字＝晚到報到 +' + S.latePts : '點名字＝「' + h(S.items[pickItem].name) + '」，再點一次取消';
-  return `<div class="stage"><div class="stephead"><h2>⭐ ${d} 點名加點</h2><span class="sp"></span><span class="muted">報到 ${Object.keys(at).length} 人</span></div>
+  var hint = manageKids ? '管理名單中：點孩子的名字可以隱藏、改名或刪除' + (D.kids.some(k => !k.active) ? `　<a href="#" onclick="hiddenKidsDlg();return false">查看已隱藏的孩子（${D.kids.filter(k => !k.active).length}）</a>` : '') : pickItem === null ? `點名字＝報到（現在 ${nowHM()}，${auto ? '準時 +' + S.onPts : '晚到 +' + S.latePts}）` : pickItem === 'on' ? '點名字＝準時報到 +' + S.onPts : pickItem === 'late' ? '點名字＝晚到報到 +' + S.latePts : '點名字＝「' + h(S.items[pickItem].name) + '」，再點一次取消';
+  return `<div class="stage"><div class="stephead"><h2>⭐ ${d} 點名加點</h2><span class="sp"></span><span class="muted" style="margin-right:10px">報到 ${Object.keys(at).length} 人</span><button class="${manageKids ? 'blue' : 'ghost'}" onclick="manageKids=!manageKids;render()">${manageKids ? '✓ 完成管理' : '👥 管理名單'}</button></div>
   <div class="fill"><div class="tbar items">
    <button class="${pickItem === null ? 'on' : ''}" onclick="pickItem=null;render()">✅ 報到（自動判斷）</button><button class="${pickItem === 'on' ? 'on' : ''}" onclick="pickItem='on';render()">準時 +${S.onPts}</button><button class="${pickItem === 'late' ? 'on' : ''}" onclick="pickItem='late';render()">晚到 +${S.latePts}</button>
    <span style="width:12px"></span>
@@ -1080,10 +1080,57 @@ function tPoints() {
     var tp = t.reduce((a, x) => a + x.pts, 0);
     var ci = t.find(x => x.id === at[k.id]);
     var done = pickItem !== null && typeof pickItem === 'number' && t.some(x => x.reason === S.items[pickItem].name);
-    return `<div class="kid ${ci ? ci.reason === ciLabel(true) ? 'here' : 'here late' : ''} ${done ? 'got' : ''}" id="k_${k.id}" onclick="tapKid('${k.id}')"><div class="n">${h(k.name)}</div><div class="p">今日 +${tp}</div><div class="p">⭐ ${bal(k.id)}</div></div>`;
+    return `<div class="kid ${ci ? ci.reason === ciLabel(true) ? 'here' : 'here late' : ''} ${done ? 'got' : ''}" id="k_${k.id}" onclick="${manageKids ? 'kidManage' : 'tapKid'}('${k.id}')"><div class="n">${manageKids ? '✏️ ' : ''}${h(k.name)}</div><div class="p">今日 +${tp}</div><div class="p">⭐ ${bal(k.id)}</div></div>`;
   }).join('')}</div></div></div>
   <div class="row" style="margin-top:8px;flex-shrink:0"><input id="newKid" class="sp" style="font-size:16px" placeholder="新朋友的名字" onkeydown="if(event.key==='Enter')quickKid()"><button class="pri" onclick="quickKid()">＋加入並報到</button>
    <button class="ghost" onclick="undo()" ${undoStack.length ? '' : 'disabled'}>↶ 復原</button></div></div>`;
+}
+var manageKids = false;
+function kidManage(id) {
+  var k = kid(id);
+  openModal(`<h2>${h(k.name)}</h2><div class="muted">累計 ⭐ ${bal(id)}</div>
+ <label class="f">改名<input id="km_n" value="${h(k.name)}"></label>
+ <div class="actions"><button class="blue" onclick="renameKid('${id}')">儲存名字</button></div>
+ <div class="card" style="margin-top:12px"><b>🙈 隱藏</b><p class="muted">不再出現在點名畫面，點數和紀錄都保留，之後可以恢復。適合暫時不來的孩子。</p><button onclick="hideKid('${id}')">隱藏這位孩子</button></div>
+ <div class="card" style="border-color:#f0c4c4"><b style="color:#c33">🗑 刪除</b><p class="muted">連同所有點數和紀錄一起永久刪除，無法復原。適合輸入錯誤的名字。</p><button class="danger" onclick="deleteKid('${id}')">永久刪除</button></div>`);
+}
+function renameKid(id) {
+  var n = document.getElementById('km_n').value.trim();
+  if (!n) return;
+  var k = kid(id);
+  var o = k.name;
+  k.name = n;
+  save('孩子改名 ' + o + ' → ' + n);
+  closeModal();
+  render();
+  toast('已改名為 ' + n);
+}
+function hideKid(id) {
+  var k = kid(id);
+  k.active = false;
+  save('隱藏孩子 ' + k.name);
+  closeModal();
+  render();
+  toast('已隱藏 ' + k.name);
+}
+function deleteKid(id) {
+  var k = kid(id);
+  if (!confirm(`確定要永久刪除「${k.name}」和他所有的點數紀錄嗎？`)) return;
+  D.kids = D.kids.filter(x => x.id !== id);
+  D.ledger = D.ledger.filter(x => x.kidId !== id);
+  for (var d in D.attend) delete D.attend[d][id];
+  D.sessions.forEach(s => {
+    s.kidNotes = (s.kidNotes || []).filter(n => n.kidId !== id);
+  });
+  undoStack = [];
+  save('刪除孩子 ' + k.name);
+  closeModal();
+  render();
+  toast('已刪除 ' + k.name);
+}
+function hiddenKidsDlg() {
+  var ks = D.kids.filter(k => !k.active);
+  openModal(`<h2>已隱藏的孩子</h2>${ks.map(k => `<div class="row card" style="margin:6px 0"><b class="sp">${h(k.name)}</b><span class="muted">⭐ ${bal(k.id)}</span><button class="blue sm" onclick="kid('${k.id}').active=true;save('恢復孩子 '+kid('${k.id}').name);hiddenKidsDlg();render()">恢復</button><button class="danger sm" onclick="deleteKid('${k.id}')">刪除</button></div>`).join('') || '<p class="muted">沒有隱藏的孩子</p>'}`);
 }
 function addPts(kidId, pts, reason) {
   var e = {
@@ -1460,8 +1507,8 @@ function pKids() {
   var ks = D.kids.filter(k => showInactive || k.active).sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'));
   return `<div class="row" style="margin-bottom:10px"><h2 class="sp">孩子點數</h2><label class="muted"><input type="checkbox" ${showInactive ? 'checked' : ''} onchange="showInactive=this.checked;render()"> 顯示已停用</label><button class="blue" onclick="editKid()">＋新增孩子</button></div>
  <div class="card"><table><tr><th>名字</th><th>點數</th><th></th></tr>${ks.map(k => `<tr style="${k.active ? '' : 'opacity:.5'}"><td><b>${h(k.name)}</b> ${k.flag ? '<span class="flag" title="需要留意">⚠️</span>' : ''}<div class="muted">${h(k.group)}${k.flag && k.flagNote ? ' · ' + h(k.flagNote) : ''}</div></td><td><b>⭐ ${bal(k.id)}</b></td>
- <td style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="adjDlg('${k.id}')">加減點</button> <button class="sm pri" onclick="redeemDlg('${k.id}')">兌換</button> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button> <button class="sm ghost" onclick="editKid('${k.id}')">編輯</button></td></tr>`).join('')}</table></div>
- <p class="muted">停用的孩子不會出現在點名畫面，但點數和紀錄都會保留，回來時再啟用就好。</p>`;
+ <td style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="adjDlg('${k.id}')">加減點</button> <button class="sm pri" onclick="redeemDlg('${k.id}')">兌換</button> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button> <button class="sm ghost" onclick="editKid('${k.id}')">編輯</button> <button class="sm danger" onclick="deleteKid('${k.id}')">刪除</button></td></tr>`).join('')}</table></div>
+ <p class="muted">「啟用」取消勾選＝隱藏。隱藏的孩子不會出現在點名畫面，但點數和紀錄都會保留，回來時再啟用就好。</p>`;
 }
 function editKid(id) {
   var k = id ? kid(id) : {
