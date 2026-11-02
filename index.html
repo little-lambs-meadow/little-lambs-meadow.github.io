@@ -2021,8 +2021,9 @@ function sbPlayFull(c) {
 function sbSrcBtn(e) {
   var d = sbDrv(e.c),
     u = sbUseDrv(e);
-  if (d && e.cf) return `<button class="ghost" style="white-space:nowrap" onclick="sbSetSrc('${u ? 'cf' : 'drv'}')" title="雲端播不出來時，可以切換成官網">${u ? '☁️ 雲端 → 改官網' : '🌐 官網 → 改雲端'}</button>`;
-  return d ? '<span class="muted" style="white-space:nowrap">☁️ 雲端</span>' : '<span class="muted" style="white-space:nowrap">🌐 官網</span>';
+  var tab = d && u ? `<a class="ghost" style="padding:10px 12px;border:1px solid #e6ddd0;border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="https://drive.google.com/file/d/${d}/view" target="_blank" rel="noopener" title="播不出來時，在新分頁直接開雲端影片">新分頁 ↗</a>` : '';
+  if (d && e.cf) return `<button class="ghost" style="white-space:nowrap" onclick="sbSetSrc('${u ? 'cf' : 'drv'}')" title="雲端播不出來時，可以切換成官網">${u ? '☁️ 雲端 → 改官網' : '🌐 官網 → 改雲端'}</button>` + tab;
+  return d ? '<span class="muted" style="white-space:nowrap">☁️ 雲端</span>' + tab : '<span class="muted" style="white-space:nowrap">🌐 官網</span>';
 }
 function sbOptions(sel) {
   return SB_SEASONS.map((sn, i) => `<optgroup label="${sn}">${SB_EPS.filter(e => e.c[1] == String(i + 1)).map(e => `<option value="${e.c}" ${e.c === sel ? 'selected' : ''}>${sbLabel(e)}｜${h(e.t)}</option>`).join('')}</optgroup>`).join('');

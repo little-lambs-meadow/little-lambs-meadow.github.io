@@ -590,8 +590,9 @@ function sbPlayFull(c){const e=sbEp(c),box=document.getElementById('sbbox');if(!
  if(fs){try{const r=fs.call(box);r&&r.catch&&r.catch(()=>{})}catch(x){}}else{window.open(drv?'https://drive.google.com/file/d/'+sbDrv(c)+'/view':'https://www.superbookchinese.com/video/'+c,'_blank');return}
  if(!drv)f.src=sbSrc(e,true)}
 function sbSrcBtn(e){const d=sbDrv(e.c),u=sbUseDrv(e);
- if(d&&e.cf)return `<button class="ghost" style="white-space:nowrap" onclick="sbSetSrc('${u?'cf':'drv'}')" title="雲端播不出來時，可以切換成官網">${u?'☁️ 雲端 → 改官網':'🌐 官網 → 改雲端'}</button>`;
- return d?'<span class="muted" style="white-space:nowrap">☁️ 雲端</span>':'<span class="muted" style="white-space:nowrap">🌐 官網</span>'}
+ const tab=d&&u?`<a class="ghost" style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="https://drive.google.com/file/d/${d}/view" target="_blank" rel="noopener" title="播不出來時，在新分頁直接開雲端影片">新分頁 ↗</a>`:'';
+ if(d&&e.cf)return `<button class="ghost" style="white-space:nowrap" onclick="sbSetSrc('${u?'cf':'drv'}')" title="雲端播不出來時，可以切換成官網">${u?'☁️ 雲端 → 改官網':'🌐 官網 → 改雲端'}</button>`+tab;
+ return d?'<span class="muted" style="white-space:nowrap">☁️ 雲端</span>'+tab:'<span class="muted" style="white-space:nowrap">🌐 官網</span>'}
 function sbOptions(sel){return SB_SEASONS.map((sn,i)=>`<optgroup label="${sn}">${SB_EPS.filter(e=>e.c[1]==String(i+1)).map(e=>`<option value="${e.c}" ${e.c===sel?'selected':''}>${sbLabel(e)}｜${h(e.t)}</option>`).join('')}</optgroup>`).join('')}
 function sbPick(c){if(!c)return;const e=sbEp(c);const v=document.getElementById('f_video');if(v)v.value='sb:'+c;
  const t=document.getElementById('f_title');if(t&&!t.value.trim())t.value=e.t;const st=document.getElementById('f_story');if(st&&!st.value.trim())st.value=e.d;toast('已選 '+sbLabel(e)+' '+e.t)}
