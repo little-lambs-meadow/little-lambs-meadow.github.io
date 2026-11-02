@@ -1116,7 +1116,7 @@ function render() {
   var tabs = mode === 'teach' ? TEACH_TABS : STAFF_TABS;
   hd.innerHTML = `<div class="hrow"><h1>🐑 ${h(D.settings.church)}${mode === 'teach' ? ' · 教學' : ' · ' + h(user || '老師區')}</h1>
   ${mode === 'teach' && tab !== 'rules' && STEPS.some(x => x[0] === tab) && D.lessons.length ? `<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id)}</select>` : ''}
-  <div class="who">${mode === 'teach' ? `<button class="sm zybtn ${zyOn ? 'on' : ''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>` : ''}${cloudBadge()}${user ? `<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>` : ''}
+  <div class="who"><button class="sm rld" onclick="hardReload()" title="重新整理（載入最新版）">⟳<span class="hide-m"> 重新整理</span></button>${mode === 'teach' ? `<button class="sm zybtn ${zyOn ? 'on' : ''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>` : ''}${cloudBadge()}${user ? `<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>` : ''}
    ${mode === 'teach' ? `<button class="sm" onclick="${user || !authOn() ? "setMode('staff')" : 'loginDlg()'}">${user || !authOn() ? '老師區' : '老師登入'}</button>` : `<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn() && user ? `<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>` : ''}`}</div></div>
   <nav>${tabs.map(_ref7 => {
     var _ref8 = _slicedToArray(_ref7, 2),
@@ -3568,6 +3568,40 @@ document.getElementById('modal').addEventListener('click', e => {
 render();
 cloudStart();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+/* 重新整理：安裝成 App 後沒有瀏覽器的重新整理鍵，所以在上方放一顆；會先更新程式、清掉舊快取，再載入最新版 */
+function hardReload() {
+  return _hardReload.apply(this, arguments);
+}
+function _hardReload() {
+  _hardReload = _asyncToGenerator(function* () {
+    toast('🔄 正在載入最新版…');
+    try {
+      if (Cloud && Cloud.pw && cloudDirty().length) {
+        cloudTick();
+        yield new Promise(r => setTimeout(r, 2000));
+      }
+    } catch (e) {} // 還沒上傳的修改先送出
+    try {
+      if (navigator.serviceWorker) {
+        var rs = yield navigator.serviceWorker.getRegistrations();
+        yield Promise.all(rs.map(r => r.update().catch(() => {})));
+      }
+    } catch (e) {}
+    try {
+      if (window.caches) {
+        var ks = yield caches.keys();
+        yield Promise.all(ks.map(k => caches.delete(k)));
+      }
+    } catch (e) {}
+    try {
+      yield fetch('./index.html?r=' + Date.now(), {
+        cache: 'reload'
+      });
+    } catch (e) {}
+    location.replace(location.pathname + '?r=' + Date.now() + location.hash);
+  });
+  return _hardReload.apply(this, arguments);
+}
 
 
 </script>
