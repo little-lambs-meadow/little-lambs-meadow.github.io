@@ -20,6 +20,7 @@ header.staff{background:linear-gradient(135deg,#2a5bd6,#3f8fe0)}
 .hrow{display:flex;gap:8px;align-items:center;justify-content:space-between;max-width:1400px;margin:auto;padding:10px 16px 4px}
 header h1{margin:0;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .who button{white-space:nowrap}
+#snack{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#2b2b2b;color:#fff;padding:10px 14px;border-radius:10px;display:none;gap:12px;align-items:center;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,0.33);font-size:15px;white-space:nowrap}#snack.on{display:flex}#snack button{background:#f2a128;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:15px}
 @media(max-width:480px){.uname{display:none}.hideS{display:none}}
 .who{font-size:13px;display:flex;gap:6px;align-items:center;flex-shrink:0;white-space:nowrap}
 nav{display:flex;gap:4px;overflow-x:auto;max-width:1400px;margin:auto;padding:4px 12px 8px}
@@ -1469,10 +1470,84 @@ function tWorship() {
   var box = yt || q;
   var bar = `<div class="tbar scroll">${q ? `<button class="pri" style="font-size:18px" onclick="playFull('${box}','${q}')">▶ 全部連續播放（${vids.length} 首）</button>` : ''}
   ${list.map((x, i) => `<button class="${x.id === s.id ? 'blue' : 'ghost'}" onclick="curSong='${x.id}';showLyrics=false;render()">${i + 1}. ${x.theme ? '⭐ ' : ''}${h(x.title)}</button>`).join('')}
-  <span class="sp"></span>${yt ? `<button class="pri" onclick="playFull('${yt}')">▶ 全螢幕播放這首</button>` : ''}${s && hasLyrics(s) ? `<button class="ghost" onclick="showLyrics=!showLyrics;render()">${showLyrics ? '🎬 看影片' : '📝 歌詞'}</button>` : ''}<button class="ghost" onclick="quickSongDlg()">＋ 加歌</button></div>`;
+  <span class="sp"></span>${yt ? `<button class="pri" onclick="playFull('${yt}')">▶ 全螢幕播放這首</button>` : ''}${s && hasLyrics(s) ? `<button class="ghost" onclick="showLyrics=!showLyrics;render()">${showLyrics ? '🎬 看影片' : '📝 歌詞'}</button>` : ''}<button class="ghost" onclick="quickSongDlg()">＋ 加歌</button>${s ? `<button class="ghost" onclick="songDelDlg('${s.id}')">🗑 移除</button>` : ''}</div>`;
   if (!s) return stepPage(bar + '<div class="empty">這一課還沒有敬拜詩歌，按「＋ 加歌」貼上 YouTube 網址</div>');
   var main = showLyrics ? `<div class="lyrics fit" data-max="40" id="lyr" style="padding:16px"><b>${h(s.title)}</b>\n${h(s.lyrics)}</div>` : box ? `<div class="vwrap">${ytBox(box)}</div>` : s.video ? `<div class="empty"><a href="${h(s.video)}" target="_blank" rel="noopener">▶ 開啟詩歌影片</a></div>` : '<div class="empty">這首詩歌還沒有 YouTube 網址，可以到「老師區 → 詩歌」補上</div>';
   return stepPage(bar + main);
+}
+function snack(msg, fn) {
+  var e = document.getElementById('snack');
+  if (!e) {
+    e = document.createElement('div');
+    e.id = 'snack';
+    document.body.appendChild(e);
+  }
+  e.innerHTML = `<span>${h(msg)}</span><button>↶ 復原</button>`;
+  e.querySelector('button').onclick = () => {
+    clearTimeout(e._t);
+    e.classList.remove('on');
+    fn();
+  };
+  e.classList.add('on');
+  clearTimeout(e._t);
+  e._t = setTimeout(() => e.classList.remove('on'), 8000);
+}
+function songDelDlg(id, fromLib) {
+  var sg = D.songs.find(x => x.id === id);
+  if (!sg) return;
+  var l = fromLib ? null : cur();
+  var inL = l && l.id && (l.songIds || []).includes(id);
+  openModal(`<h2>🗑 移除〈${h(sg.title)}〉</h2><p class="muted">請選擇要怎麼處理這首詩歌：</p>
+  ${inL ? `<button class="blue" style="width:100%;margin:6px 0" onclick="songRemoveFromLesson('${id}')">只從這一課移除（詩歌庫保留）</button>` : ''}
+  ${sg.theme ? `<button class="ghost" style="width:100%;margin:6px 0" onclick="songUntheme('${id}')">取消「⭐ 本季主題」（不再每堂課出現）</button>` : ''}
+  <button class="danger" style="width:100%;margin:6px 0" onclick="songDelete('${id}')">從詩歌庫完全刪除（所有課程都會拿掉）</button>
+  <div class="actions"><button class="ghost" onclick="closeModal()">取消</button></div>`);
+}
+function songRemoveFromLesson(id) {
+  var l = cur(),
+    sg = D.songs.find(x => x.id === id);
+  var before = [...(l.songIds || [])];
+  l.songIds = before.filter(x => x !== id);
+  save('從 ' + l.title + ' 移除詩歌 ' + sg.title);
+  closeModal();
+  render();
+  snack('已從這一課移除〈' + sg.title + '〉', () => {
+    l.songIds = before;
+    save('復原詩歌 ' + sg.title);
+    render();
+  });
+}
+function songUntheme(id) {
+  var sg = D.songs.find(x => x.id === id);
+  sg.theme = false;
+  save('取消主題詩歌 ' + sg.title);
+  closeModal();
+  render();
+  snack('〈' + sg.title + '〉已不是本季主題', () => {
+    sg.theme = true;
+    save('復原主題詩歌 ' + sg.title);
+    render();
+  });
+}
+function songDelete(id) {
+  var i = D.songs.findIndex(x => x.id === id);
+  if (i < 0) return;
+  var sg = D.songs[i];
+  var used = D.lessons.filter(l => (l.songIds || []).includes(id));
+  D.songs.splice(i, 1);
+  used.forEach(l => l.songIds = l.songIds.filter(x => x !== id));
+  if (curSong === id) curSong = null;
+  save('刪除詩歌 ' + sg.title);
+  closeModal();
+  render();
+  snack('已刪除〈' + sg.title + '〉', () => {
+    D.songs.splice(Math.min(i, D.songs.length), 0, sg);
+    used.forEach(l => {
+      if (!l.songIds.includes(id)) l.songIds.push(id);
+    });
+    save('復原詩歌 ' + sg.title);
+    render();
+  });
 }
 function quickSongDlg() {
   openModal(`<h2>＋ 加一首敬拜詩歌</h2>
@@ -2737,7 +2812,7 @@ function _doImport() {
 }
 function pSongs() {
   return `<div class="row" style="margin-bottom:10px"><h2 class="sp">詩歌</h2><button class="blue" onclick="editSong()">＋新增詩歌</button></div>
- ${D.songs.map(s => `<div class="card row"><div class="sp"><b>${s.theme ? '⭐ ' : ''}${h(s.title)}</b><div class="muted">${h(s.season)}${s.notes ? ' · ' + h(s.notes).slice(0, 40) : ''}</div></div><button class="sm ghost" onclick="curSong='${s.id}';setMode('teach');go('worship')">投影</button><button class="sm ghost" onclick="editSong('${s.id}')">編輯</button></div>`).join('') || '<div class="empty">還沒有詩歌</div>'}`;
+ ${D.songs.map(s => `<div class="card row"><div class="sp"><b>${s.theme ? '⭐ ' : ''}${h(s.title)}</b><div class="muted">${h(s.season)}${s.notes ? ' · ' + h(s.notes).slice(0, 40) : ''}</div></div><button class="sm ghost" onclick="curSong='${s.id}';setMode('teach');go('worship')">投影</button><button class="sm ghost" onclick="editSong('${s.id}')">編輯</button><button class="sm danger" onclick="songDelDlg('${s.id}',true)">刪除</button></div>`).join('') || '<div class="empty">還沒有詩歌</div>'}`;
 }
 function editSong(id) {
   var s = id ? D.songs.find(x => x.id === id) : {};
@@ -2750,7 +2825,7 @@ function editSong(id) {
       id: uid()
     }, v));
     save((id ? '修改' : '新增') + '詩歌 ' + v.title);
-  }, id && isAdmin() ? `<div class="actions"><button class="danger" onclick="if(confirm('刪除這首詩歌？')){D.songs=D.songs.filter(x=>x.id!=='${id}');save('刪除詩歌');closeModal();render()}">刪除</button></div>` : '');
+  }, id ? `<div class="actions"><button class="danger" onclick="songDelete('${id}')">刪除這首詩歌</button></div>` : '');
 }
 
 /* ============ 成發 ============ */
