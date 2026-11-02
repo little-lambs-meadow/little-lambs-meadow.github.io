@@ -1581,6 +1581,117 @@ var SB_DRV = {
   "s5-14": "1HjjgqxNHBmioJ4Kto79EaAqk9cw_ywPc",
   "s5-15": "1lPz_1hGmoJ9I47PHVTpD2gm87--CSRNP"
 };
+/* 其他串流來源：GOODTV（67 集）、YouTube 官方普通話頻道 @superbookmandarin（第一～三季 39 集） */
+var SB_GTV = {
+  "s1-01": 64831,
+  "s1-02": 64832,
+  "s1-03": 64836,
+  "s1-04": 64835,
+  "s1-05": 64833,
+  "s1-06": 64834,
+  "s1-07": 64837,
+  "s1-08": 64838,
+  "s1-09": 64839,
+  "s1-10": 64844,
+  "s1-11": 64842,
+  "s1-12": 64850,
+  "s1-13": 64845,
+  "s2-01": 64841,
+  "s2-02": 64847,
+  "s2-03": 64840,
+  "s2-04": 64843,
+  "s2-05": 64852,
+  "s2-06": 64848,
+  "s2-07": 64849,
+  "s2-08": 64846,
+  "s2-09": 64851,
+  "s2-10": 64853,
+  "s2-11": 64855,
+  "s2-12": 64854,
+  "s2-13": 64856,
+  "s3-01": 109560,
+  "s3-02": 109563,
+  "s3-03": 109564,
+  "s3-04": 109839,
+  "s3-05": 109838,
+  "s3-06": 110191,
+  "s3-07": 110190,
+  "s3-08": 110288,
+  "s3-09": 110359,
+  "s3-10": 110637,
+  "s3-11": 110638,
+  "s3-12": 110838,
+  "s3-13": 110839,
+  "s4-01": 111292,
+  "s4-02": 111293,
+  "s4-03": 111702,
+  "s4-04": 111770,
+  "s4-05": 111769,
+  "s4-06": 112039,
+  "s4-07": 112257,
+  "s4-08": 112463,
+  "s4-09": 112608,
+  "s4-10": 112685,
+  "s4-11": 112817,
+  "s4-12": 112877,
+  "s4-13": 113003,
+  "s5-01": 113115,
+  "s5-02": 113198,
+  "s5-03": 113330,
+  "s5-04": 113489,
+  "s5-05": 113713,
+  "s5-06": 113744,
+  "s5-07": 113900,
+  "s5-08": 114247,
+  "s5-09": 114307,
+  "s5-10": 114370,
+  "s5-11": 114519,
+  "s5-12": 114758,
+  "s5-13": 114870,
+  "s5-14": 114871,
+  "s5-15": 114984
+};
+var SB_YT = {
+  "s1-01": "j8lHcRzyIHY",
+  "s1-02": "hLxF8ltz390",
+  "s1-03": "u6ScjRi-lrY",
+  "s1-04": "mYjAK0iEGek",
+  "s1-05": "aT9UCVkBtTg",
+  "s1-06": "Uiv4XEWE23k",
+  "s1-07": "zODCJ1WA3GA",
+  "s1-08": "hJ1Iuwxop2Q",
+  "s1-09": "mAZQgu2KfFA",
+  "s1-10": "nXA2G0xxQBo",
+  "s1-11": "N9Qz594skOM",
+  "s1-12": "dKdwD90WTDs",
+  "s1-13": "vvyiQYWhVuA",
+  "s2-01": "LFybHkIsjuA",
+  "s2-02": "s8bU_Urxthk",
+  "s2-03": "pZ9Cvybvd94",
+  "s2-04": "aRK5AUtILpc",
+  "s2-05": "JjcR71Eb3UA",
+  "s2-06": "3SYuQ2SC5cA",
+  "s2-07": "9lb2lAmrfxI",
+  "s2-08": "0h5pWWZGvMk",
+  "s2-09": "Cr5ZoQ2d_3M",
+  "s2-10": "nr9gyV2gGfc",
+  "s2-11": "LeDCQTSIrTs",
+  "s2-12": "tgo4yjFkWDo",
+  "s2-13": "SFoJ82BfOHM",
+  "s3-01": "0c-vFIwyDXE",
+  "s3-02": "zdk3jGYhBvw",
+  "s3-03": "lvVmgBAUCkk",
+  "s3-04": "SWHslYtUCXI",
+  "s3-05": "J8bjSMrbAmU",
+  "s3-06": "2MNzEEbWpCY",
+  "s3-07": "SB7zs7qtTGo",
+  "s3-08": "Jj1dfemV--g",
+  "s3-09": "6oN34NADT9Q",
+  "s3-10": "E9YwRxU37Tw",
+  "s3-11": "JkCvGqggoe8",
+  "s3-12": "9e2i2MkSKeU",
+  "s3-13": "nd-rdTb65mU"
+};
 var SB_EPS = [{
   "c": "s1-01",
   "cf": "7b0acc1b4fcfa1c084c62c8194da58df",
@@ -1975,21 +2086,51 @@ function sbPoster(e) {
 function sbDrv(c) {
   return SB_DRV[c] || null;
 }
-function sbUseDrv(e) {
-  if (!sbDrv(e.c)) return false;
-  if (!e.cf) return true;
+var SB_SRC = {
+  drv: '☁️ 雲端',
+  cf: '🌐 官網',
+  gtv: '📺 GOODTV',
+  yt: '▶️ YouTube'
+};
+function sbAvail(e) {
+  var a = [];
+  if (sbDrv(e.c)) a.push('drv');
+  if (e.cf) a.push('cf');
+  if (SB_GTV[e.c]) a.push('gtv');
+  if (SB_YT[e.c]) a.push('yt');
+  return a;
+}
+function sbWhich(e) {
+  var a = sbAvail(e);
   var v = 'drv';
   try {
     v = localStorage.getItem('llm_vsrc') || 'drv';
   } catch (x) {}
-  return v !== 'cf';
+  return a.indexOf(v) >= 0 ? v : a[0];
+}
+function sbUseDrv(e) {
+  return sbWhich(e) === 'drv';
 }
 function sbSetSrc(v) {
   try {
     localStorage.setItem('llm_vsrc', v);
   } catch (x) {}
   render();
-  toast(v === 'cf' ? '改用官網播放' : '改用雲端硬碟播放');
+  toast('改用 ' + SB_SRC[v] + ' 播放');
+}
+function sbUrl(e, w, auto) {
+  w = w || sbWhich(e);
+  if (w === 'drv') return drvSrc(sbDrv(e.c));
+  if (w === 'gtv') return 'https://www.goodtv.tv/watch?episode=' + SB_GTV[e.c];
+  if (w === 'yt') return 'https://www.youtube.com/embed/' + SB_YT[e.c] + '?rel=0&playsinline=1' + (auto ? '&autoplay=1' : '');
+  return sbSrc(e, auto);
+}
+function sbOpenUrl(e, w) {
+  w = w || sbWhich(e);
+  if (w === 'drv') return 'https://drive.google.com/file/d/' + sbDrv(e.c) + '/view';
+  if (w === 'gtv') return 'https://www.goodtv.tv/watch?episode=' + SB_GTV[e.c];
+  if (w === 'yt') return 'https://www.youtube.com/watch?v=' + SB_YT[e.c];
+  return 'https://www.superbookchinese.com/video/' + e.c;
 }
 function drvSrc(id) {
   return 'https://drive.google.com/file/d/' + id + '/preview';
@@ -1998,7 +2139,8 @@ function sbSrc(e, auto) {
   return 'https://' + SB_CF + '.cloudflarestream.com/' + e.cf + '/iframe?poster=' + encodeURIComponent(sbPoster(e)) + (auto ? '&autoplay=true' : '');
 }
 function sbBox(e, id) {
-  return `<div class="vwrap"><div class="video" id="${id}"><iframe src="${sbUseDrv(e) ? drvSrc(sbDrv(e.c)) : sbSrc(e)}" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div></div>`;
+  var w = sbWhich(e);
+  return `<div class="vwrap"><div class="${w === 'gtv' ? 'webbox' : 'video'}" id="${id}"><iframe src="${sbUrl(e, w)}" referrerpolicy="no-referrer-when-downgrade" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div></div>`;
 }
 function sbPlayFull(c) {
   var e = sbEp(c),
@@ -2006,24 +2148,23 @@ function sbPlayFull(c) {
   if (!e || !box) return;
   var f = box.querySelector('iframe');
   var fs = box.requestFullscreen || box.webkitRequestFullscreen;
-  var drv = sbUseDrv(e);
+  var w = sbWhich(e);
   if (fs) {
     try {
       var r = fs.call(box);
       r && r.catch && r.catch(() => {});
     } catch (x) {}
   } else {
-    window.open(drv ? 'https://drive.google.com/file/d/' + sbDrv(c) + '/view' : 'https://www.superbookchinese.com/video/' + c, '_blank');
+    window.open(sbOpenUrl(e, w), '_blank');
     return;
   }
-  if (!drv) f.src = sbSrc(e, true);
+  if (w === 'cf' || w === 'yt') f.src = sbUrl(e, w, true);
 }
 function sbSrcBtn(e) {
-  var d = sbDrv(e.c),
-    u = sbUseDrv(e);
-  var tab = d && u ? `<a class="ghost" style="padding:10px 12px;border:1px solid #e6ddd0;border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="https://drive.google.com/file/d/${d}/view" target="_blank" rel="noopener" title="播不出來時，在新分頁直接開雲端影片">新分頁 ↗</a>` : '';
-  if (d && e.cf) return `<button class="ghost" style="white-space:nowrap" onclick="sbSetSrc('${u ? 'cf' : 'drv'}')" title="雲端播不出來時，可以切換成官網">${u ? '☁️ 雲端 → 改官網' : '🌐 官網 → 改雲端'}</button>` + tab;
-  return d ? '<span class="muted" style="white-space:nowrap">☁️ 雲端</span>' + tab : '<span class="muted" style="white-space:nowrap">🌐 官網</span>';
+  var w = sbWhich(e),
+    av = sbAvail(e);
+  var btns = av.map((k, i) => `<button class="${k === w ? 'pri' : 'ghost'}" style="white-space:nowrap;padding:8px 10px" onclick="sbSetSrc('${k}')">${i + 1}.${SB_SRC[k]}</button>`).join('');
+  return `<span class="row" style="gap:6px;flex-wrap:nowrap">${btns}<a class="ghost" style="padding:8px 10px;border:1px solid #e6ddd0;border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="${sbOpenUrl(e, w)}" target="_blank" rel="noopener" title="在新分頁開啟目前的來源">↗</a></span>`;
 }
 function sbOptions(sel) {
   return SB_SEASONS.map((sn, i) => `<optgroup label="${sn}">${SB_EPS.filter(e => e.c[1] == String(i + 1)).map(e => `<option value="${e.c}" ${e.c === sel ? 'selected' : ''}>${sbLabel(e)}｜${h(e.t)}</option>`).join('')}</optgroup>`).join('');
