@@ -20,7 +20,7 @@ header.staff{background:linear-gradient(135deg,#2a5bd6,#3f8fe0)}
 .hrow{display:flex;gap:8px;align-items:center;justify-content:space-between;max-width:1400px;margin:auto;padding:10px 16px 4px}
 header h1{margin:0;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .who button{white-space:nowrap}
-@media(max-width:480px){.uname{display:none}}
+@media(max-width:480px){.uname{display:none}.hideS{display:none}}
 .who{font-size:13px;display:flex;gap:6px;align-items:center;flex-shrink:0;white-space:nowrap}
 nav{display:flex;gap:4px;overflow-x:auto;max-width:1400px;margin:auto;padding:4px 12px 8px}
 nav button{background:rgba(255,255,255,0.15);color:#fff;white-space:nowrap}
@@ -1397,7 +1397,7 @@ function stepPage(body, needLesson) {
   var l = cur();
   return `<div class="stage"><div class="stephead"><div class="num">${i + 1}</div><h2>${n}</h2><span class="sp"></span>${needLesson === false ? '' : lsel()}</div>
   <div class="fill">${needLesson !== false && !l.id ? '<div class="empty">還沒有課程，請老師到「老師區 → 備課」新增</div>' : body}</div>
-  <div class="stepnav">${prev ? `<button class="ghost" onclick="stepGo(-1)">← ${prev[1]}</button>` : '<span style="flex:1"></span>'}${next ? `<button class="pri" onclick="stepGo(1)">${next[1]} →</button>` : `<button class="pri" onclick="go('points')">⭐ 點名加點</button>`}</div></div>`;
+  </div>`;
 }
 function layout() {
   var m = document.getElementById('app');
@@ -2176,8 +2176,7 @@ function sbPlayFull(c) {
 function sbSrcBtn(e) {
   var w = sbWhich(e),
     av = sbAvail(e);
-  var btns = av.map((k, i) => `<button class="${k === w ? 'pri' : 'ghost'}" style="white-space:nowrap;padding:8px 10px" onclick="sbSetSrc('${k}')">${i + 1}.${SB_SRC[k]}</button>`).join('');
-  return `<span class="row" style="gap:6px;flex-wrap:nowrap">${btns}<a class="ghost" style="padding:8px 10px;border:1px solid #e6ddd0;border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="${sbOpenUrl(e, w)}" target="_blank" rel="noopener" title="在新分頁開啟目前的來源">↗</a></span>`;
+  return `<select class="lsel" style="width:auto;min-width:150px;font-size:16px" title="切換影片來源" onchange="if(this.value==='open'){window.open('${sbOpenUrl(e, w)}','_blank');this.value='${w}'}else sbSetSrc(this.value)">${av.map((k, i) => `<option value="${k}" ${k === w ? 'selected' : ''}>${i + 1}. ${SB_SRC[k]}</option>`).join('')}<option value="open">↗ 在新分頁開啟</option></select>`;
 }
 function sbOptions(sel) {
   return SB_SEASONS.map((sn, i) => `<optgroup label="${sn}">${SB_EPS.filter(e => e.c[1] == String(i + 1)).map(e => `<option value="${e.c}" ${e.c === sel ? 'selected' : ''}>${sbLabel(e)}｜${h(e.t)}</option>`).join('')}</optgroup>`).join('');
@@ -2263,7 +2262,7 @@ function tVideo() {
   var gt = gtvUrl(l.video);
   var sc = sbCode(l.video),
     se = sc && sbEp(sc);
-  if (se) return stepPage(`<div class="tbar scroll"><button class="pri" style="flex:1;font-size:20px;padding:12px" onclick="sbPlayFull('${se.c}')">▶ 全螢幕播放〈${h(se.t)}〉</button><span class="muted" style="white-space:nowrap">${sbLabel(se)}</span>${sbSrcBtn(se)}</div>${sbBox(se, 'sbbox')}`);
+  if (se) return stepPage(`<div class="tbar scroll"><button class="pri" style="flex:1;font-size:20px;padding:12px" onclick="sbPlayFull('${se.c}')">▶ 全螢幕播放<span class="hideS">〈${h(se.t)}〉</span></button>${sbSrcBtn(se)}</div>${sbBox(se, 'sbbox')}`);
   if (gt) return stepPage(`<div class="tbar scroll"><button class="pri" style="flex:1;font-size:20px;padding:12px" onclick="fsEl('#gtvbox')">⛶ 全螢幕〈${h(l.title)}〉</button><a class="ghost" style="padding:10px 12px;border:1px solid #e6ddd0;border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="${h(gt)}" target="_blank" rel="noopener">在 GOODTV 開啟 ↗</a></div>
   <div class="muted" style="flex-shrink:0;margin-bottom:6px">GOODTV 影片：按下方畫面裡的播放鍵開始；全螢幕後若影片沒有放大，再按播放器右下角的全螢幕鍵。</div>${gtvBox(gt, 'gtvbox')}`);
   return stepPage(yt ? `<div class="tbar"><button class="pri" style="flex:1;font-size:22px;padding:12px" onclick="playFull('${yt}')">▶ 全螢幕播放〈${h(l.title)}〉</button></div><div class="vwrap">${ytBox(yt)}</div>` : l.video ? `<div class="empty"><a class="pri" style="display:inline-block;padding:16px 30px;border-radius:10px;background:#e2572a;color:#fff;font-size:22px;text-decoration:none" href="${h(l.video)}" target="_blank" rel="noopener">▶ 開啟影片〈${h(l.title)}〉</a></div>` : '<div class="empty">這一課還沒有影片網址</div>');
