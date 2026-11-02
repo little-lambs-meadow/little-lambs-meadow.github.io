@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#e2572a">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bpmf+Iansui&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -44,6 +46,11 @@ h3{margin:0 0 6px;font-size:16px}
 .sec h4{margin:0 0 4px;font-size:14px;color:var(--pri);border-left:4px solid var(--pri);padding-left:8px}
 .sec ol,.sec ul{margin:4px 0;padding-left:22px}
 .pre{white-space:pre-wrap}
+body.bpmf .zy{font-family:"Bpmf Iansui","PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;font-weight:400;line-height:1.75}
+body.bpmf .zy .zh,body.bpmf .zy b{font-weight:400}
+body.bpmf .zy .en,body.bpmf .zy .ref{font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+.zybtn.on{background:#fff;color:#e2572a}
+.tok.say{background:#f2c46b;color:#1f1b2e;border-radius:4px}
 .video{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000}
 .video:fullscreen{padding-top:0!important;border-radius:0;width:100%!important;height:100%!important}.video:-webkit-full-screen{padding-top:0!important;border-radius:0;width:100%!important;height:100%!important}
 .video img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
@@ -129,7 +136,7 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 .fit{overflow:hidden}
 .bigcard.fit{display:flex;flex-direction:column;justify-content:center}
 .proj.fit{min-height:0;padding:16px}
-.proj .zh{font-size:1em!important}.proj .en{font-size:.62em!important}.proj .ref{font-size:.45em!important}
+.proj .zh{font-size:1em!important}.proj .en{font-size:1em!important;font-weight:700;line-height:1.5}.proj .ref{font-size:.45em!important}
 .qcard.fit{display:flex;align-items:center;justify-content:center;min-height:0}
 .kidsfit .kids{grid-template-columns:repeat(auto-fill,minmax(6.5em,1fr))}
 .kidsfit .kid{padding:.5em .3em}.kidsfit .kid .n{font-size:1em}.kidsfit .kid .p{font-size:.7em}
@@ -410,13 +417,13 @@ function pairs(lines,numeric){return lines.map(s=>{const p=s.split('|').map(x=>x
 const STEPS=[['rules','規則'],['worship','敬拜'],['ice','破冰'],['intro','前言'],['video','妙妙書'],['qa','問答'],['verse','金句'],['pray','禱告']];
 const TEACH_TABS=STEPS.map(([k,n],i)=>[k,`<span class="n">${i+1}</span>${n}`]).concat([['points','⭐ 點名'],['rank','🏆 排行']]);
 const STAFF_TABS=[['lessons','備課'],['songs','詩歌'],['shows','成發'],['kids','孩子點數'],['sessions','上課紀錄'],['meetings','會議'],['settings','設定']];
-function render(){
+function render(){applyZy();
  if(authOn()&&user&&!(me()&&me().active!==false)){setUser(null);mode='teach';tab='rules'}
  const hd=document.getElementById('hdr');hd.className=mode;
  const tabs=mode==='teach'?TEACH_TABS:STAFF_TABS;
  hd.innerHTML=`<div class="hrow"><h1>🐑 ${h(D.settings.church)}${mode==='teach'?' · 教學':' · '+h(user||'老師區')}</h1>
   ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id)}</select>`:''}
-  <div class="who">${cloudBadge()}${user?`<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>`:''}
+  <div class="who">${mode==='teach'?`<button class="sm zybtn ${zyOn?'on':''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>`:''}${cloudBadge()}${user?`<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>`:''}
    ${mode==='teach'?`<button class="sm" onclick="${user||!authOn()?"setMode('staff')":'loginDlg()'}">${user||!authOn()?'老師區':'老師登入'}</button>`:`<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn()&&user?`<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>`:''}`}</div></div>
   <nav>${tabs.map(([k,n])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${n}</button>`).join('')}</nav>`;
  {const on=hd.querySelector('nav .on');if(on){const n=on.parentNode;n.scrollLeft=on.offsetLeft-(n.clientWidth-on.offsetWidth)/2}}
@@ -538,7 +545,7 @@ function fitText(e){if(window.innerWidth<=600&&e.classList.contains('kidsfit')){
  while(f>12&&(e.scrollHeight>e.clientHeight+1||e.scrollWidth>e.clientWidth+1)){f-=2;e.style.fontSize=f+'px'}}
 window.addEventListener('resize',()=>{if(mode==='teach')layout()});
 function tRules(){const r=D.settings.rules||[];
- return stepPage(`<div class="bigcard fit" data-max="44"><div style="color:#f2c46b;margin-bottom:.3em">🐑 小羊樂園的約定 —— 我們一起念一遍！</div><ol>${r.map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>`,false)}
+ return stepPage(`<div class="bigcard fit zy" data-max="44"><div style="color:#f2c46b;margin-bottom:.3em">🐑 小羊樂園的約定 —— 我們一起念一遍！</div><ol>${r.map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>`,false)}
 function worshipList(l){const ids=[];
  D.songs.filter(x=>x.theme&&(!l.season||x.season===l.season)).forEach(x=>ids.push(x.id));
  (l.songIds||[]).forEach(i=>{if(!ids.includes(i))ids.push(i)});
@@ -590,7 +597,7 @@ function tIce(){const l=cur();const st=l.expSteps||[];
    ${l.props&&l.props.length?`<div style="color:#f2c46b;margin-top:.4em;font-size:.75em">🧰 道具：${l.props.map(h).join('、')}</div>`:''}
    ${l.safety?`<div style="color:#ffcf9e;font-size:.75em">⚠️ ${h(l.safety)}</div>`:''}</div>`:'<div class="empty">這一課還沒有寫破冰遊戲</div>'}`)}
 function tIntro(){const l=cur();const t=l.intro||l.story;
- return stepPage(`<div class="bigcard fit" data-max="40"><div style="font-size:1.25em;font-weight:700">${h(l.title)}</div><div style="color:#f2c46b;font-size:.7em;margin-bottom:.4em">📜 ${h(l.scripture)}</div>
+ return stepPage(`<div class="bigcard fit zy" data-max="40"><div style="font-size:1.25em;font-weight:700">${h(l.title)}</div><div style="color:#f2c46b;font-size:.7em;margin-bottom:.4em">📜 ${h(l.scripture)}</div>
   <div class="pre">${h(t)||'（這一課還沒有寫前言）'}</div></div>`)}
 /* ===== 超級妙妙書 67 集：雲端硬碟（主要）＋ 官網（備用，第一～四季） ===== */
 const SB_CF='customer-0thff6zd3v6ksb4k';
@@ -654,26 +661,43 @@ function tVideo(){const l=cur();const yt=ytId(l.video);const gt=gtvUrl(l.video);
 function tQA(){const l=cur();const q=l.questions||[];
  if(!q.length)return stepPage('<div class="empty">這一課還沒有問答題目</div>');
  if(qIdx>=q.length)qIdx=q.length-1;
- if(qAll)return stepPage(`<div class="tbar"><span class="sp"></span><button class="ghost" onclick="qAll=false;render()">一題一題看</button></div><div class="bigcard fit" data-max="36"><ol>${q.map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>`);
+ if(qAll)return stepPage(`<div class="tbar"><span class="sp"></span><button class="ghost" onclick="qAll=false;render()">一題一題看</button></div><div class="bigcard fit zy" data-max="36"><ol>${q.map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>`);
  return stepPage(`<div class="tbar scroll"><b style="font-size:18px;white-space:nowrap">第 ${qIdx+1} 題 / 共 ${q.length} 題</b><span class="sp"></span><button class="ghost" ${qIdx?'':'disabled'} onclick="qIdx--;render()">← 上一題</button><button class="blue" ${qIdx<q.length-1?'':'disabled'} onclick="qIdx++;render()">下一題 →</button><button class="ghost" onclick="qAll=true;render()">全部列出</button></div>
-  <div class="qcard fit" data-max="56">${h(q[qIdx])}</div>`)}
+  <div class="qcard fit zy" data-max="56">${h(q[qIdx])}</div>`)}
 function tPray(){const l=cur();
- return stepPage(`<div class="bigcard fit" data-max="36"><div style="text-align:center;font-size:1.4em">🙏</div><div class="pre">${h(l.prayer||D.settings.prayer)}</div>
+ return stepPage(`<div class="bigcard fit zy" data-max="36"><div style="text-align:center;font-size:1.4em">🙏</div><div class="pre">${h(l.prayer||D.settings.prayer)}</div>
   <div style="text-align:center;margin-top:.6em;color:#f2c46b">🐑 下課囉！我們下週見 👋</div></div>`)}
 function fsEl(sel){const e=document.querySelector(sel);if(!e)return;const f=e.requestFullscreen||e.webkitRequestFullscreen;if(f)f.call(e)}
 function tLesson(){const p=lessonPicker('');return `${p}<div class="card">${lessonBody(lessonById(curLesson))}</div>`}
 
 function tokens(s,lang){return lang==='zh'?[...s]:s.split(/(\s+)/)}
 function isWord(t){return /[\p{L}\p{N}]/u.test(t)}
-function verseHtml(s,lang){return tokens(s,lang).map((t,i)=>isWord(t)?`<span class="tok ${hidTok.has(lang+i)?'hid':''}" onclick="hidTok.delete('${lang}${i}');render()">${h(t)}</span>`:h(t)).join('')}
+function verseHtml(s,lang){return tokens(s,lang).map((t,i)=>isWord(t)?`<span class="tok ${hidTok.has(lang+i)?'hid':''}" data-i="${i}" onclick="hidTok.delete('${lang}${i}');render()">${h(t)}</span>`:h(t)).join('')}
 function tVerse(){
  const l=cur();if(!l.id)return stepPage('');
  return stepPage(`<div class="tbar scroll">${[['both','中英'],['zh','中文'],['en','English']].map(([k,n])=>`<button class="${verseLang===k?'pri':'ghost'}" onclick="verseLang='${k}';hidTok.clear();render()">${n}</button>`).join('')}
-  <span class="sp"></span><button class="ghost" onclick="hideMore()">🙈 遮一些</button><button class="ghost" onclick="hidTok.clear();render()">全部顯示</button><button class="ghost" onclick="fsEl('#proj')">⛶ 全螢幕</button></div>
-  <div class="proj fit" data-max="64" id="proj">
+  ${verseLang!=='zh'&&l.verseEn?`<button class="blue" onclick="sayEn(1)">🔊 英文朗讀</button><button class="ghost" onclick="sayEn(0.7)">🐢 慢慢唸</button>`:''}<span class="sp"></span><button class="ghost" onclick="hideMore()">🙈 遮一些</button><button class="ghost" onclick="hidTok.clear();render()">全部顯示</button><button class="ghost" onclick="fsEl('#proj')">⛶ 全螢幕</button></div>
+  <div class="proj fit zy" data-max="64" id="proj">
    ${verseLang!=='en'&&l.verseZh?`<div class="zh">${verseHtml(l.verseZh,'zh')}</div>`:''}
    ${verseLang!=='zh'&&l.verseEn?`<div class="en">${verseHtml(l.verseEn,'en')}</div>`:''}
    <div class="ref">${h(l.verseRef)}</div></div>`)}
+/* 英文金句語音導讀：用裝置內建的語音，直接念目前畫面上的英文金句（老師改了英文也會跟著念新的） */
+function enVoice(){const vs=(window.speechSynthesis&&speechSynthesis.getVoices())||[];const en=vs.filter(v=>/^en[-_]/i.test(v.lang));
+ return en.find(v=>/natural|google us|samantha|aria|jenny/i.test(v.name))||en.find(v=>/en[-_]US/i.test(v.lang))||en[0]||null}
+function sayEn(rate){const l=cur();if(!l.verseEn)return;const ss=window.speechSynthesis;
+ if(!ss||!window.SpeechSynthesisUtterance){toast('這台裝置的瀏覽器不支援語音朗讀');return}
+ ss.cancel();const text=l.verseEn+(l.verseRef?'':'');const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=rate||1;const v=enVoice();if(v)u.voice=v;
+ const toks=tokens(l.verseEn,'en');const starts=[];let pos=0;toks.forEach((t,i)=>{starts.push([pos,i]);pos+=t.length});
+ const clear=()=>document.querySelectorAll('.tok.say').forEach(e=>e.classList.remove('say'));
+ u.onboundary=e=>{if(e.name&&e.name!=='word')return;let k=0;for(const [p,i] of starts){if(p<=e.charIndex)k=i;else break}clear();const el=document.querySelector('#proj .en .tok[data-i="'+k+'"]');if(el)el.classList.add('say')};
+ u.onend=u.onerror=clear;ss.speak(u)}
+if(window.speechSynthesis&&speechSynthesis.addEventListener)speechSynthesis.addEventListener('voiceschanged',()=>{});
+/* 注音：用 Bpmf Iansui 注音字型，字旁自動顯示注音；每台裝置可以自己開關 */
+let zyOn=true;try{zyOn=localStorage.getItem('llm_bpmf')!=='0'}catch(x){}
+function applyZy(){document.body.classList.toggle('bpmf',zyOn)}
+function toggleZy(){zyOn=!zyOn;try{localStorage.setItem('llm_bpmf',zyOn?'1':'0')}catch(x){}applyZy();render();toast(zyOn?'已開啟注音':'已關閉注音')}
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(mode==='teach')layout()});
+if(document.fonts&&document.fonts.addEventListener)document.fonts.addEventListener('loadingdone',()=>{if(mode==='teach')layout()});
 function hideMore(){const l=cur();const all=[];
  if(verseLang!=='en'&&l.verseZh)tokens(l.verseZh,'zh').forEach((t,i)=>isWord(t)&&!hidTok.has('zh'+i)&&all.push('zh'+i));
  if(verseLang!=='zh'&&l.verseEn)tokens(l.verseEn,'en').forEach((t,i)=>isWord(t)&&!hidTok.has('en'+i)&&all.push('en'+i));
