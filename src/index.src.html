@@ -366,7 +366,9 @@ function toast(t){const e=document.getElementById('toast');e.textContent=t;e.cla
 function bal(id){return D.ledger.reduce((a,x)=>x.kidId===id?a+x.pts:a,0)}
 function kid(id){return D.kids.find(k=>k.id===id)}
 function lessonById(id){return D.lessons.find(l=>l.id===id)}
-function sortedLessons(){return [...D.lessons].sort((a,b)=>(a.season||'').localeCompare(b.season||'','zh-Hant')||(a.no||0)-(b.no||0)||(a.date||'').localeCompare(b.date||''))}
+function seasonNum(t){t=String(t||'');const m=t.match(/\d+/);if(m)return Number(m[0]);const Z='零一二三四五六七八九';const c=t.match(/[一二三四五六七八九十]+/);if(!c)return 999;const x=c[0];
+ if(x==='十')return 10;if(x[0]==='十')return 10+Z.indexOf(x[1]);if(x.length>1&&x[1]==='十')return Z.indexOf(x[0])*10+(x[2]?Z.indexOf(x[2]):0);return Z.indexOf(x[0])}
+function sortedLessons(){return [...D.lessons].sort((a,b)=>seasonNum(a.season)-seasonNum(b.season)||(a.season||'').localeCompare(b.season||'','zh-Hant')||(a.no||0)-(b.no||0)||(a.date||'').localeCompare(b.date||''))}
 function thisWeek(){const t=today();const ls=[...D.lessons].filter(l=>l.date).sort((a,b)=>a.date.localeCompare(b.date));return ls.find(l=>l.date>=t)||ls[ls.length-1]||D.lessons[0]}
 function copy(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('已複製')).catch(()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();toast('已複製')})}
 function openModal(html){document.getElementById('panel').innerHTML=`<button class="close ghost" onclick="closeModal()">✕</button>`+html;document.getElementById('modal').classList.add('on')}

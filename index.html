@@ -918,8 +918,21 @@ function kid(id) {
 function lessonById(id) {
   return D.lessons.find(l => l.id === id);
 }
+function seasonNum(t) {
+  t = String(t || '');
+  var m = t.match(/\d+/);
+  if (m) return Number(m[0]);
+  var Z = '零一二三四五六七八九';
+  var c = t.match(/[一二三四五六七八九十]+/);
+  if (!c) return 999;
+  var x = c[0];
+  if (x === '十') return 10;
+  if (x[0] === '十') return 10 + Z.indexOf(x[1]);
+  if (x.length > 1 && x[1] === '十') return Z.indexOf(x[0]) * 10 + (x[2] ? Z.indexOf(x[2]) : 0);
+  return Z.indexOf(x[0]);
+}
 function sortedLessons() {
-  return [...D.lessons].sort((a, b) => (a.season || '').localeCompare(b.season || '', 'zh-Hant') || (a.no || 0) - (b.no || 0) || (a.date || '').localeCompare(b.date || ''));
+  return [...D.lessons].sort((a, b) => seasonNum(a.season) - seasonNum(b.season) || (a.season || '').localeCompare(b.season || '', 'zh-Hant') || (a.no || 0) - (b.no || 0) || (a.date || '').localeCompare(b.date || ''));
 }
 function thisWeek() {
   var t = today();
