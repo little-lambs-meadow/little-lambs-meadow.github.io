@@ -437,49 +437,56 @@ function cloudNow(){return new Promise(r=>{if(!Cloud.pw)return r();let n=0;
  const w1=()=>{if(Cloud.busy&&n++<60)return setTimeout(w1,200);cloudTick();setTimeout(w2,150)};w1()})}
 function needCloud(){if(Cloud.url&&!Cloud.pw){toast('請先輸入教會密碼連上雲端');cloudDlg();return true}return false}
 function loginDlg(){
- if(Cloud.needRebuild)cloudRebuild();if(needCloud())return;
+ if(Cloud.needRebuild)cloudRebuild();if(!D.teachers.length&&needCloud())return;
  if(!D.teachers.some(t=>isAdminRole(t.role)))return setupDlg();
  const ts=activeT();
  openModal(`<h2>🐑 老師登入</h2>
- <label class="f">你是哪位老師<select id="lg_u">${ts.map(t=>`<option>${h(t.name)}</option>`).join('')}</select></label>
- <label class="f">密碼<input id="lg_p" type="password" onkeydown="if(event.key==='Enter')doLogin()"></label>
+ <label class="f">帳號<input id="lg_a" autocomplete="username" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('lg_p').focus()"></label>
+ <label class="f">密碼<input id="lg_p" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></label>
  <div class="actions"><button class="blue" onclick="doLogin()">登入</button></div>
  <div class="notice" style="margin-top:14px">第一次使用？請向主控同工索取驗證碼，再 <a href="#" onclick="registerDlg();return false"><b>用驗證碼註冊</b></a>。<br>忘記密碼請找主控重設。</div>
  <p class="muted">登入後會記住在這台裝置，不用每次輸入；換人使用請按「登出」。</p>`);
- setTimeout(()=>{const e=document.getElementById('lg_p');e&&e.focus()},50);
+ setTimeout(()=>{const e=document.getElementById('lg_a');e&&e.focus()},50);
 }
-async function doLogin(){const t=D.teachers.find(x=>x.name===val('lg_u'));
- if(!t||t.active===false||t.pwHash!==await hashPw(document.getElementById('lg_p').value)){toast('密碼不正確');return}
+const normAcc=a=>String(a||'').trim().toLowerCase();
+const accOf=t=>t.account||t.name;
+const findAcc=a=>D.teachers.find(x=>normAcc(accOf(x))===normAcc(a));
+async function doLogin(){const a=val('lg_a');if(!a){toast('請輸入帳號');return}
+ const t=findAcc(a);
+ if(!t||t.active===false||t.pwHash!==await hashPw(document.getElementById('lg_p').value)){toast('帳號或密碼不正確');return}
  setUser(t.name);closeModal();setMode('staff');toast('歡迎，'+t.name)}
 function setupDlg(){openModal(`<h2>🐑 小羊樂園 初次設定</h2>
  <p class="muted">建立第一個管理帳號。主控和設計師都可以發驗證碼讓老師註冊、管理老師帳號和系統設定。</p>
- <label class="f">你的稱呼<input id="su_n" placeholder="例如：Jimmy、林傳道"></label>
+ <label class="f">帳號（登入用，中文、英文、數字都可以）<input id="su_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
+ <label class="f">稱呼（顯示在紀錄上，例如：Jimmy、林傳道）<input id="su_n"></label>
  <label class="f">身分<select id="su_r"><option value="admin">主控（負責同工、院長）</option><option value="designer">設計師（負責 app 程式）</option></select></label>
  <label class="f">設定密碼（至少 6 碼）<input id="su_p" type="password"></label>
  <label class="f">再輸入一次<input id="su_p2" type="password"></label>
  <div class="actions"><button class="blue" onclick="doSetup()">建立帳號</button></div>`)}
-async function doSetup(){const n=val('su_n'),p=document.getElementById('su_p').value;
- if(!n){toast('請填稱呼');return}if(!pwOk(p,document.getElementById('su_p2').value))return;
- const r=val('su_r')||'admin';D.settings.auth=true;D.teachers.push({id:uid(),name:n,role:r,active:true,pwHash:await hashPw(p),created:today()});
+async function doSetup(){const a=val('su_a'),n=val('su_n')||a,p=document.getElementById('su_p').value;
+ if(!a){toast('請填帳號');return}if(!pwOk(p,document.getElementById('su_p2').value))return;
+ const r=val('su_r')||'admin';D.settings.auth=true;D.teachers.push({id:uid(),account:a,name:n,role:r,active:true,pwHash:await hashPw(p),created:today()});
  setUser(n);save('建立'+ROLES[r]+'帳號 '+n);closeModal();setMode('staff');go('settings');toast(ROLES[r]+'帳號建立完成')}
 function registerDlg(){if(Cloud.needRebuild)cloudRebuild();if(needCloud())return;openModal(`<h2>🐑 老師註冊</h2>
  <p class="muted">請輸入主控同工給你的驗證碼（6 碼，限用一次）。</p>
  <label class="f">驗證碼<input id="rg_c" style="text-transform:uppercase;letter-spacing:4px;font-size:20px" maxlength="8"></label>
- <label class="f">你的稱呼（例如：陳老師、美玲姊妹）<input id="rg_n"></label>
+ <label class="f">帳號（登入用，中文、英文、數字都可以，自己記得就好）<input id="rg_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
+ <label class="f">稱呼（顯示在紀錄上，例如：陳老師、美玲姊妹）<input id="rg_n"></label>
  <label class="f">設定密碼（至少 6 碼）<input id="rg_p" type="password"></label>
  <label class="f">再輸入一次<input id="rg_p2" type="password"></label>
  <div class="actions"><button class="blue" onclick="doRegister()">註冊</button><button class="ghost" onclick="loginDlg()">返回登入</button></div>`)}
 async function doRegister(){
- const code=val('rg_c').toUpperCase().replace(/\s/g,''),n=val('rg_n'),p=document.getElementById('rg_p').value;
+ const code=val('rg_c').toUpperCase().replace(/\s/g,''),acc=val('rg_a'),n=val('rg_n')||acc,p=document.getElementById('rg_p').value;
  let inv=D.invites.find(i=>i.code===code);
  if(!inv&&Cloud.pw){toast('正在確認驗證碼…');await cloudNow();inv=D.invites.find(i=>i.code===code)}
  if(!inv||inv.revoked){toast('驗證碼不正確');return}
  if(inv.usedBy){toast('這組驗證碼已經被使用過');return}
  if(Date.now()>inv.expires){toast('驗證碼已過期，請向主控重新索取');return}
- if(!n){toast('請填稱呼');return}
- if(D.teachers.some(t=>t.name===n)){toast('已經有同名的老師，請換個稱呼');return}
+ if(!acc){toast('請填帳號');return}
+ if(findAcc(acc)||D.teachers.some(t=>normAcc(t.name)===normAcc(acc)&&!t.account)){toast('這個帳號已經有人使用，請換一個');return}
+ if(D.teachers.some(t=>t.name===n)){toast('已經有同樣稱呼的老師，請換個稱呼');return}
  if(!pwOk(p,document.getElementById('rg_p2').value))return;
- D.teachers.push({id:uid(),name:n,role:'teacher',active:true,pwHash:await hashPw(p),created:today()});
+ D.teachers.push({id:uid(),account:acc,name:n,role:'teacher',active:true,pwHash:await hashPw(p),created:today()});
  inv.usedBy=n;inv.usedAt=today();setUser(n);save('用驗證碼 '+code+' 註冊');closeModal();setMode('staff');toast('註冊完成，歡迎 '+n);cloudSoon()}
 function logout(){setUser(null);setMode('teach')}
 
@@ -898,7 +905,7 @@ function pSettings(){const S=D.settings;
  <div class="row"><input id="iv_note" class="sp" placeholder="給誰（例如：陳姊妹）"><button class="blue" onclick="genInvite()">產生驗證碼</button></div>
  ${open.map(i=>`<div class="row card" style="margin:8px 0"><b style="font-size:22px;letter-spacing:3px;font-family:monospace">${i.code}</b><span class="sp muted">${h(i.note)} · ${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效</span><button class="sm ghost" onclick="copyInvite('${i.code}')">複製訊息</button><button class="sm danger" onclick="revokeInvite('${i.code}')">作廢</button></div>`).join('')}
  ${used.length?`<div class="muted" style="margin-top:6px">最近使用：${used.map(i=>`${i.code} → ${h(i.usedBy)}（${h(i.usedAt)}）`).join('、')}</div>`:''}</div>
- <div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.map(t=>`<tr style="${t.active===false?'opacity:.5':''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role)?'t':'o'}">${roleName(t)}</span>${t.active===false?' <span class="tag">已停用</span>':''}<div class="muted">${h(t.created||'')} 加入</div></td>
+ <div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.map(t=>`<tr style="${t.active===false?'opacity:.5':''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role)?'t':'o'}">${roleName(t)}</span> <span class="muted">帳號：${h(accOf(t))}</span>${t.active===false?' <span class="tag">已停用</span>':''}<div class="muted">${h(t.created||'')} 加入</div></td>
  <td style="text-align:right">${t.name===user?'<span class="muted">（你）</span>':`<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).map(r=>`<option value="${r}" ${(t.role||'teacher')===r?'selected':''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active===false?'ghost':'danger'}" onclick="toggleT('${t.id}')">${t.active===false?'啟用':'停用'}</button>`}</td></tr>`).join('')}</table>
  <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議。</p></div>
 `:''}
