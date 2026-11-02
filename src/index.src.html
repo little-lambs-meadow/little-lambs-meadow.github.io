@@ -185,7 +185,7 @@ let myName='';try{myName=sessionStorage.getItem('ss_name')||''}catch(e){}
 function who(){return user||(mode==='staff'?(myName||'老師'):'教學模式')}
 function save(act){if(act){D.log.unshift({id:uid(),t:Date.now(),ts:new Date().toLocaleString('zh-TW'),by:who(),act});D.log=D.log.slice(0,300)}DB.save(D);cloudSoon()}
 /* ============ 雲端同步（Google 試算表） ============ */
-const CLOUD_URL_DEFAULT='';
+const CLOUD_URL_DEFAULT='https://script.google.com/macros/s/AKfycby5cqFp80G1Cdg6EYMbmY40zP1wckca4k2dFedeQ0dJ1bSQLbZS-gqY6qRGGUR0geiaRw/exec';
 const CK='llm_cloud_v1';
 const Cloud={url:'',pw:'',ver:0,base:{},snap:{},busy:false,state:'off',lastOk:0,needRebuild:false,needRender:false,skip:false,t2:null};
 (function(){let c={};try{c=JSON.parse(localStorage.getItem(CK)||'{}')}catch(e){}
