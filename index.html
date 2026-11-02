@@ -221,7 +221,8 @@ function _unsupportedIterableToArray(t, e) { if (t) { if ("string" == typeof t) 
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function _iterableToArrayLimit(r, t) { var e = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (Array.isArray(r) && (null == e || e === ("undefined" != typeof Symbol && [][Symbol.iterator]) || e === []["@@iterator"])) return r; if (null != e) { var l, n, i, a, u = [], o = !0, f = !1; try { if (i = (e = e.call(r)).next, 0 === t) { if (Object(e) !== e) return; o = !1; } else for (; !(o = (l = i.call(e)).done) && (u.push(l.value), u.length !== t); o = !0); } catch (r) { f = !0, n = r; } finally { try { if (!o && null != e.return && (a = e.return(), Object(a) !== a)) return; } finally { if (f) throw n; } } return u; } }
 /* ============ 資料層（之後換成 Google 試算表 / Firebase 只需改這裡） ============ */
-var DEFAULT_RULES = ['上課時專心聽老師說話', '想說話先舉手', '愛護身邊的朋友，不推、不打、不罵人', '愛惜教室和教材，用完放回原位', '一起敬拜、一起學習神的話'];
+var DEFAULT_RULES = ['我會準時上課', '我會聽從老師的指令', '我會先舉手再發言'];
+var DEFAULT_REASONS = ['愛神，把神放在 No.1（第一位）', '學習神的話', '帶人認識神', '做對的事'];
 var DEFAULT_PRAYER = '親愛的天父，謝謝祢今天帶領我們一起學習祢的話語。求祢幫助每一位小朋友把今天學到的放在心裡，這一週平平安安。奉主耶穌基督的名禱告，阿們。';
 var DEFAULT_ITEMS = [{
   name: '認真唱歌',
@@ -274,6 +275,7 @@ var DB = {
         });
         if (d.settings.auth === undefined) d.settings.auth = false;
         if (!d.settings.rules) d.settings.rules = DEFAULT_RULES.slice();
+        if (!d.settings.reasons) d.settings.reasons = DEFAULT_REASONS.slice();
         if (!d.settings.prayer) d.settings.prayer = DEFAULT_PRAYER;
         if (!d.settings.cutoff) {
           d.settings.cutoff = '10:30';
@@ -320,6 +322,7 @@ function demo() {
     settings: {
       church: '小羊樂園',
       rules: DEFAULT_RULES.slice(),
+      reasons: DEFAULT_REASONS.slice(),
       prayer: DEFAULT_PRAYER,
       auth: false,
       teacherNames: ['王老師', '李老師'],
@@ -1506,8 +1509,10 @@ window.addEventListener('resize', () => {
   if (mode === 'teach') layout();
 });
 function tRules() {
-  var r = D.settings.rules || [];
-  return stepPage(`<div class="bigcard fit zy" data-max="44"><div style="color:#f2c46b;margin-bottom:.3em">🐑 小羊樂園的約定 —— 我們一起念一遍！</div><ol>${r.map(x => `<li>${h(x)}</li>`).join('')}</ol></div>`, false);
+  var r = D.settings.rules || [],
+    w = D.settings.reasons || [];
+  return stepPage(`<div class="bigcard fit zy" data-max="44"><div style="color:#f2c46b;margin-bottom:.2em">📏 主日學規則 —— 我們一起念一遍！</div><ol>${r.map(x => `<li>${h(x)}</li>`).join('')}</ol>
+  ${w.length ? `<div style="border-top:2px dashed #ffffff40;margin:.35em 0 .3em"></div><div style="color:#f2c46b;margin-bottom:.2em">❤️ 參加主日學的原因</div><ol>${w.map(x => `<li>${h(x)}</li>`).join('')}</ol>` : ''}</div>`, false);
 }
 function worshipList(l) {
   var ids = [];
@@ -3392,6 +3397,7 @@ function pSettings() {
 ` : ''}
  <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
  <label class="f">① 主日學規則（一行一條，上課時大家一起念）<textarea id="st_rules">${h((S.rules || []).join('\n'))}</textarea></label>
+ <label class="f">① 參加主日學的原因（一行一條，顯示在規則下面）<textarea id="st_reasons">${h((S.reasons || []).join('\n'))}</textarea></label>
  <label class="f">⑧ 預設結束禱告<textarea id="st_pray">${h(S.prayer || '')}</textarea></label>
  ${authOn() ? '' : `<label class="f">老師名單（一行一位，用於上課紀錄與會議）<textarea id="st_tn">${h((S.teacherNames || []).join('\n'))}</textarea></label>`}
  ${authOn() ? `<label class="f"><input type="checkbox" id="st_r" ${S.requireLogin ? 'checked' : ''}> 教學模式點名加點需要老師登入</label>` : ''}
@@ -3490,6 +3496,7 @@ function saveSettings() {
   var S = D.settings;
   S.church = v('st_c').trim() || '小羊樂園';
   S.rules = v('st_rules').split('\n').map(x => x.trim()).filter(Boolean);
+  S.reasons = v('st_reasons').split('\n').map(x => x.trim()).filter(Boolean);
   S.prayer = v('st_pray').trim() || DEFAULT_PRAYER;
   var r = document.getElementById('st_r');
   if (r) S.requireLogin = r.checked;

@@ -200,7 +200,8 @@ window.onerror=function(m,u,l){var a=document.getElementById("app");if(a){a.inne
 </script>
 <script>
 /* ============ 資料層（之後換成 Google 試算表 / Firebase 只需改這裡） ============ */
-const DEFAULT_RULES=['上課時專心聽老師說話','想說話先舉手','愛護身邊的朋友，不推、不打、不罵人','愛惜教室和教材，用完放回原位','一起敬拜、一起學習神的話'];
+const DEFAULT_RULES=['我會準時上課','我會聽從老師的指令','我會先舉手再發言'];
+const DEFAULT_REASONS=['愛神，把神放在 No.1（第一位）','學習神的話','帶人認識神','做對的事'];
 const DEFAULT_PRAYER='親愛的天父，謝謝祢今天帶領我們一起學習祢的話語。求祢幫助每一位小朋友把今天學到的放在心裡，這一週平平安安。奉主耶穌基督的名禱告，阿們。';
 const DEFAULT_ITEMS=[{name:'認真唱歌',pts:2},{name:'認真上課',pts:2},{name:'朗誦英文經句',pts:1},{name:'背誦英文經句',pts:2},{name:'上台複寫經句',pts:1},{name:'默寫金句',pts:2},{name:'當天值日生',pts:1}];
 const KEY='little_lambs_meadow_v1';
@@ -208,13 +209,13 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const DB={
  load(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(d&&d.settings)return DB.fix(d)}}catch(e){}return demo()},
- fix(d){{{d.invites=d.invites||[];(d.log||[]).forEach(l=>{if(!l.id){l.id=uid();l.t=l.t||0}});if(d.settings.auth===undefined)d.settings.auth=false;if(!d.settings.rules)d.settings.rules=DEFAULT_RULES.slice();if(!d.settings.prayer)d.settings.prayer=DEFAULT_PRAYER;if(!d.settings.cutoff){d.settings.cutoff='10:30';d.settings.onPts=2;d.settings.latePts=1}if((d.settings.items||[]).map(x=>x.name).join()==='背金句,帶聖經,幫忙收拾,熱心參與')d.settings.items=DEFAULT_ITEMS.map(x=>Object.assign({},x));const dm=demo();(d.lessons||[]).forEach(l=>{const x=dm.lessons.find(y=>y.title===l.title&&y.video===l.video);if(x){['intro','iceName','prayer'].forEach(k=>{if(!l[k])l[k]=x[k]})}});(d.songs||[]).forEach(sg=>{if(sg.title==='（示範）本季主題詩歌'&&sg.theme===undefined)sg.theme=true});d.settings.teacherNames=d.settings.teacherNames||['王老師','李老師'];d.teachers=(d.teachers||[]).filter(t=>t.pwHash);return d}}},
+ fix(d){{{d.invites=d.invites||[];(d.log||[]).forEach(l=>{if(!l.id){l.id=uid();l.t=l.t||0}});if(d.settings.auth===undefined)d.settings.auth=false;if(!d.settings.rules)d.settings.rules=DEFAULT_RULES.slice();if(!d.settings.reasons)d.settings.reasons=DEFAULT_REASONS.slice();if(!d.settings.prayer)d.settings.prayer=DEFAULT_PRAYER;if(!d.settings.cutoff){d.settings.cutoff='10:30';d.settings.onPts=2;d.settings.latePts=1}if((d.settings.items||[]).map(x=>x.name).join()==='背金句,帶聖經,幫忙收拾,熱心參與')d.settings.items=DEFAULT_ITEMS.map(x=>Object.assign({},x));const dm=demo();(d.lessons||[]).forEach(l=>{const x=dm.lessons.find(y=>y.title===l.title&&y.video===l.video);if(x){['intro','iceName','prayer'].forEach(k=>{if(!l[k])l[k]=x[k]})}});(d.songs||[]).forEach(sg=>{if(sg.title==='（示範）本季主題詩歌'&&sg.theme===undefined)sg.theme=true});d.settings.teacherNames=d.settings.teacherNames||['王老師','李老師'];d.teachers=(d.teachers||[]).filter(t=>t.pwHash);return d}}},
  save(d){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){toast('無法儲存，請用「設定 → 匯出備份」')}}
 };
 function demo(){
  const k=['小明','小美','小恩','小約翰'].map(n=>({id:uid(),name:n,group:'',active:true,flag:false,flagNote:''}));
  return {
-  settings:{church:'小羊樂園',rules:DEFAULT_RULES.slice(),prayer:DEFAULT_PRAYER,auth:false,teacherNames:['王老師','李老師'],requireLogin:false,cutoff:'10:30',onPts:2,latePts:1,
+  settings:{church:'小羊樂園',rules:DEFAULT_RULES.slice(),reasons:DEFAULT_REASONS.slice(),prayer:DEFAULT_PRAYER,auth:false,teacherNames:['王老師','李老師'],requireLogin:false,cutoff:'10:30',onPts:2,latePts:1,
    items:DEFAULT_ITEMS.map(x=>Object.assign({},x)),
    rewards:[{name:'貼紙',cost:5},{name:'文具',cost:15},{name:'小禮物',cost:30}]},
   teachers:[],invites:[],
@@ -557,8 +558,9 @@ function layout(){
 function fitText(e){if(window.innerWidth<=600&&e.classList.contains('kidsfit')){e.style.fontSize='';return}let f=Number(e.getAttribute('data-max'))||40;e.style.fontSize=f+'px';
  while(f>12&&(e.scrollHeight>e.clientHeight+1||e.scrollWidth>e.clientWidth+1)){f-=2;e.style.fontSize=f+'px'}}
 window.addEventListener('resize',()=>{if(mode==='teach')layout()});
-function tRules(){const r=D.settings.rules||[];
- return stepPage(`<div class="bigcard fit zy" data-max="44"><div style="color:#f2c46b;margin-bottom:.3em">🐑 小羊樂園的約定 —— 我們一起念一遍！</div><ol>${r.map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>`,false)}
+function tRules(){const r=D.settings.rules||[],w=D.settings.reasons||[];
+ return stepPage(`<div class="bigcard fit zy" data-max="44"><div style="color:#f2c46b;margin-bottom:.2em">📏 主日學規則 —— 我們一起念一遍！</div><ol>${r.map(x=>`<li>${h(x)}</li>`).join('')}</ol>
+  ${w.length?`<div style="border-top:2px dashed #ffffff40;margin:.35em 0 .3em"></div><div style="color:#f2c46b;margin-bottom:.2em">❤️ 參加主日學的原因</div><ol>${w.map(x=>`<li>${h(x)}</li>`).join('')}</ol>`:''}</div>`,false)}
 function worshipList(l){const ids=[];
  D.songs.filter(x=>x.theme&&(!l.season||x.season===l.season)).forEach(x=>ids.push(x.id));
  (l.songIds||[]).forEach(i=>{if(!ids.includes(i))ids.push(i)});
@@ -1037,6 +1039,7 @@ function pSettings(){const S=D.settings;
 `:''}
  <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
  <label class="f">① 主日學規則（一行一條，上課時大家一起念）<textarea id="st_rules">${h((S.rules||[]).join('\n'))}</textarea></label>
+ <label class="f">① 參加主日學的原因（一行一條，顯示在規則下面）<textarea id="st_reasons">${h((S.reasons||[]).join('\n'))}</textarea></label>
  <label class="f">⑧ 預設結束禱告<textarea id="st_pray">${h(S.prayer||'')}</textarea></label>
  ${authOn()?'':`<label class="f">老師名單（一行一位，用於上課紀錄與會議）<textarea id="st_tn">${h((S.teacherNames||[]).join('\n'))}</textarea></label>`}
  ${authOn()?`<label class="f"><input type="checkbox" id="st_r" ${S.requireLogin?'checked':''}> 教學模式點名加點需要老師登入</label>`:''}
@@ -1060,7 +1063,7 @@ function setRole(id,r){const t=D.teachers.find(x=>x.id===id);if(!isAdminRole(r)&
 async function resetPw(id){const t=D.teachers.find(x=>x.id===id);const p=prompt(`替「${t.name}」設定臨時密碼（至少 6 碼），請對方登入後自己修改`);if(p===null)return;
  if(p.length<6){toast('密碼至少 6 碼');return}t.pwHash=await hashPw(p);save('重設 '+t.name+' 的密碼');toast('已重設')}
 function saveSettings(){const v=k=>document.getElementById(k).value;const S=D.settings;
- S.church=v('st_c').trim()||'小羊樂園';S.rules=v('st_rules').split('\n').map(x=>x.trim()).filter(Boolean);S.prayer=v('st_pray').trim()||DEFAULT_PRAYER;const r=document.getElementById('st_r');if(r)S.requireLogin=r.checked;const tn=document.getElementById('st_tn');if(tn)S.teacherNames=tn.value.split('\n').map(x=>x.trim()).filter(Boolean);S.cutoff=v('st_cut')||'10:30';S.onPts=Number(v('st_on'))||2;S.latePts=Number(v('st_late'))||1;
+ S.church=v('st_c').trim()||'小羊樂園';S.rules=v('st_rules').split('\n').map(x=>x.trim()).filter(Boolean);S.reasons=v('st_reasons').split('\n').map(x=>x.trim()).filter(Boolean);S.prayer=v('st_pray').trim()||DEFAULT_PRAYER;const r=document.getElementById('st_r');if(r)S.requireLogin=r.checked;const tn=document.getElementById('st_tn');if(tn)S.teacherNames=tn.value.split('\n').map(x=>x.trim()).filter(Boolean);S.cutoff=v('st_cut')||'10:30';S.onPts=Number(v('st_on'))||2;S.latePts=Number(v('st_late'))||1;
  S.items=pairs(v('st_i').split('\n')).map(p=>({name:p[0],pts:Number(p[1])||1}));
  S.rewards=pairs(v('st_w').split('\n')).map(p=>({name:p[0],cost:Number(p[1])||1}));
  save('修改設定');render();toast('設定已儲存')}
