@@ -945,36 +945,55 @@ function seasonNum(t) {
 function seasonSorted() {
   return [...D.lessons].sort((a, b) => seasonNum(a.season) - seasonNum(b.season) || (a.season || '').localeCompare(b.season || '', 'zh-Hant') || (a.no || 0) - (b.no || 0) || (a.date || '').localeCompare(b.date || ''));
 }
-/* 妙妙書兩種教學進度：依季度（season）或依聖經書卷順序（bible，照 66 卷目錄從創世記到啟示錄，同卷依章節） */
+/* 妙妙書三種教學進度：1 依季度（season）、2 依聖經書卷（bible，照 66 卷目錄，同卷依章節）、3 依聖經時間軸（time，照事件發生先後） */
 var SB_BIBLE = [["s1-01", "創世記"], ["s2-09", "創世記"], ["s3-02", "創世記"], ["s1-02", "創世記"], ["s3-04", "創世記"], ["s1-03", "創世記"], ["s2-02", "創世記"], ["s5-01", "出埃及記"], ["s1-04", "出埃及記"], ["s1-05", "出埃及記"], ["s4-07", "民數記"], ["s2-04", "約書亞記"], ["s2-10", "士師記"], ["s3-01", "路得記"], ["s3-06", "撒母耳記上"], ["s1-06", "撒母耳記上"], ["s3-07", "撒母耳記上"], ["s3-11", "列王紀上"], ["s4-04", "列王紀上"], ["s4-08", "列王紀上"], ["s2-13", "列王紀上"], ["s3-05", "列王紀下"], ["s3-09", "列王紀下"], ["s3-08", "尼希米記"], ["s2-05", "以斯帖記"], ["s2-08", "約伯記"], ["s5-05", "以賽亞書"], ["s4-10", "耶利米書"], ["s3-12", "但以理書"], ["s2-03", "但以理書"], ["s1-07", "但以理書"], ["s5-14", "但以理書"], ["s2-01", "約拿書"], ["s5-13", "舊約英雄回顧"], ["s3-03", "四福音書"], ["s1-08", "四福音書"], ["s4-11", "四福音書"], ["s2-06", "四福音書"], ["s5-06", "四福音書"], ["s4-01", "四福音書"], ["s5-02", "四福音書"], ["s5-04", "四福音書"], ["s5-07", "四福音書"], ["s1-09", "四福音書"], ["s4-09", "四福音書"], ["s4-06", "四福音書"], ["s3-13", "四福音書"], ["s2-12", "四福音書"], ["s3-10", "四福音書"], ["s5-03", "四福音書"], ["s5-15", "四福音書"], ["s1-10", "四福音書"], ["s1-11", "四福音書"], ["s5-12", "四福音書"], ["s2-11", "四福音書"], ["s5-09", "使徒行傳"], ["s4-13", "使徒行傳"], ["s1-12", "使徒行傳"], ["s4-02", "使徒行傳"], ["s4-05", "使徒行傳"], ["s4-12", "使徒行傳"], ["s4-03", "使徒行傳"], ["s5-10", "使徒行傳"], ["s5-11", "使徒行傳"], ["s2-07", "使徒行傳"], ["s5-08", "提摩太後書"], ["s1-13", "啟示錄"]];
-var SB_BRANK = {};
+var SB_TIME = [["s1-01", "創世之初"], ["s2-09", "創世之初"], ["s3-02", "創世之初"], ["s1-02", "先祖時代"], ["s3-04", "先祖時代"], ["s1-03", "先祖時代"], ["s2-02", "先祖時代"], ["s2-08", "先祖時代"], ["s5-01", "出埃及與曠野"], ["s1-04", "出埃及與曠野"], ["s1-05", "出埃及與曠野"], ["s4-07", "出埃及與曠野"], ["s2-04", "進迦南與士師"], ["s2-10", "進迦南與士師"], ["s3-01", "進迦南與士師"], ["s3-06", "王國時代"], ["s1-06", "王國時代"], ["s3-07", "王國時代"], ["s3-11", "王國時代"], ["s4-04", "王國時代"], ["s4-08", "先知時代"], ["s2-13", "先知時代"], ["s3-05", "先知時代"], ["s3-09", "先知時代"], ["s2-01", "先知時代"], ["s5-05", "先知時代"], ["s4-10", "先知時代"], ["s3-12", "被擄與歸回"], ["s2-03", "被擄與歸回"], ["s1-07", "被擄與歸回"], ["s5-14", "被擄與歸回"], ["s2-05", "被擄與歸回"], ["s3-08", "被擄與歸回"], ["s5-13", "舊約英雄回顧"], ["s3-03", "耶穌的降生"], ["s1-08", "耶穌的降生"], ["s4-11", "耶穌的降生"], ["s2-06", "耶穌的傳道"], ["s5-06", "耶穌的傳道"], ["s4-01", "耶穌的傳道"], ["s5-02", "耶穌的傳道"], ["s5-04", "耶穌的傳道"], ["s5-07", "耶穌的傳道"], ["s1-09", "耶穌的傳道"], ["s4-09", "耶穌的傳道"], ["s4-06", "耶穌的傳道"], ["s3-13", "耶穌的傳道"], ["s2-12", "耶穌的傳道"], ["s3-10", "耶穌的傳道"], ["s5-03", "耶穌的傳道"], ["s5-15", "受難與復活"], ["s1-10", "受難與復活"], ["s1-11", "受難與復活"], ["s5-12", "受難與復活"], ["s2-11", "受難與復活"], ["s5-09", "初代教會"], ["s4-13", "初代教會"], ["s1-12", "初代教會"], ["s4-02", "初代教會"], ["s4-05", "初代教會"], ["s4-12", "保羅宣教"], ["s4-03", "保羅宣教"], ["s5-10", "保羅宣教"], ["s5-11", "保羅宣教"], ["s2-07", "保羅宣教"], ["s5-08", "保羅宣教"], ["s1-13", "末日與新天新地"]];
+var SB_BRANK = {},
+  SB_TRANK = {};
 SB_BIBLE.forEach((x, i) => SB_BRANK[x[0]] = i);
+SB_TIME.forEach((x, i) => SB_TRANK[x[0]] = i);
 function lessonOrder() {
-  return (D.settings && D.settings.lessonOrder) === 'bible' ? 'bible' : 'season';
+  var v = D.settings && D.settings.lessonOrder;
+  return v === 'bible' || v === 'time' ? v : 'season';
+}
+function ordList() {
+  return lessonOrder() === 'time' ? [SB_TIME, SB_TRANK] : [SB_BIBLE, SB_BRANK];
 }
 function bibleRank(l) {
-  var c = sbCode(l.video);
-  return c && SB_BRANK[c] != null ? SB_BRANK[c] : 9999;
+  var c = sbCode(l.video),
+    _ordList = ordList(),
+    _ordList2 = _slicedToArray(_ordList, 2),
+    rk = _ordList2[1];
+  return c && rk[c] != null ? rk[c] : 9999;
 }
 function bibleBook(l) {
-  var c = sbCode(l.video);
-  return c && SB_BRANK[c] != null ? SB_BIBLE[SB_BRANK[c]][1] : '其他課程';
+  var c = sbCode(l.video),
+    _ordList3 = ordList(),
+    _ordList4 = _slicedToArray(_ordList3, 2),
+    ls = _ordList4[0],
+    rk = _ordList4[1];
+  return c && rk[c] != null ? ls[rk[c]][1] : '其他課程';
 }
 function sortedLessons() {
   var a = seasonSorted();
-  if (lessonOrder() !== 'bible') return a;
+  if (lessonOrder() === 'season') return a;
   var idx = new Map(a.map((l, i) => [l.id, i]));
   return a.sort((x, y) => bibleRank(x) - bibleRank(y) || idx.get(x.id) - idx.get(y.id));
 }
+var ORD_NAME = {
+  season: '依季度',
+  bible: '依聖經書卷',
+  time: '依聖經時間軸'
+};
 function setLessonOrder(v) {
   D.settings.lessonOrder = v;
-  save('教學進度改成' + (v === 'bible' ? '聖經書卷順序' : '季度版'));
+  save('教學進度改成' + ORD_NAME[v]);
   render();
-  toast(v === 'bible' ? '已改成：依聖經書卷順序（創世記→啟示錄）' : '已改成：依季度版');
+  toast('已改成：' + ORD_NAME[v]);
 }
 function orderToggle() {
   var o = lessonOrder();
-  return `<span class="row" style="gap:6px;flex-wrap:nowrap"><span class="muted" style="white-space:nowrap">教學進度：</span><button class="sm ${o === 'season' ? 'blue' : 'ghost'}" onclick="setLessonOrder('season')">1. 依季度</button><button class="sm ${o === 'bible' ? 'blue' : 'ghost'}" onclick="setLessonOrder('bible')">2. 依聖經書卷順序</button></span>`;
+  return `<span class="row" style="gap:6px;flex-wrap:wrap"><span class="muted" style="white-space:nowrap">教學進度：</span>${['season', 'bible', 'time'].map((k, i) => `<button class="sm ${o === k ? 'blue' : 'ghost'}" onclick="setLessonOrder('${k}')">${i + 1}. ${ORD_NAME[k]}</button>`).join('')}</span>`;
 }
 function thisWeek() {
   var t = today();
@@ -1001,7 +1020,7 @@ function closeModal() {
   if (Cloud.needRebuild) setTimeout(cloudRebuild, 0);
 }
 function lessonOpts(sel) {
-  var bib = lessonOrder() === 'bible';
+  var bib = lessonOrder() !== 'season';
   var k = 0;
   return sortedLessons().map(l => {
     k++;
@@ -2753,7 +2772,7 @@ function tRank() {
 /* ============ 老師區：備課 ============ */
 var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'], ['story', '故事重點', 'textarea'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['songIds', '本課詩歌', 'checks', D.songs.map(s => s.title)], ['prayer', '⑧ 結束禱告（空白就用設定裡的預設禱告）', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
 function pLessons() {
-  var bib = lessonOrder() === 'bible';
+  var bib = lessonOrder() !== 'season';
   var grp = [];
   var k = 0;
   sortedLessons().forEach(l => {
@@ -2762,11 +2781,11 @@ function pLessons() {
     if (last && last[0] === g) last[1].push([++k, l]);else grp.push([g, [[++k, l]]]);
   });
   return `<div class="row" style="margin-bottom:10px;flex-wrap:wrap"><h2 class="sp">備課</h2>${orderToggle()}${isAdmin() ? '<button class="ghost" onclick="sbImportBtn()">📥 匯入妙妙書 67 集</button>' : ''}<button class="ghost" onclick="importDlg()">匯入</button><button class="blue" onclick="editLesson()">＋新增課程</button></div>
- ${bib ? '<div class="muted" style="margin:-4px 0 10px">📖 依聖經書卷順序排列：照 66 卷書的目錄從創世記到啟示錄，同一卷依章節先後；教學模式的課程選單也會照這個順序。</div>' : ''}${grp.map(_ref1 => {
+ ${bib ? `<div class="muted" style="margin:-4px 0 10px">${lessonOrder() === 'time' ? '⏳ 依聖經時間軸排列：照事件發生的先後，從創世到新天新地' : '📖 依聖經書卷排列：照 66 卷書的目錄從創世記到啟示錄，同一卷依章節先後'}；教學模式的課程選單也會照這個順序。</div>` : ''}${grp.map(_ref1 => {
     var _ref10 = _slicedToArray(_ref1, 2),
       s = _ref10[0],
       ls = _ref10[1];
-    return `<div class="card"><h3>${bib ? '📖 ' : ''}${h(s)}（${ls.length} 課）</h3><table>${ls.map(_ref11 => {
+    return `<div class="card"><h3>${bib ? lessonOrder() === 'time' ? '⏳ ' : '📖 ' : ''}${h(s)}（${ls.length} 課）</h3><table>${ls.map(_ref11 => {
       var _ref12 = _slicedToArray(_ref11, 2),
         n = _ref12[0],
         l = _ref12[1];
