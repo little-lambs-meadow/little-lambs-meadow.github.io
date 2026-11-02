@@ -48,6 +48,8 @@ h3{margin:0 0 6px;font-size:16px}
 .video img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
 .video .play{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;background:rgba(226,87,42,.9);color:#fff;font-size:38px;line-height:84px;text-align:center;pointer-events:none}
 .video{cursor:pointer}
+.webbox{width:100%;height:100%;border-radius:10px;overflow:hidden;background:#000}.webbox iframe{width:100%;height:100%;border:0;display:block;background:#fff}
+.webbox:fullscreen{border-radius:0}
 .video iframe{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;border:0}
 select,input,textarea{font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:#fff}
 label.f{display:block;margin-top:10px;font-size:13px;color:var(--muted)}
@@ -566,7 +568,11 @@ function tIce(){const l=cur();const st=l.expSteps||[];
 function tIntro(){const l=cur();const t=l.intro||l.story;
  return stepPage(`<div class="bigcard fit" data-max="40"><div style="font-size:1.25em;font-weight:700">${h(l.title)}</div><div style="color:#f2c46b;font-size:.7em;margin-bottom:.4em">📜 ${h(l.scripture)}</div>
   <div class="pre">${h(t)||'（這一課還沒有寫前言）'}</div></div>`)}
-function tVideo(){const l=cur();const yt=ytId(l.video);
+function gtvUrl(u){u=String(u||'').trim();return /^https?:\/\/(www\.)?goodtv\.tv\//i.test(u)?u.replace(/^http:/i,'https:'):null}
+function gtvBox(u,id){return `<div class="vwrap"><div class="webbox" id="${id}"><iframe src="${h(u)}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></div></div>`}
+function tVideo(){const l=cur();const yt=ytId(l.video);const gt=gtvUrl(l.video);
+ if(gt)return stepPage(`<div class="tbar scroll"><button class="pri" style="flex:1;font-size:20px;padding:12px" onclick="fsEl('#gtvbox')">⛶ 全螢幕〈${h(l.title)}〉</button><a class="ghost" style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="${h(gt)}" target="_blank" rel="noopener">在 GOODTV 開啟 ↗</a></div>
+  <div class="muted" style="flex-shrink:0;margin-bottom:6px">GOODTV 影片：按下方畫面裡的播放鍵開始；全螢幕後若影片沒有放大，再按播放器右下角的全螢幕鍵。</div>${gtvBox(gt,'gtvbox')}`);
  return stepPage(yt?`<div class="tbar"><button class="pri" style="flex:1;font-size:22px;padding:12px" onclick="playFull('${yt}')">▶ 全螢幕播放〈${h(l.title)}〉</button></div><div class="vwrap">${ytBox(yt)}</div>`
   :l.video?`<div class="empty"><a class="pri" style="display:inline-block;padding:16px 30px;border-radius:10px;background:#e2572a;color:#fff;font-size:22px;text-decoration:none" href="${h(l.video)}" target="_blank" rel="noopener">▶ 開啟影片〈${h(l.title)}〉</a></div>`
   :'<div class="empty">這一課還沒有影片網址</div>')}
@@ -668,7 +674,7 @@ function tRank(){
   <div class="fill"><div class="card fit" data-max="40" style="margin:0"><ol class="rank">${ks.map((x,i)=>`<li><span><span class="medal">${m[i]||(i+1)+'.'}</span>${h(x.k.name)}</span><b>⭐ ${x.b}</b></li>`).join('')||'<div class="empty">還沒有點數</div>'}</ol></div></div></div>`;
 }
 /* ============ 老師區：備課 ============ */
-const LESSON_FIELDS=()=>[['season','季'],['no','第幾課','number'],['date','上課日期','date'],['title','課名'],['scripture','經文段落'],['video','影片網址'],['story','故事重點','textarea'],['intro','④ 妙妙書前言（老師講解這一課要看什麼）','textarea'],
+const LESSON_FIELDS=()=>[['season','季'],['no','第幾課','number'],['date','上課日期','date'],['title','課名'],['scripture','經文段落'],['video','影片網址（YouTube 或 GOODTV 的網址都可以）'],['story','故事重點','textarea'],['intro','④ 妙妙書前言（老師講解這一課要看什麼）','textarea'],
  ['iceName','③ 破冰遊戲名稱'],['expSteps','③ 破冰體驗遊戲流程（一行一步）','lines'],['props','道具清單（一行一項）','lines'],['safety','安全提醒','textarea'],['questions','⑥ 影片看後問答（一行一題）','lines'],
  ['verseRef','金句出處'],['verseZh','中文金句','textarea'],['verseEn','英文金句','textarea'],['songIds','本課詩歌','checks',D.songs.map(s=>s.title)],['prayer','⑧ 結束禱告（空白就用設定裡的預設禱告）','textarea'],['notes','備課備註（只有老師看得到）','textarea']];
 function pLessons(){
