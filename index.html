@@ -942,8 +942,39 @@ function seasonNum(t) {
   if (x.length > 1 && x[1] === '十') return Z.indexOf(x[0]) * 10 + (x[2] ? Z.indexOf(x[2]) : 0);
   return Z.indexOf(x[0]);
 }
-function sortedLessons() {
+function seasonSorted() {
   return [...D.lessons].sort((a, b) => seasonNum(a.season) - seasonNum(b.season) || (a.season || '').localeCompare(b.season || '', 'zh-Hant') || (a.no || 0) - (b.no || 0) || (a.date || '').localeCompare(b.date || ''));
+}
+/* 妙妙書兩種教學進度：依季度（season）或依聖經時間序（bible，從創世記到啟示錄） */
+var SB_BIBLE = [["s1-01", "創世記"], ["s2-09", "創世記"], ["s3-02", "創世記"], ["s1-02", "創世記"], ["s3-04", "創世記"], ["s1-03", "創世記"], ["s2-02", "創世記"], ["s2-08", "約伯記"], ["s5-01", "出埃及記"], ["s1-04", "出埃及記"], ["s1-05", "出埃及記"], ["s4-07", "民數記"], ["s2-04", "約書亞記"], ["s2-10", "士師記"], ["s3-01", "路得記"], ["s3-06", "撒母耳記"], ["s1-06", "撒母耳記"], ["s3-07", "撒母耳記"], ["s3-11", "列王紀"], ["s4-04", "列王紀"], ["s4-08", "列王紀"], ["s2-13", "列王紀"], ["s3-05", "列王紀"], ["s3-09", "列王紀"], ["s2-01", "約拿書"], ["s5-05", "以賽亞書"], ["s4-10", "耶利米書"], ["s3-12", "但以理書"], ["s2-03", "但以理書"], ["s1-07", "但以理書"], ["s5-14", "舊約回顧"], ["s2-05", "以斯帖記"], ["s3-08", "尼希米記"], ["s5-13", "舊約回顧"], ["s3-03", "福音書"], ["s1-08", "福音書"], ["s4-11", "福音書"], ["s2-06", "福音書"], ["s5-06", "福音書"], ["s4-01", "福音書"], ["s5-02", "福音書"], ["s5-04", "福音書"], ["s5-07", "福音書"], ["s1-09", "福音書"], ["s4-09", "福音書"], ["s4-06", "福音書"], ["s3-13", "福音書"], ["s2-12", "福音書"], ["s3-10", "福音書"], ["s5-03", "福音書"], ["s5-15", "福音書"], ["s1-10", "福音書"], ["s1-11", "福音書"], ["s5-12", "福音書"], ["s2-11", "福音書"], ["s5-09", "使徒行傳"], ["s4-13", "使徒行傳"], ["s1-12", "使徒行傳"], ["s4-02", "使徒行傳"], ["s4-05", "使徒行傳"], ["s4-12", "使徒行傳"], ["s4-03", "使徒行傳"], ["s5-10", "使徒行傳"], ["s5-11", "使徒行傳"], ["s2-07", "使徒行傳"], ["s5-08", "使徒行傳"], ["s1-13", "啟示錄"]];
+var SB_BRANK = {};
+SB_BIBLE.forEach((x, i) => SB_BRANK[x[0]] = i);
+function lessonOrder() {
+  return (D.settings && D.settings.lessonOrder) === 'bible' ? 'bible' : 'season';
+}
+function bibleRank(l) {
+  var c = sbCode(l.video);
+  return c && SB_BRANK[c] != null ? SB_BRANK[c] : 9999;
+}
+function bibleBook(l) {
+  var c = sbCode(l.video);
+  return c && SB_BRANK[c] != null ? SB_BIBLE[SB_BRANK[c]][1] : '其他課程';
+}
+function sortedLessons() {
+  var a = seasonSorted();
+  if (lessonOrder() !== 'bible') return a;
+  var idx = new Map(a.map((l, i) => [l.id, i]));
+  return a.sort((x, y) => bibleRank(x) - bibleRank(y) || idx.get(x.id) - idx.get(y.id));
+}
+function setLessonOrder(v) {
+  D.settings.lessonOrder = v;
+  save('教學進度改成' + (v === 'bible' ? '聖經時間序' : '季度版'));
+  render();
+  toast(v === 'bible' ? '已改成：依聖經時間序（創世記→啟示錄）' : '已改成：依季度版');
+}
+function orderToggle() {
+  var o = lessonOrder();
+  return `<span class="row" style="gap:6px;flex-wrap:nowrap"><span class="muted" style="white-space:nowrap">教學進度：</span><button class="sm ${o === 'season' ? 'blue' : 'ghost'}" onclick="setLessonOrder('season')">1. 依季度</button><button class="sm ${o === 'bible' ? 'blue' : 'ghost'}" onclick="setLessonOrder('bible')">2. 依聖經時間序</button></span>`;
 }
 function thisWeek() {
   var t = today();
@@ -970,7 +1001,13 @@ function closeModal() {
   if (Cloud.needRebuild) setTimeout(cloudRebuild, 0);
 }
 function lessonOpts(sel) {
-  return sortedLessons().map(l => `<option value="${l.id}" ${l.id === sel ? 'selected' : ''}>${h(l.season)} 第${h(l.no)}課 ${h(l.title)}${l.date ? ' (' + l.date + ')' : ''}</option>`).join('');
+  var bib = lessonOrder() === 'bible';
+  var k = 0;
+  return sortedLessons().map(l => {
+    k++;
+    var lab = bib ? `${k}. 〔${bibleBook(l)}〕${l.title}（${l.season}第${l.no}課）` : `${l.season} 第${l.no}課 ${l.title}`;
+    return `<option value="${l.id}" ${l.id === sel ? 'selected' : ''}>${h(lab)}${l.date ? ' (' + h(l.date) + ')' : ''}</option>`;
+  }).join('');
 }
 
 /* ============ 通用表單 ============ */
@@ -2716,15 +2753,26 @@ function tRank() {
 /* ============ 老師區：備課 ============ */
 var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'], ['story', '故事重點', 'textarea'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['songIds', '本課詩歌', 'checks', D.songs.map(s => s.title)], ['prayer', '⑧ 結束禱告（空白就用設定裡的預設禱告）', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
 function pLessons() {
-  var by = {};
-  sortedLessons().forEach(l => (by[l.season || '未分季'] = by[l.season || '未分季'] || []).push(l));
-  return `<div class="row" style="margin-bottom:10px"><h2 class="sp">備課</h2>${isAdmin() ? '<button class="ghost" onclick="sbImportBtn()">📥 匯入妙妙書 67 集</button>' : ''}<button class="ghost" onclick="importDlg()">匯入</button><button class="blue" onclick="editLesson()">＋新增課程</button></div>
- ${Object.entries(by).map(_ref1 => {
+  var bib = lessonOrder() === 'bible';
+  var grp = [];
+  var k = 0;
+  sortedLessons().forEach(l => {
+    var g = bib ? bibleBook(l) : l.season || '未分季';
+    var last = grp[grp.length - 1];
+    if (last && last[0] === g) last[1].push([++k, l]);else grp.push([g, [[++k, l]]]);
+  });
+  return `<div class="row" style="margin-bottom:10px;flex-wrap:wrap"><h2 class="sp">備課</h2>${orderToggle()}${isAdmin() ? '<button class="ghost" onclick="sbImportBtn()">📥 匯入妙妙書 67 集</button>' : ''}<button class="ghost" onclick="importDlg()">匯入</button><button class="blue" onclick="editLesson()">＋新增課程</button></div>
+ ${bib ? '<div class="muted" style="margin:-4px 0 10px">📖 依聖經時間序排列：從創世記到啟示錄，教學模式的課程選單也會照這個順序。</div>' : ''}${grp.map(_ref1 => {
     var _ref10 = _slicedToArray(_ref1, 2),
       s = _ref10[0],
       ls = _ref10[1];
-    return `<div class="card"><h3>${h(s)}（${ls.length} 課）</h3><table>${ls.map(l => `<tr><td style="width:60px">第${h(l.no)}課</td><td><b>${h(l.title)}</b><div class="muted">${h(l.date)} ${h(l.verseRef)}${l.notes ? ' · 📝有備註' : ''}</div></td>
-  <td style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="viewLesson('${l.id}')">看</button> <button class="sm ghost" onclick="editLesson('${l.id}')">編輯</button></td></tr>`).join('')}</table></div>`;
+    return `<div class="card"><h3>${bib ? '📖 ' : ''}${h(s)}（${ls.length} 課）</h3><table>${ls.map(_ref11 => {
+      var _ref12 = _slicedToArray(_ref11, 2),
+        n = _ref12[0],
+        l = _ref12[1];
+      return `<tr><td style="width:${bib ? 96 : 60}px">${bib ? `${n}.<div class="muted" style="font-size:12px">${h(l.season)}第${h(l.no)}課</div>` : `第${h(l.no)}課`}</td><td><b>${h(l.title)}</b><div class="muted">${h(l.date)} ${h(l.verseRef)}${l.notes ? ' · 📝有備註' : ''}</div></td>
+  <td style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="viewLesson('${l.id}')">看</button> <button class="sm ghost" onclick="editLesson('${l.id}')">編輯</button></td></tr>`;
+    }).join('')}</table></div>`;
   }).join('') || '<div class="empty">還沒有課程</div>'}`;
 }
 function viewLesson(id) {
@@ -2733,7 +2781,7 @@ function viewLesson(id) {
 }
 function editLesson(id) {
   var l = id ? lessonById(id) : {
-    season: (sortedLessons().slice(-1)[0] || {}).season || '第一季',
+    season: (seasonSorted().slice(-1)[0] || {}).season || '第一季',
     no: D.lessons.length + 1,
     expSteps: [],
     props: [],
