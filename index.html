@@ -119,6 +119,7 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 .stephead .num{width:40px;height:40px;border-radius:50%;background:#e2572a;color:#fff;font-size:20px;font-weight:700;text-align:center;line-height:40px;flex-shrink:0;margin-right:10px}
 .stephead h2{margin:0;font-size:26px;white-space:nowrap}
 .lsel{max-width:50%;padding:6px;font-size:14px;margin-left:10px}
+.hsel{flex:0 1 420px;min-width:0;margin-left:auto;padding:6px 8px;font-size:15px;border-radius:8px;border:1px solid rgba(255,255,255,0.53);background:rgba(255,255,255,0.94);color:#333}
 .fill{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .fill>.fit,.fill>.vwrap{flex:1;min-height:0;overflow:hidden}
 .vwrap .video{margin:0 auto}
@@ -152,6 +153,7 @@ nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
  .stephead .num{width:32px;height:32px;line-height:32px;font-size:17px;margin-right:8px}
  .stephead h2{font-size:21px}
  .lsel{order:9;max-width:none;width:100%;margin:6px 0 0;padding:7px 8px}
+ .hrow{flex-wrap:wrap}.hsel{order:9;flex:1 1 100%;margin:4px 0 0;padding:6px 8px;font-size:14px}
  .stepnav{margin-top:8px;gap:8px}
  .stepnav button{font-size:16px;padding:12px 6px}
  .tbar.scroll,.items{flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
@@ -1042,6 +1044,7 @@ function render() {
   hd.className = mode;
   var tabs = mode === 'teach' ? TEACH_TABS : STAFF_TABS;
   hd.innerHTML = `<div class="hrow"><h1>🐑 ${h(D.settings.church)}${mode === 'teach' ? ' · 教學' : ' · ' + h(user || '老師區')}</h1>
+  ${mode === 'teach' && tab !== 'rules' && STEPS.some(x => x[0] === tab) && D.lessons.length ? `<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id)}</select>` : ''}
   <div class="who">${cloudBadge()}${user ? `<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>` : ''}
    ${mode === 'teach' ? `<button class="sm" onclick="${user || !authOn() ? "setMode('staff')" : 'loginDlg()'}">${user || !authOn() ? '老師區' : '老師登入'}</button>` : `<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn() && user ? `<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>` : ''}`}</div></div>
   <nav>${tabs.map(_ref7 => {
@@ -1395,8 +1398,7 @@ function stepPage(body, needLesson) {
   var prev = STEPS[i - 1],
     next = STEPS[i + 1];
   var l = cur();
-  return `<div class="stage"><div class="stephead"><div class="num">${i + 1}</div><h2>${n}</h2><span class="sp"></span>${needLesson === false ? '' : lsel()}</div>
-  <div class="fill">${needLesson !== false && !l.id ? '<div class="empty">還沒有課程，請老師到「老師區 → 備課」新增</div>' : body}</div>
+  return `<div class="stage"><div class="fill">${needLesson !== false && !l.id ? '<div class="empty">還沒有課程，請老師到「老師區 → 備課」新增</div>' : body}</div>
   </div>`;
 }
 function layout() {
