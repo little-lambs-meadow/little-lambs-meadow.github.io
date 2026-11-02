@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>超級妙妙書 主日學課程</title>
+<style>
+:root{--bg:#f7f3ec;--card:#fff;--ink:#2b2622;--muted:#7a7068;--pri:#e2572a;--pri-soft:#fde8df;--blue:#2a6fd6;--ok:#2e9b5a;--line:#e6ddd0}
+*{box-sizing:border-box}
+body{margin:0;font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+header{background:linear-gradient(135deg,#e2572a,#f2a128);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:5;box-shadow:0 2px 8px #0002}
+.hrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;max-width:1100px;margin:auto}
+header h1{margin:0;font-size:20px}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+button{font:inherit;font-size:14px;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;background:#fff;color:var(--ink)}
+button.pri{background:var(--pri);color:#fff}
+button.ghost{background:transparent;border:1px solid var(--line)}
+button.danger{background:#fff;color:#c33;border:1px solid #f0c4c4}
+main{max-width:1100px;margin:auto;padding:12px 16px 40px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.tab{white-space:nowrap;background:#fff;border:1px solid var(--line)}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.bar{display:flex;gap:8px;align-items:center;margin:12px 0;flex-wrap:wrap}
+.bar input{flex:1;min-width:160px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit}
+.prog{height:8px;background:#e9e1d5;border-radius:4px;overflow:hidden;flex:1;min-width:120px}
+.prog i{display:block;height:100%;background:var(--ok)}
+.muted{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;position:relative;transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 4px 12px #0001}
+.card .no{font-size:12px;color:var(--pri);font-weight:700}
+.card h3{margin:2px 0 4px;font-size:16px}
+.card.done{opacity:.6}
+.card.done::after{content:"✓ 已上";position:absolute;top:10px;right:10px;font-size:12px;color:var(--ok);font-weight:700}
+.empty{text-align:center;padding:40px 10px;color:var(--muted)}
+.modal{position:fixed;inset:0;background:#0006;display:none;align-items:flex-start;justify-content:center;z-index:20;overflow-y:auto;padding:20px 10px}
+.modal.on{display:flex}
+.panel{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:18px;position:relative}
+.panel h2{margin:0 0 4px;font-size:22px}
+.close{position:absolute;top:10px;right:10px}
+.sec{margin-top:14px}
+.sec h4{margin:0 0 4px;font-size:14px;color:var(--pri);border-left:4px solid var(--pri);padding-left:8px}
+.verse{background:var(--pri-soft);border-radius:8px;padding:10px 12px;font-size:17px;font-weight:600}
+.sec ol,.sec ul{margin:4px 0;padding-left:22px}
+.pre{white-space:pre-wrap}
+.video{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+label.f{display:block;margin-top:10px;font-size:13px;color:var(--muted)}
+label.f input,label.f textarea,label.f select{display:block;width:100%;margin-top:3px;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit;color:var(--ink)}
+textarea{min-height:70px;resize:vertical}
+#impText{min-height:260px;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+.guide{background:#f4f1ec;border-radius:8px;padding:10px;font-size:13px;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace}
+a{color:var(--blue)}
+@media print{
+ header,main,.actions,.close{display:none!important}
+ .modal{position:static;display:block!important;background:none;padding:0}
+ .panel{box-shadow:none;max-width:none}
+ .video{display:none}
+}
+</style>
+</head>
+<body>
+<header><div class="hrow">
+ <h1>📖 超級妙妙書 主日學</h1>
+ <div class="btns">
+  <button class="pri" onclick="openImport()">匯入教材</button>
+  <button onclick="exportJSON()">匯出備份</button>
+  <button onclick="addLesson()">＋新增一課</button>
+ </div>
+</div></header>
+<main>
+ <div class="tabs" id="tabs"></div>
+ <div class="bar">
+  <input id="q" placeholder="搜尋課名、經文、金句…" oninput="render()">
+  <button class="ghost" onclick="renameSeason()">✎ 改季名</button>
+ </div>
+ <div class="bar"><div class="prog"><i id="progBar"></i></div><span class="muted" id="progTxt"></span></div>
+ <div class="grid" id="grid"></div>
+</main>
+
+<div class="modal" id="mLesson"><div class="panel" id="lessonPanel"></div></div>
+
+<div class="modal" id="mImport"><div class="panel">
+ <button class="close ghost" onclick="closeM('mImport')">✕</button>
+ <h2>匯入教材</h2>
+ <p class="muted">把教材文字依下面格式貼上，或選擇之前匯出的 .json 備份檔／.txt 檔。</p>
+ <label class="f">匯入方式
+  <select id="impMode">
+   <option value="merge">加入／更新（同季同課名會覆蓋內容，保留「已上」紀錄）</option>
+   <option value="replace">全部取代（清掉現有資料）</option>
+  </select>
+ </label>
+ <label class="f">選擇檔案（.json 或 .txt）<input type="file" id="impFile" accept=".json,.txt,.md"></label>
+ <label class="f">或貼上文字<textarea id="impText"></textarea></label>
+ <div class="actions">
+  <button class="pri" onclick="doImport()">匯入</button>
+  <button class="ghost" onclick="fillTemplate()">填入範本</button>
+  <button class="ghost" onclick="toggleGuide()">格式說明</button>
+ </div>
+ <div class="guide" id="guide" style="display:none"># 第一季          ← 一個 # 開頭＝季
+## 第1課 課名     ← 兩個 # 開頭＝課
+日期: 2026-01-04
+經文: 創世記 1:1-31
+金句: 這裡放本課金句
+影片: https://www.youtube.com/watch?v=xxxx
+重點:
+故事重點可以寫很多行
+討論:
+- 第一個討論問題
+- 第二個討論問題
+活動:
+- 活動一
+學習單:
+- 學習單名稱 | https://連結
+備註:
+老師自己的提醒
+
+可用欄位：日期、經文、金句、影片、重點（故事重點）、討論（討論問題）、活動、學習單（連結）、備註</div>
+</div></div>
+
+<script>
+const KEY='superbook_curriculum_v1';
+const FIELD={'日期':'date','經文':'scripture','金句':'verse','影片':'video','重點':'summary','故事重點':'summary','討論':'questions','討論問題':'questions','活動':'activities','學習單':'links','連結':'links','備註':'notes'};
+const LISTS=['questions','activities','links'];
+const TEMPLATE=`# 第一季
+## 第1課 （課名）
+日期: 
+經文: 
+金句: 
+影片: 
+重點:
+
+討論:
+- 
+活動:
+- 
+學習單:
+- 名稱 | https://
+備註:
+`;
+let data=load(), cur=0, open=null;
+
+function blank(){return {seasons:['第一季','第二季','第三季','第四季'].map(n=>({name:n,lessons:[]}))}}
+function sample(){const d=blank();d.seasons[0].lessons.push(newLesson('（範例）按「匯入教材」貼上你的課程',{scripture:'經文會顯示在這裡',verse:'金句會用醒目的方式顯示',summary:'這是一筆範例資料。匯入正式教材時選「全部取代」就會清掉它。',questions:['討論問題會自動編號'],activities:['活動會條列顯示']}));return d}
+function newLesson(title,o={}){return Object.assign({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),title,date:'',scripture:'',verse:'',video:'',summary:'',questions:[],activities:[],links:[],notes:'',done:false},o)}
+function load(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(d&&d.seasons)return d}}catch(e){}return sample()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){alert('這個瀏覽器無法自動儲存，請記得用「匯出備份」保存資料。')}}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function linkify(s){return esc(s).replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>')}
+
+function render(){
+ const tabs=document.getElementById('tabs');
+ tabs.innerHTML=data.seasons.map((s,i)=>`<button class="tab ${i===cur?'on':''}" onclick="cur=${i};render()">${esc(s.name)} <span class="muted">${s.lessons.length}</span></button>`).join('')+
+  `<button class="tab" onclick="addSeason()">＋季</button>`;
+ const S=data.seasons[cur]; if(!S){cur=0;return render()}
+ const q=document.getElementById('q').value.trim().toLowerCase();
+ const list=S.lessons.map((l,i)=>({l,i})).filter(({l})=>!q||[l.title,l.scripture,l.verse,l.summary].join(' ').toLowerCase().includes(q));
+ const done=S.lessons.filter(l=>l.done).length, tot=S.lessons.length;
+ document.getElementById('progBar').style.width=tot?(done/tot*100)+'%':'0';
+ document.getElementById('progTxt').textContent=`本季進度 ${done} / ${tot}`;
+ document.getElementById('grid').innerHTML=list.length?list.map(({l,i})=>`
+  <div class="card ${l.done?'done':''}" onclick="showLesson(${i})">
+   <div class="no">第 ${i+1} 課${l.date?' · '+esc(l.date):''}</div>
+   <h3>${esc(l.title)}</h3>
+   <div class="muted">${esc(l.scripture)}</div>
+  </div>`).join(''):`<div class="empty">${q?'找不到符合的課程':'這一季還沒有課程，按「匯入教材」或「＋新增一課」開始'}</div>`;
+}
+
+function showLesson(i){
+ open=i;const l=data.seasons[cur].lessons[i];
+ const yt=ytId(l.video);
+ const sec=(t,h)=>h?`<div class="sec"><h4>${t}</h4>${h}</div>`:'';
+ const li=(a,tag)=>a.length?`<${tag}>${a.map(x=>`<li>${linkify(x)}</li>`).join('')}</${tag}>`:'';
+ document.getElementById('lessonPanel').innerHTML=`
+  <button class="close ghost" onclick="closeM('mLesson')">✕</button>
+  <div class="muted">${esc(data.seasons[cur].name)} · 第 ${i+1} 課${l.date?' · '+esc(l.date):''}</div>
+  <h2>${esc(l.title)}</h2>
+  ${l.scripture?`<div class="muted">📜 ${esc(l.scripture)}</div>`:''}
+  ${l.verse?`<div class="sec"><h4>金句</h4><div class="verse">${esc(l.verse)}</div></div>`:''}
+  ${yt?`<div class="sec"><h4>影片</h4><div class="video"><iframe src="https://www.youtube.com/embed/${yt}" allowfullscreen></iframe></div></div>`:sec('影片',l.video?`<a href="${esc(l.video)}" target="_blank" rel="noopener">▶ 開啟影片</a>`:'')}
+  ${sec('故事重點',l.summary?`<div class="pre">${linkify(l.summary)}</div>`:'')}
+  ${sec('討論問題',li(l.questions,'ol'))}
+  ${sec('活動',li(l.activities,'ul'))}
+  ${sec('學習單／連結',l.links.length?'<ul>'+l.links.map(k=>`<li><a href="${esc(k.url)}" target="_blank" rel="noopener">${esc(k.name||k.url)}</a></li>`).join('')+'</ul>':'')}
+  ${sec('備註',l.notes?`<div class="pre">${linkify(l.notes)}</div>`:'')}
+  <div class="actions">
+   <button class="${l.done?'ghost':'pri'}" onclick="toggleDone()">${l.done?'取消已上':'✓ 標記已上'}</button>
+   <button onclick="editLesson()">✎ 編輯</button>
+   <button onclick="move(-1)">← 上一課</button><button onclick="move(1)">下一課 →</button>
+   <button onclick="window.print()">🖨 列印</button>
+   <button class="danger" onclick="delLesson()">刪除</button>
+  </div>`;
+ document.getElementById('mLesson').classList.add('on');
+}
+function ytId(u){const m=String(u||'').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);return m?m[1]:null}
+function move(d){const n=open+d,L=data.seasons[cur].lessons;if(n>=0&&n<L.length)showLesson(n)}
+function toggleDone(){const l=data.seasons[cur].lessons[open];l.done=!l.done;save();render();showLesson(open)}
+function delLesson(){if(!confirm('確定刪除這一課？'))return;data.seasons[cur].lessons.splice(open,1);save();closeM('mLesson');render()}
+function closeM(id){document.getElementById(id).classList.remove('on')}
+
+function editLesson(){
+ const l=data.seasons[cur].lessons[open];
+ const f=(lab,k,ta)=>`<label class="f">${lab}${ta?`<textarea id="e_${k}">${esc(l[k])}</textarea>`:`<input id="e_${k}" value="${esc(l[k])}">`}</label>`;
+ const fl=(lab,k,v)=>`<label class="f">${lab}（一行一項）<textarea id="e_${k}">${esc(v)}</textarea></label>`;
+ document.getElementById('lessonPanel').innerHTML=`
+  <button class="close ghost" onclick="showLesson(open)">✕</button>
+  <h2>編輯課程</h2>
+  ${f('課名','title')}${f('日期','date')}${f('經文','scripture')}${f('金句','verse',1)}${f('影片網址','video')}
+  ${f('故事重點','summary',1)}
+  ${fl('討論問題','questions',l.questions.join('\n'))}
+  ${fl('活動','activities',l.activities.join('\n'))}
+  ${fl('學習單／連結，格式：名稱 | 網址','links',l.links.map(k=>k.name?k.name+' | '+k.url:k.url).join('\n'))}
+  ${f('備註','notes',1)}
+  <div class="actions"><button class="pri" onclick="saveEdit()">儲存</button><button class="ghost" onclick="showLesson(open)">取消</button></div>`;
+}
+function saveEdit(){
+ const l=data.seasons[cur].lessons[open],v=k=>document.getElementById('e_'+k).value;
+ ['title','date','scripture','verse','video','summary','notes'].forEach(k=>l[k]=v(k).trim());
+ l.questions=lines(v('questions'));l.activities=lines(v('activities'));l.links=lines(v('links')).map(parseLink);
+ if(!l.title)l.title='（未命名）';save();render();showLesson(open);
+}
+function lines(s){return s.split('\n').map(x=>x.trim()).filter(Boolean)}
+function parseLink(s){const p=s.split('|');if(p.length>1)return{name:p[0].trim(),url:p.slice(1).join('|').trim()};return{name:'',url:s.trim()}}
+
+function addLesson(){data.seasons[cur].lessons.push(newLesson('新課程'));save();render();showLesson(data.seasons[cur].lessons.length-1);editLesson()}
+function addSeason(){const n=prompt('新的季名稱','第'+(data.seasons.length+1)+'季');if(n){data.seasons.push({name:n,lessons:[]});cur=data.seasons.length-1;save();render()}}
+function renameSeason(){const S=data.seasons[cur];const n=prompt('季名稱（清空則刪除這一季）',S.name);if(n===null)return;
+ if(!n.trim()){if(confirm(`刪除「${S.name}」和裡面 ${S.lessons.length} 課？`)){data.seasons.splice(cur,1);if(!data.seasons.length)data=blank();cur=0}}else S.name=n.trim();save();render()}
+
+/* ---------- 匯入 ---------- */
+function openImport(){document.getElementById('impText').value='';document.getElementById('impFile').value='';document.getElementById('mImport').classList.add('on')}
+function fillTemplate(){document.getElementById('impText').value=TEMPLATE}
+function toggleGuide(){const g=document.getElementById('guide');g.style.display=g.style.display==='none'?'block':'none'}
+function parseText(txt){
+ const seasons=[];let S=null,L=null,sec=null;
+ for(const raw of txt.split(/\r?\n/)){
+  const line=raw.trim();if(!line)continue;
+  if(/^#(?!#)\s*/.test(line)){S={name:line.replace(/^#\s*/,''),lessons:[]};seasons.push(S);L=null;sec=null;continue}
+  if(/^##/.test(line)){if(!S){S={name:'第一季',lessons:[]};seasons.push(S)}L=newLesson(line.replace(/^#+\s*/,''));S.lessons.push(L);sec=null;continue}
+  if(!L)continue;
+  const m=line.match(/^([^:：]{1,6})[:：]\s*(.*)$/);
+  if(m&&FIELD[m[1].trim()]){sec=FIELD[m[1].trim()];if(m[2])addTo(L,sec,m[2]);continue}
+  const item=line.match(/^(?:[-•*．]|\d+[.、)）])\s*(.*)$/);
+  if(item){if(item[1])addTo(L,sec&&LISTS.includes(sec)?sec:(sec||'notes'),item[1]);continue}
+  addTo(L,sec||'summary',line);
+ }
+ return seasons;
+}
+function addTo(L,k,v){
+ if(k==='links')L.links.push(parseLink(v));
+ else if(LISTS.includes(k))L[k].push(v);
+ else if(k==='video'||k==='date')L[k]=v;
+ else L[k]=L[k]?L[k]+'\n'+v:v;
+}
+async function doImport(){
+ let seasons=[];
+ const file=document.getElementById('impFile').files[0];
+ try{
+  if(file){const t=await file.text();
+   if(/\.json$/i.test(file.name)){const d=JSON.parse(t);seasons=(d.seasons||[]).map(s=>({name:s.name,lessons:(s.lessons||[]).map(l=>newLesson(l.title||'（未命名）',l))}))}
+   else seasons=parseText(t)}
+  const pasted=document.getElementById('impText').value;
+  if(pasted.trim())seasons=seasons.concat(parseText(pasted));
+ }catch(e){alert('讀取失敗：'+e.message);return}
+ const n=seasons.reduce((a,s)=>a+s.lessons.length,0);
+ if(!n){alert('沒有讀到任何課程。請確認每季用「# 」開頭、每課用「## 」開頭。');return}
+ if(document.getElementById('impMode').value==='replace'){
+  if(!confirm(`將清除現有資料，改為 ${seasons.length} 季、${n} 課，確定嗎？`))return;
+  data={seasons};cur=0;
+ }else{
+  for(const s of seasons){
+   let T=data.seasons.find(x=>x.name===s.name);
+   if(!T){T={name:s.name,lessons:[]};data.seasons.push(T)}
+   for(const l of s.lessons){const i=T.lessons.findIndex(x=>x.title===l.title);
+    if(i>=0){l.done=T.lessons[i].done;l.id=T.lessons[i].id;T.lessons[i]=l}else T.lessons.push(l)}
+  }
+ }
+ save();closeM('mImport');render();alert(`匯入完成：${n} 課`);
+}
+function exportJSON(){
+ const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(b);
+ a.download='超級妙妙書課程備份_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on')}));
+render();
+</script>
+</body>
+</html>

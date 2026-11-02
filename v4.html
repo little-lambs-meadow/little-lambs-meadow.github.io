@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#e2572a">
+<title>小羊樂園 兒童主日學</title>
+<style>
+:root{--bg:#f7f3ec;--card:#fff;--ink:#2b2622;--muted:#7a7068;--pri:#e2572a;--soft:#fde8df;--blue:#2a6fd6;--bsoft:#e3eefc;--ok:#2e9b5a;--warn:#c9711c;--wsoft:#fff1df;--line:#e6ddd0}
+*{box-sizing:border-box}
+body{margin:0;font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-tap-highlight-color:transparent}
+header{color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px #0002}
+header.teach{background:linear-gradient(135deg,#e2572a,#f2a128)}
+header.staff{background:linear-gradient(135deg,#2a5bd6,#3f8fe0)}
+.hrow{display:flex;gap:8px;align-items:center;justify-content:space-between;max-width:1100px;margin:auto;padding:10px 16px 4px}
+header h1{margin:0;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.who button{white-space:nowrap}
+@media(max-width:480px){.uname{display:none}}
+.who{font-size:13px;display:flex;gap:6px;align-items:center;flex-shrink:0;white-space:nowrap}
+nav{display:flex;gap:4px;overflow-x:auto;max-width:1100px;margin:auto;padding:4px 12px 8px}
+nav button{background:#ffffff26;color:#fff;white-space:nowrap}
+nav button.on{background:#fff;color:var(--ink);font-weight:700}
+button{font:inherit;font-size:14px;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;background:#fff;color:var(--ink)}
+button.pri{background:var(--pri);color:#fff}
+button.blue{background:var(--blue);color:#fff}
+button.ghost{background:transparent;border:1px solid var(--line)}
+button.danger{color:#c33;border:1px solid #f0c4c4;background:#fff}
+button.sm{padding:4px 9px;font-size:13px}
+button:disabled{opacity:.4;cursor:not-allowed}
+main{max-width:1100px;margin:auto;padding:14px 16px 60px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sp{flex:1}
+.muted{color:var(--muted);font-size:13px}
+h2{margin:0 0 6px;font-size:20px}
+h3{margin:0 0 6px;font-size:16px}
+.sec{margin-top:14px}
+.sec h4{margin:0 0 4px;font-size:14px;color:var(--pri);border-left:4px solid var(--pri);padding-left:8px}
+.sec ol,.sec ul{margin:4px 0;padding-left:22px}
+.pre{white-space:pre-wrap}
+.video{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000}
+.video:fullscreen{padding-top:0;border-radius:0}.video:-webkit-full-screen{padding-top:0;border-radius:0}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+select,input,textarea{font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:#fff}
+label.f{display:block;margin-top:10px;font-size:13px;color:var(--muted)}
+label.f>input:not([type=checkbox]),label.f>textarea,label.f>select{display:block;width:100%;margin-top:3px}
+textarea{min-height:70px;resize:vertical;width:100%}
+.checks{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.checks label{background:#f4f1ec;border-radius:16px;padding:3px 10px;color:var(--ink);font-size:14px}
+.tag{display:inline-block;font-size:12px;border-radius:10px;padding:1px 8px;background:#eee;color:#555}
+.tag.d{background:#e2f5ea;color:var(--ok)}.tag.t{background:var(--wsoft);color:var(--warn)}.tag.o{background:var(--bsoft);color:var(--blue)}
+.flag{color:var(--warn);font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600}
+/* 投影 */
+.proj{background:#1f1b2e;color:#fff;border-radius:16px;padding:28px 20px;text-align:center;min-height:260px;display:flex;flex-direction:column;justify-content:center}
+.proj .ref{color:#f2c46b;font-size:18px;margin-top:14px}
+.proj .zh{font-size:clamp(24px,5vw,44px);font-weight:700;line-height:1.5}
+.proj .en{font-size:clamp(18px,3.4vw,30px);margin-top:12px;color:#d8d4ee}
+.tok{cursor:pointer;border-radius:4px}
+.tok.hid{background:#f2c46b;color:transparent;user-select:none}
+.lyrics{background:#1f1b2e;color:#fff;border-radius:16px;padding:24px;white-space:pre-wrap;text-align:center;line-height:1.8}
+/* 點名 */
+.kids{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.kid{background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;user-select:none;transition:transform .1s}
+.kid:active{transform:scale(.95)}
+.kid .n{font-size:18px;font-weight:700}
+.kid .p{font-size:13px;color:var(--muted)}
+.kid.here{border-color:var(--ok);background:#effaf3}
+.kid.pop{animation:pop .4s}
+@keyframes pop{50%{transform:scale(1.12);background:#fff4c2}}
+.items{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.items button{border:2px solid var(--line)}
+.items button.on{border-color:var(--pri);background:var(--soft);font-weight:700}
+.rank li{font-size:20px;padding:6px 0;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between}
+.rank{list-style:none;padding:0;margin:0}
+.rank li b{color:var(--pri)}
+.medal{width:34px;display:inline-block}
+.modal{position:fixed;inset:0;background:#0006;display:none;align-items:flex-start;justify-content:center;z-index:30;overflow-y:auto;padding:20px 10px}
+.modal.on{display:flex}
+.panel{background:#fff;border-radius:14px;max-width:720px;width:100%;padding:18px;position:relative}
+.close{position:absolute;top:10px;right:10px}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2b2622;color:#fff;padding:8px 16px;border-radius:20px;z-index:40;opacity:0;transition:.25s;pointer-events:none}
+.toast.on{opacity:1}
+.entry{border-left:3px solid var(--line);padding:4px 10px;margin:6px 0}
+.entry.決議{border-color:var(--ok)}.entry.待辦{border-color:var(--warn)}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.notice{background:var(--wsoft);border-radius:10px;padding:10px 12px;font-size:14px}
+a{color:var(--blue)}
+@media print{header,main,.actions,.close,.noprint{display:none!important}.modal{position:static;display:block!important;background:none;padding:0}.panel{max-width:none}}
+</style>
+</head>
+<body>
+<header id="hdr"></header>
+<main id="app"></main>
+<div class="modal" id="modal"><div class="panel" id="panel"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 資料層（之後換成 Google 試算表 / Firebase 只需改這裡） ============ */
+const KEY='little_lambs_meadow_v1';
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const DB={
+ load(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(d&&d.settings){d.invites=d.invites||[];if(d.settings.auth===undefined)d.settings.auth=false;d.settings.teacherNames=d.settings.teacherNames||['王老師','李老師'];d.teachers=(d.teachers||[]).filter(t=>t.pwHash);return d}}}catch(e){}return demo()},
+ save(d){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){toast('無法儲存，請用「設定 → 匯出備份」')}}
+};
+function demo(){
+ const k=['小明','小美','小恩','小約翰'].map(n=>({id:uid(),name:n,group:'',active:true,flag:false,flagNote:''}));
+ return {
+  settings:{church:'小羊樂園',auth:false,teacherNames:['王老師','李老師'],requireLogin:false,attendPts:1,
+   items:[{name:'背金句',pts:2},{name:'帶聖經',pts:1},{name:'幫忙收拾',pts:1},{name:'熱心參與',pts:1}],
+   rewards:[{name:'貼紙',cost:5},{name:'文具',cost:15},{name:'小禮物',cost:30}]},
+  teachers:[],invites:[],
+  lessons:[
+   {id:uid(),season:'第一季',no:1,date:'2026-11-01',title:'世界的開始',scripture:'創世記 1–3 章',
+    video:'https://www.youtube.com/watch?v=j8lHcRzyIHY',
+    story:'神用說話創造了光、天空、海洋、植物、動物，最後照著自己的形像造人，並在第七天安息。神看著一切都「甚好」。\n重點：世界不是偶然出現的，是神用愛精心創造的，每個孩子都是神特別的作品。',
+    expSteps:['（5分）黑暗開場：關燈，只說「起初，地是空虛混沌」，停十秒讓孩子感受黑暗','（3分）要有光：老師說「要有光！」同時打開燈或手電筒，問孩子剛才的感受','（10分）創造感官站：分組輪流摸水（海）、泥土（地）、樹葉（植物）、毛絨玩具（動物）','（10分）我是神的作品：每人用黏土捏一個「神造的東西」，介紹給大家','（3分）第七天安息：全體躺下或趴下，安靜一分鐘，感謝神'],
+    props:['手電筒數支','臉盆裝水、毛巾','一盒泥土或沙','樹葉、花','毛絨動物玩具','黏土（每人一份）'],
+    safety:'關燈時保留一盞小夜燈；玩水區鋪報紙並準備毛巾。',
+    questions:['神創造的東西裡，你最喜歡哪一個？為什麼？','神說人是照著祂的形像造的，這代表什麼？','你覺得神看見你的時候，會說什麼？'],
+    verseRef:'創世記 1:1',verseZh:'起初，神創造天地。',verseEn:'In the beginning God created the heaven and the earth.',
+    songIds:[],notes:'【示範課程】影片約 25 分鐘，可只播前半段再進體驗活動。'}
+  ],
+  songs:[{id:uid(),title:'（示範）本季主題詩歌',season:'第一季',video:'',lyrics:'在「老師區 → 詩歌」貼上教會使用的歌詞版本，\n上課時就能在這裡投影。\n\n可以用 A− / A＋ 調整字體大小，\n按 ⛶ 全螢幕投影。',notes:'動作：副歌時大家拍手兩下'}],
+  shows:[{id:uid(),season:'第一季',date:'2026-12-20',title:'第一季成果發表（示範）',items:[['開場詩歌','全體小朋友','5'],['金句背誦：創世記 1:1（中英）','全體小朋友','3'],['短劇：七天的創造','國小組','8'],['結尾詩歌與禱告','全體','5']],tasks:[{t:'訂主堂場地',o:'王老師',done:true},{t:'短劇道具：太陽月亮星星頭飾',o:'李老師',done:false},{t:'邀請家長的通知單',o:'王老師',done:false}],notes:'彩排：12/13 主日學後'}],kids:k,ledger:[],attend:{},sessions:[],meetings:[],log:[]
+ };
+}
+let D=DB.load();
+let myName='';try{myName=sessionStorage.getItem('ss_name')||''}catch(e){}
+function who(){return user||(mode==='staff'?(myName||'老師'):'教學模式')}
+function save(act){if(act){D.log.unshift({ts:new Date().toLocaleString('zh-TW'),by:who(),act});D.log=D.log.slice(0,300)}DB.save(D)}
+
+/* ============ 狀態 ============ */
+let user=null;try{user=sessionStorage.getItem('ss_user')}catch(e){}
+let mode=user?'staff':'teach', tab=user?'lessons':'lesson';
+let curLesson=null, curSong=null, curMeeting=null, verseLang='both', hidden=new Set(), fontSize=26, pickItem=null, undoStack=[];
+
+/* ============ 工具 ============ */
+function h(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function linkify(s){return h(s).replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>')}
+function playFull(id){
+ const box=document.getElementById('vid_'+id);const f=box.querySelector('iframe');
+ const fs=box.requestFullscreen||box.webkitRequestFullscreen;
+ if(!fs){window.open('https://www.youtube.com/watch?v='+id,'_blank');return}   // iPhone 不支援網頁全螢幕 → 交給 YouTube App
+ try{const r=fs.call(box);r&&r.catch&&r.catch(()=>{})}catch(e){}
+ f.src='https://www.youtube.com/embed/'+id+'?autoplay=1&rel=0';
+}
+function ytId(u){const m=String(u||'').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);return m?m[1]:null}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),1600)}
+function bal(id){return D.ledger.reduce((a,x)=>x.kidId===id?a+x.pts:a,0)}
+function kid(id){return D.kids.find(k=>k.id===id)}
+function lessonById(id){return D.lessons.find(l=>l.id===id)}
+function sortedLessons(){return [...D.lessons].sort((a,b)=>(a.season||'').localeCompare(b.season||'','zh-Hant')||(a.no||0)-(b.no||0)||(a.date||'').localeCompare(b.date||''))}
+function thisWeek(){const t=today();const ls=[...D.lessons].filter(l=>l.date).sort((a,b)=>a.date.localeCompare(b.date));return ls.find(l=>l.date>=t)||ls[ls.length-1]||D.lessons[0]}
+function copy(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('已複製')).catch(()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();toast('已複製')})}
+function openModal(html){document.getElementById('panel').innerHTML=`<button class="close ghost" onclick="closeModal()">✕</button>`+html;document.getElementById('modal').classList.add('on')}
+function closeModal(){document.getElementById('modal').classList.remove('on')}
+function lessonOpts(sel){return sortedLessons().map(l=>`<option value="${l.id}" ${l.id===sel?'selected':''}>${h(l.season)} 第${h(l.no)}課 ${h(l.title)}${l.date?' ('+l.date+')':''}</option>`).join('')}
+
+/* ============ 通用表單 ============ */
+let FORM=null;
+function form(title,fields,obj,onSave,extra=''){
+ FORM={fields,onSave};
+ openModal(`<h2>${title}</h2>${fields.map(f=>fieldHtml(f,obj)).join('')}${extra}
+  <div class="actions"><button class="pri" onclick="submitForm()">儲存</button><button class="ghost" onclick="closeModal()">取消</button></div>`);
+}
+function fieldHtml([k,label,type='text',opts],o){
+ const v=o[k];const id='f_'+k;
+ if(type==='textarea')return `<label class="f">${label}<textarea id="${id}">${h(v)}</textarea></label>`;
+ if(type==='lines')return `<label class="f">${label}<textarea id="${id}">${h((v||[]).join('\n'))}</textarea></label>`;
+ if(type==='select')return `<label class="f">${label}<select id="${id}">${opts.map(([a,b])=>`<option value="${h(a)}" ${a===v?'selected':''}>${h(b)}</option>`).join('')}</select></label>`;
+ if(type==='checks')return `<label class="f">${label}<div class="checks" id="${id}">${opts.map(n=>`<label><input type="checkbox" value="${h(n)}" ${(v||[]).includes(n)?'checked':''}> ${h(n)}</label>`).join('')}</div></label>`;
+ if(type==='bool')return `<label class="f"><input type="checkbox" id="${id}" ${v?'checked':''}> ${label}</label>`;
+ return `<label class="f">${label}<input id="${id}" type="${type}" value="${h(v)}"></label>`;
+}
+function submitForm(){
+ const out={};
+ for(const [k,,type] of FORM.fields){const e=document.getElementById('f_'+k);
+  if(type==='lines')out[k]=e.value.split('\n').map(x=>x.trim()).filter(Boolean);
+  else if(type==='checks')out[k]=[...e.querySelectorAll('input:checked')].map(x=>x.value);
+  else if(type==='bool')out[k]=e.checked;
+  else if(type==='number')out[k]=Number(e.value)||0;
+  else out[k]=e.value.trim();}
+ if(FORM.onSave(out)!==false){closeModal();render()}
+}
+function pairs(lines,numeric){return lines.map(s=>{const p=s.split('|').map(x=>x.trim());return p}).filter(p=>p[0])}
+
+/* ============ 外框 ============ */
+const TEACH_TABS=[['lesson','📖 本週課程'],['verse','✨ 金句'],['song','🎵 詩歌'],['points','⭐ 點名加點'],['rank','🏆 排行']];
+const STAFF_TABS=[['lessons','備課'],['songs','詩歌'],['shows','成發'],['kids','孩子點數'],['sessions','上課紀錄'],['meetings','會議'],['settings','設定']];
+function render(){
+ if(authOn()&&user&&!(me()&&me().active!==false)){setUser(null);mode='teach';tab='lesson'}
+ const hd=document.getElementById('hdr');hd.className=mode;
+ const tabs=mode==='teach'?TEACH_TABS:STAFF_TABS;
+ hd.innerHTML=`<div class="hrow"><h1>🐑 ${h(D.settings.church)}${mode==='teach'?' · 教學':' · '+h(user||'老師區')}</h1>
+  <div class="who">${user?`<span class="uname">👤 ${h(user)}${isAdmin()?'（主控）':''}</span>`:''}
+   ${mode==='teach'?`<button class="sm" onclick="${user||!authOn()?"setMode('staff')":'loginDlg()'}">${user||!authOn()?'老師區':'老師登入'}</button>`:`<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn()&&user?`<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>`:''}`}</div></div>
+  <nav>${tabs.map(([k,n])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${n}</button>`).join('')}</nav>`;
+ const f={lesson:tLesson,verse:tVerse,song:tSong,points:tPoints,rank:tRank,lessons:pLessons,songs:pSongs,shows:pShows,kids:pKids,sessions:pSessions,meetings:pMeetings,meeting:pMeeting,settings:pSettings}[tab];
+ document.getElementById('app').innerHTML=f?f():'';
+}
+function go(t){tab=t;render();scrollTo(0,0)}
+function setMode(m){mode=m;tab=m==='teach'?'lesson':'lessons';render()}
+const val=id=>document.getElementById(id).value.trim();
+const activeT=()=>D.teachers.filter(t=>t.active!==false);
+const me=()=>D.teachers.find(t=>t.name===user);
+const authOn=()=>!!D.settings.auth;
+const isAdmin=()=>!authOn()||(me()||{}).role==='admin';
+const teacherNames=()=>authOn()?activeT().map(t=>t.name):(D.settings.teacherNames||[]);
+async function hashPw(pw){const t=new TextEncoder().encode('xiaoyang|'+pw);
+ try{const b=await crypto.subtle.digest('SHA-256',t);return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+ catch(e){let a=5381,c=52711;for(const x of t){a=((a*33)^x)>>>0;c=((c*31)+x)>>>0}return 'f'+a.toString(16)+c.toString(16)}}
+function pwOk(p,p2){if(p.length<6){toast('密碼至少 6 碼');return false}if(p!==p2){toast('兩次密碼不一樣');return false}return true}
+function setUser(n){user=n;try{n?sessionStorage.setItem('ss_user',n):sessionStorage.removeItem('ss_user')}catch(e){}}
+function loginDlg(){
+ if(!D.teachers.some(t=>t.role==='admin'))return setupDlg();
+ const ts=activeT();
+ openModal(`<h2>🐑 老師登入</h2>
+ <label class="f">你是哪位老師<select id="lg_u">${ts.map(t=>`<option>${h(t.name)}</option>`).join('')}</select></label>
+ <label class="f">密碼<input id="lg_p" type="password" onkeydown="if(event.key==='Enter')doLogin()"></label>
+ <div class="actions"><button class="blue" onclick="doLogin()">登入</button></div>
+ <div class="notice" style="margin-top:14px">第一次使用？請向主控同工索取驗證碼，再 <a href="#" onclick="registerDlg();return false"><b>用驗證碼註冊</b></a>。<br>忘記密碼請找主控重設。</div>`);
+ setTimeout(()=>{const e=document.getElementById('lg_p');e&&e.focus()},50);
+}
+async function doLogin(){const t=D.teachers.find(x=>x.name===val('lg_u'));
+ if(!t||t.active===false||t.pwHash!==await hashPw(document.getElementById('lg_p').value)){toast('密碼不正確');return}
+ setUser(t.name);closeModal();setMode('staff');toast('歡迎，'+t.name)}
+function setupDlg(){openModal(`<h2>🐑 小羊樂園 初次設定</h2>
+ <p class="muted">建立第一個「主控」帳號。主控可以發驗證碼讓其他老師註冊、管理老師帳號和系統設定。</p>
+ <label class="f">你的稱呼<input id="su_n" placeholder="例如：林傳道"></label>
+ <label class="f">設定密碼（至少 6 碼）<input id="su_p" type="password"></label>
+ <label class="f">再輸入一次<input id="su_p2" type="password"></label>
+ <div class="actions"><button class="blue" onclick="doSetup()">建立主控帳號</button></div>`)}
+async function doSetup(){const n=val('su_n'),p=document.getElementById('su_p').value;
+ if(!n){toast('請填稱呼');return}if(!pwOk(p,document.getElementById('su_p2').value))return;
+ D.settings.auth=true;D.teachers.push({id:uid(),name:n,role:'admin',active:true,pwHash:await hashPw(p),created:today()});
+ setUser(n);save('建立主控帳號 '+n);closeModal();setMode('staff');go('settings');toast('主控帳號建立完成')}
+function registerDlg(){openModal(`<h2>🐑 老師註冊</h2>
+ <p class="muted">請輸入主控同工給你的驗證碼（6 碼，限用一次）。</p>
+ <label class="f">驗證碼<input id="rg_c" style="text-transform:uppercase;letter-spacing:4px;font-size:20px" maxlength="8"></label>
+ <label class="f">你的稱呼（例如：陳老師、美玲姊妹）<input id="rg_n"></label>
+ <label class="f">設定密碼（至少 6 碼）<input id="rg_p" type="password"></label>
+ <label class="f">再輸入一次<input id="rg_p2" type="password"></label>
+ <div class="actions"><button class="blue" onclick="doRegister()">註冊</button><button class="ghost" onclick="loginDlg()">返回登入</button></div>`)}
+async function doRegister(){
+ const code=val('rg_c').toUpperCase().replace(/\s/g,''),n=val('rg_n'),p=document.getElementById('rg_p').value;
+ const inv=D.invites.find(i=>i.code===code);
+ if(!inv||inv.revoked){toast('驗證碼不正確');return}
+ if(inv.usedBy){toast('這組驗證碼已經被使用過');return}
+ if(Date.now()>inv.expires){toast('驗證碼已過期，請向主控重新索取');return}
+ if(!n){toast('請填稱呼');return}
+ if(D.teachers.some(t=>t.name===n)){toast('已經有同名的老師，請換個稱呼');return}
+ if(!pwOk(p,document.getElementById('rg_p2').value))return;
+ D.teachers.push({id:uid(),name:n,role:'teacher',active:true,pwHash:await hashPw(p),created:today()});
+ inv.usedBy=n;inv.usedAt=today();setUser(n);save('用驗證碼 '+code+' 註冊');closeModal();setMode('staff');toast('註冊完成，歡迎 '+n)}
+function logout(){setUser(null);setMode('teach')}
+
+/* ============ 教學模式 ============ */
+function lessonBody(l){
+ if(!l)return '<div class="empty">還沒有課程，請老師登入後到「備課」新增或匯入</div>';
+ const yt=ytId(l.video);const sec=(t,x)=>x?`<div class="sec"><h4>${t}</h4>${x}</div>`:'';
+ const list=(a,tag)=>a&&a.length?`<${tag}>${a.map(x=>`<li>${linkify(x)}</li>`).join('')}</${tag}>`:'';
+ const songs=(l.songIds||[]).map(id=>D.songs.find(s=>s.id===id)).filter(Boolean);
+ return `<div class="muted">${h(l.season)} · 第 ${h(l.no)} 課${l.date?' · '+h(l.date):''}</div><h2>${h(l.title)}</h2>
+  ${l.scripture?`<div class="muted">📜 ${h(l.scripture)}</div>`:''}
+  ${yt?`<div class="sec"><h4>影片</h4><button class="pri" style="width:100%;font-size:17px;padding:12px;margin-bottom:8px" onclick="playFull('${yt}')">▶ 全螢幕播放</button><div class="video" id="vid_${yt}"><iframe src="https://www.youtube.com/embed/${yt}?rel=0" allow="autoplay; fullscreen" allowfullscreen></iframe></div></div>`:sec('影片',l.video?`<a href="${h(l.video)}" target="_blank" rel="noopener">▶ 開啟影片</a>`:'')}
+  ${sec('故事重點',l.story?`<div class="pre">${linkify(l.story)}</div>`:'')}
+  ${sec('體驗活動流程',list(l.expSteps,'ol'))}
+  ${sec('道具',list(l.props,'ul'))}
+  ${sec('安全提醒',l.safety?`<div class="notice">${h(l.safety)}</div>`:'')}
+  ${sec('討論問題',list(l.questions,'ol'))}
+  ${sec('本課金句',l.verseZh||l.verseEn?`<div>${h(l.verseZh)}</div><div class="muted">${h(l.verseEn)}</div><div class="muted">${h(l.verseRef)}</div>`:'')}
+  ${sec('本課詩歌',songs.map(s=>`<button class="sm ghost" onclick="curSong='${s.id}';go('song')">🎵 ${h(s.title)}</button>`).join(' '))}`;
+}
+function lessonPicker(onchange){const l=lessonById(curLesson)||thisWeek();curLesson=l&&l.id;return D.lessons.length?`<select style="width:100%;margin-bottom:10px" onchange="curLesson=this.value;${onchange}render()">${lessonOpts(curLesson)}</select>`:''}
+function tLesson(){const p=lessonPicker('');return `${p}<div class="card">${lessonBody(lessonById(curLesson))}</div>`}
+
+function tokens(s,lang){return lang==='zh'?[...s]:s.split(/(\s+)/)}
+function isWord(t){return /[\p{L}\p{N}]/u.test(t)}
+function verseHtml(s,lang){return tokens(s,lang).map((t,i)=>isWord(t)?`<span class="tok ${hidden.has(lang+i)?'hid':''}" onclick="hidden.delete('${lang}${i}');render()">${h(t)}</span>`:h(t)).join('')}
+function tVerse(){
+ const p=lessonPicker('hidden.clear();');const l=lessonById(curLesson);
+ if(!l)return '<div class="empty">還沒有課程</div>';
+ return `${p}<div class="row" style="margin-bottom:10px">
+  ${[['both','中英'],['zh','中文'],['en','English']].map(([k,n])=>`<button class="${verseLang===k?'pri':'ghost'}" onclick="verseLang='${k}';hidden.clear();render()">${n}</button>`).join('')}
+  <span class="sp"></span><button class="ghost" onclick="hideMore()">🙈 遮一些</button><button class="ghost" onclick="hidden.clear();render()">全部顯示</button>
+  <button class="ghost" onclick="document.getElementById('proj').requestFullscreen&&document.getElementById('proj').requestFullscreen()">⛶ 全螢幕</button></div>
+  <div class="proj" id="proj">
+   ${verseLang!=='en'&&l.verseZh?`<div class="zh">${verseHtml(l.verseZh,'zh')}</div>`:''}
+   ${verseLang!=='zh'&&l.verseEn?`<div class="en">${verseHtml(l.verseEn,'en')}</div>`:''}
+   <div class="ref">${h(l.verseRef)}</div></div>
+  <p class="muted">練習方法：按「遮一些」逐步遮住字詞讓孩子接著背，點被遮住的字可以打開提示。</p>`;
+}
+function hideMore(){const l=lessonById(curLesson);const all=[];
+ if(verseLang!=='en'&&l.verseZh)tokens(l.verseZh,'zh').forEach((t,i)=>isWord(t)&&!hidden.has('zh'+i)&&all.push('zh'+i));
+ if(verseLang!=='zh'&&l.verseEn)tokens(l.verseEn,'en').forEach((t,i)=>isWord(t)&&!hidden.has('en'+i)&&all.push('en'+i));
+ const n=Math.max(1,Math.ceil(all.length*.3));for(let i=0;i<n&&all.length;i++)hidden.add(all.splice(Math.floor(Math.random()*all.length),1)[0]);render()}
+
+function tSong(){
+ if(!D.songs.length)return '<div class="empty">還沒有詩歌</div>';
+ const s=D.songs.find(x=>x.id===curSong)||D.songs[0];curSong=s.id;const yt=ytId(s.video);
+ return `<div class="row" style="margin-bottom:10px"><select class="sp" onchange="curSong=this.value;render()">${D.songs.map(x=>`<option value="${x.id}" ${x.id===s.id?'selected':''}>${h(x.season?x.season+'｜':'')}${h(x.title)}</option>`).join('')}</select>
+  <button class="ghost" onclick="fontSize=Math.max(16,fontSize-4);render()">A−</button><button class="ghost" onclick="fontSize+=4;render()">A＋</button>
+  <button class="ghost" onclick="document.getElementById('lyr').requestFullscreen&&document.getElementById('lyr').requestFullscreen()">⛶</button></div>
+  ${yt?`<div class="video" style="margin-bottom:10px"><iframe src="https://www.youtube.com/embed/${yt}" allowfullscreen></iframe></div>`:s.video?`<p><a href="${h(s.video)}" target="_blank" rel="noopener">▶ 開啟詩歌影片</a></p>`:''}
+  <div class="lyrics" id="lyr" style="font-size:${fontSize}px"><b>${h(s.title)}</b>\n\n${h(s.lyrics)}</div>`;
+}
+
+function canPoint(){return !(authOn()&&D.settings.requireLogin&&!user)}
+function tPoints(){
+ if(!canPoint())return `<div class="card empty">目前設定為「加點需要老師登入」<br><br><button class="blue" onclick="loginDlg()">老師登入</button></div>`;
+ const d=today();const at=D.attend[d]||{};const kids=D.kids.filter(k=>k.active).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
+ return `<div class="row"><h2 class="sp">${d} 點名加點</h2><span class="muted">出席 ${Object.keys(at).length} 人</span></div>
+  <div class="items"><button class="${pickItem===null?'on':''}" onclick="pickItem=null;render()">✅ 點名（+${D.settings.attendPts}）</button>
+   ${D.settings.items.map((it,i)=>`<button class="${pickItem===i?'on':''}" onclick="pickItem=${i};render()">${h(it.name)} +${it.pts}</button>`).join('')}</div>
+  <p class="muted">${pickItem===null?'點孩子的名字＝簽到（再點一次取消）':'點孩子的名字＝加「'+h(D.settings.items[pickItem].name)+'」點數'}</p>
+  <div class="kids">${kids.map(k=>`<div class="kid ${at[k.id]?'here':''}" id="k_${k.id}" onclick="tapKid('${k.id}')"><div class="n">${h(k.name)}</div><div class="p">⭐ ${bal(k.id)}</div></div>`).join('')}</div>
+  <div class="row" style="margin-top:14px"><input id="newKid" class="sp" placeholder="新朋友的名字" onkeydown="if(event.key==='Enter')quickKid()"><button class="pri" onclick="quickKid()">＋加入</button>
+   <button class="ghost" onclick="undo()" ${undoStack.length?'':'disabled'}>↶ 復原</button></div>`;
+}
+function addPts(kidId,pts,reason){const e={id:uid(),kidId,pts,reason,date:today(),by:who(),ts:Date.now()};D.ledger.push(e);return e}
+function tapKid(id){
+ const d=today();D.attend[d]=D.attend[d]||{};const k=kid(id);
+ if(pickItem===null){
+  if(D.attend[d][id]){const lid=D.attend[d][id];D.ledger=D.ledger.filter(x=>x.id!==lid);delete D.attend[d][id];undoStack=undoStack.filter(u=>u.lid!==lid);save();toast('取消 '+k.name+' 的簽到')}
+  else{const e=addPts(id,D.settings.attendPts,'出席');D.attend[d][id]=e.id;undoStack.push({lid:e.id,att:true,d});save();toast(k.name+' 簽到 +'+e.pts)}
+ }else{const it=D.settings.items[pickItem];const e=addPts(id,it.pts,it.name);undoStack.push({lid:e.id});save();toast(k.name+' '+it.name+' +'+it.pts)}
+ render();const el=document.getElementById('k_'+id);el&&el.classList.add('pop');
+}
+function undo(){const u=undoStack.pop();if(!u)return;D.ledger=D.ledger.filter(x=>x.id!==u.lid);if(u.att){for(const k in D.attend[u.d])if(D.attend[u.d][k]===u.lid)delete D.attend[u.d][k]}save();render();toast('已復原')}
+function quickKid(){const e=document.getElementById('newKid');const n=e.value.trim();if(!n)return;
+ if(D.kids.some(k=>k.name===n&&k.active)&&!confirm('已經有叫「'+n+'」的孩子，還要再新增一位嗎？'))return;
+ const k={id:uid(),name:n,group:'',active:true,flag:false,flagNote:''};D.kids.push(k);save('新增孩子 '+n);
+ const p=pickItem;pickItem=null;tapKid(k.id);pickItem=p;render();toast('歡迎 '+n+'！已簽到')}
+function tRank(){
+ const ks=D.kids.filter(k=>k.active).map(k=>({k,b:bal(k.id)})).sort((a,b)=>b.b-a.b).slice(0,10);
+ const at=D.attend[today()]||{};const m=['🥇','🥈','🥉'];
+ return `<div class="card"><h2>🏆 點數排行</h2><ol class="rank">${ks.map((x,i)=>`<li><span><span class="medal">${m[i]||(i+1)+'.'}</span>${h(x.k.name)}</span><b>⭐ ${x.b}</b></li>`).join('')||'<div class="empty">還沒有點數</div>'}</ol></div>
+  <div class="card"><h3>今天出席 ${Object.keys(at).length} 位小朋友</h3><div>${Object.keys(at).map(id=>kid(id)).filter(Boolean).map(k=>h(k.name)).join('、')}</div></div>`;
+}
+
+/* ============ 老師區：備課 ============ */
+const LESSON_FIELDS=()=>[['season','季'],['no','第幾課','number'],['date','上課日期','date'],['title','課名'],['scripture','經文段落'],['video','影片網址'],['story','故事重點','textarea'],
+ ['expSteps','體驗活動流程（一行一步）','lines'],['props','道具清單（一行一項）','lines'],['safety','安全提醒','textarea'],['questions','討論問題（一行一題）','lines'],
+ ['verseRef','金句出處'],['verseZh','中文金句','textarea'],['verseEn','英文金句','textarea'],['songIds','本課詩歌','checks',D.songs.map(s=>s.title)],['notes','備課備註（只有老師看得到）','textarea']];
+function pLessons(){
+ const by={};sortedLessons().forEach(l=>(by[l.season||'未分季']=by[l.season||'未分季']||[]).push(l));
+ return `<div class="row" style="margin-bottom:10px"><h2 class="sp">備課</h2><button class="ghost" onclick="importDlg()">匯入</button><button class="blue" onclick="editLesson()">＋新增課程</button></div>
+ ${Object.entries(by).map(([s,ls])=>`<div class="card"><h3>${h(s)}（${ls.length} 課）</h3><table>${ls.map(l=>`<tr><td style="width:60px">第${h(l.no)}課</td><td><b>${h(l.title)}</b><div class="muted">${h(l.date)} ${h(l.verseRef)}${l.notes?' · 📝有備註':''}</div></td>
+  <td style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="viewLesson('${l.id}')">看</button> <button class="sm ghost" onclick="editLesson('${l.id}')">編輯</button></td></tr>`).join('')}</table></div>`).join('')||'<div class="empty">還沒有課程</div>'}`;
+}
+function viewLesson(id){const l=lessonById(id);openModal(lessonBody(l)+(l.notes?`<div class="sec"><h4>備課備註</h4><div class="pre">${h(l.notes)}</div></div>`:'')+`<div class="actions"><button onclick="editLesson('${id}')">編輯</button><button onclick="window.print()">🖨 列印</button><button class="pri" onclick="curLesson='${id}';closeModal();setMode('teach')">在教學模式開啟</button></div>`)}
+function editLesson(id){
+ const l=id?lessonById(id):{season:(sortedLessons().slice(-1)[0]||{}).season||'第一季',no:D.lessons.length+1,expSteps:[],props:[],questions:[],songIds:[]};
+ const o={...l,songIds:(l.songIds||[]).map(i=>(D.songs.find(s=>s.id===i)||{}).title).filter(Boolean)};
+ form(id?'編輯課程':'新增課程',LESSON_FIELDS(),o,v=>{
+  v.songIds=v.songIds.map(t=>(D.songs.find(s=>s.title===t)||{}).id).filter(Boolean);
+  if(!v.title){toast('請填課名');return false}
+  if(id)Object.assign(l,v);else D.lessons.push({id:uid(),...v});save((id?'修改':'新增')+'課程 '+v.title);
+ },id?`<div class="actions"><button class="danger" onclick="if(confirm('刪除這一課？')){D.lessons=D.lessons.filter(x=>x.id!=='${id}');save('刪除課程');closeModal();render()}">刪除這一課</button></div>`:'');
+}
+const IMP_MAP={'日期':'date','經文':'scripture','影片':'video','故事':'story','重點':'story','故事重點':'story','體驗':'expSteps','體驗活動':'expSteps','道具':'props','安全':'safety','安全提醒':'safety','討論':'questions','討論問題':'questions','金句出處':'verseRef','中文金句':'verseZh','金句':'verseZh','英文金句':'verseEn','備註':'notes'};
+const IMP_LISTS=['expSteps','props','questions'];
+function parseLessons(txt){
+ const out=[];let season='第一季',L=null,sec=null;
+ for(const raw of txt.split(/\r?\n/)){const line=raw.trim();if(!line)continue;
+  if(/^#(?!#)/.test(line)){season=line.replace(/^#\s*/,'');L=null;continue}
+  if(/^##/.test(line)){const t=line.replace(/^#+\s*/,'');const m=t.match(/^第\s*(\d+)\s*課\s*(.*)$/);
+   L={id:uid(),season,no:m?Number(m[1]):out.filter(x=>x.season===season).length+1,title:m?(m[2]||t):t,date:'',scripture:'',video:'',story:'',expSteps:[],props:[],safety:'',questions:[],verseRef:'',verseZh:'',verseEn:'',songIds:[],notes:''};out.push(L);sec=null;continue}
+  if(!L)continue;
+  const m=line.match(/^([^:：]{1,6})[:：]\s*(.*)$/);
+  if(m&&IMP_MAP[m[1].trim()]){sec=IMP_MAP[m[1].trim()];if(m[2])put(L,sec,m[2]);continue}
+  const it=line.match(/^(?:[-•*．]|\d+[.、)）])\s*(.*)$/);
+  put(L,sec||'story',it&&IMP_LISTS.includes(sec)?it[1]:line);
+ }
+ return out;
+ function put(L,k,v){if(IMP_LISTS.includes(k))L[k].push(v);else if(['date','video','verseRef'].includes(k))L[k]=v;else L[k]=L[k]?L[k]+'\n'+v:v}
+}
+function importDlg(){
+ openModal(`<h2>匯入課程</h2><p class="muted">每季用「# 」開頭，每課用「## 第1課 課名」開頭。同季同課號會更新內容。</p>
+ <div class="notice pre" style="font-size:12px"># 第一季
+## 第1課 起初
+日期: 2027-01-03
+經文: 創世記 1
+影片: https://youtu.be/...
+故事:
+（可以多行）
+體驗:
+- 步驟一
+道具:
+- 道具一
+安全: 提醒事項
+討論:
+- 問題一
+金句出處: 創世記 1:1
+中文金句: ...
+英文金句: ...</div>
+ <label class="f">或選擇 .txt 檔<input type="file" id="impF" accept=".txt,.md"></label>
+ <label class="f">貼上文字<textarea id="impT" style="min-height:220px;font-family:monospace;font-size:13px"></textarea></label>
+ <div class="actions"><button class="blue" onclick="doImport()">匯入</button></div>`);
+}
+async function doImport(){
+ let t=document.getElementById('impT').value;const f=document.getElementById('impF').files[0];if(f)t=(await f.text())+'\n'+t;
+ const ls=parseLessons(t);if(!ls.length){toast('沒有讀到課程，請檢查「## 」開頭');return}
+ let up=0;for(const l of ls){const o=D.lessons.find(x=>x.season===l.season&&Number(x.no)===l.no);if(o){Object.assign(o,{...l,id:o.id,songIds:o.songIds,notes:l.notes||o.notes});up++}else D.lessons.push(l)}
+ save(`匯入課程 ${ls.length} 課`);closeModal();render();toast(`匯入 ${ls.length} 課（更新 ${up} 課）`);
+}
+
+/* ============ 詩歌 ============ */
+function pSongs(){
+ return `<div class="row" style="margin-bottom:10px"><h2 class="sp">詩歌</h2><button class="blue" onclick="editSong()">＋新增詩歌</button></div>
+ ${D.songs.map(s=>`<div class="card row"><div class="sp"><b>${h(s.title)}</b><div class="muted">${h(s.season)}${s.notes?' · '+h(s.notes).slice(0,40):''}</div></div><button class="sm ghost" onclick="curSong='${s.id}';setMode('teach');go('song')">投影</button><button class="sm ghost" onclick="editSong('${s.id}')">編輯</button></div>`).join('')||'<div class="empty">還沒有詩歌</div>'}`;
+}
+function editSong(id){const s=id?D.songs.find(x=>x.id===id):{};
+ form(id?'編輯詩歌':'新增詩歌',[['title','歌名'],['season','季（例如 第一季）'],['video','影片網址'],['lyrics','歌詞','textarea'],['notes','教唱重點／動作提示','textarea']],s,v=>{
+  if(!v.title){toast('請填歌名');return false}if(id)Object.assign(s,v);else D.songs.push({id:uid(),...v});save((id?'修改':'新增')+'詩歌 '+v.title)},
+  id?`<div class="actions"><button class="danger" onclick="if(confirm('刪除這首詩歌？')){D.songs=D.songs.filter(x=>x.id!=='${id}');save('刪除詩歌');closeModal();render()}">刪除</button></div>`:'')}
+
+/* ============ 成發 ============ */
+function pShows(){
+ return `<div class="row" style="margin-bottom:10px"><h2 class="sp">每季成發</h2><button class="blue" onclick="editShow()">＋新增成發</button></div>
+ ${[...D.shows].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(s=>{const mins=s.items.reduce((a,x)=>a+(Number(x[2])||0),0);const done=s.tasks.filter(t=>t.done).length;
+ return `<div class="card"><div class="row"><div class="sp"><h3>${h(s.title)}</h3><div class="muted">${h(s.season)} · ${h(s.date)} · 節目約 ${mins} 分鐘 · 準備進度 ${done}/${s.tasks.length}</div></div><button class="sm ghost" onclick="printShow('${s.id}')">節目單</button><button class="sm ghost" onclick="editShow('${s.id}')">編輯</button></div>
+ <div class="sec"><h4>節目</h4><table><tr><th>#</th><th>節目</th><th>負責</th><th>分鐘</th></tr>${s.items.map((x,i)=>`<tr><td>${i+1}</td><td>${h(x[0])}</td><td>${h(x[1])}</td><td>${h(x[2])}</td></tr>`).join('')}</table></div>
+ <div class="sec"><h4>準備事項</h4>${s.tasks.map((t,i)=>`<label style="display:block"><input type="checkbox" ${t.done?'checked':''} onchange="D.shows.find(x=>x.id==='${s.id}').tasks[${i}].done=this.checked;save();render()"> ${h(t.t)} <span class="muted">${h(t.o)}</span></label>`).join('')||'<span class="muted">無</span>'}</div>
+ ${s.notes?`<div class="sec"><h4>備註</h4><div class="pre">${h(s.notes)}</div></div>`:''}</div>`}).join('')||'<div class="empty">還沒有成發計畫</div>'}`;
+}
+function editShow(id){const s=id?D.shows.find(x=>x.id===id):{items:[],tasks:[]};
+ const o={...s,items:s.items.map(x=>x.join(' | ')),tasks:s.tasks.map(t=>t.o?t.t+' | '+t.o:t.t)};
+ form(id?'編輯成發':'新增成發',[['title','名稱'],['season','季'],['date','日期','date'],['items','節目（一行一個：節目 | 負責 | 分鐘）','lines'],['tasks','準備事項（一行一個：事項 | 負責人）','lines'],['notes','備註（彩排時間、場地等）','textarea']],o,v=>{
+  v.items=pairs(v.items);v.tasks=pairs(v.tasks).map(p=>({t:p[0],o:p[1]||'',done:!!(s.tasks.find(x=>x.t===p[0])||{}).done}));
+  if(!v.title){toast('請填名稱');return false}if(id)Object.assign(s,v);else D.shows.push({id:uid(),...v});save((id?'修改':'新增')+'成發 '+v.title)},
+  id?`<div class="actions"><button class="danger" onclick="if(confirm('刪除？')){D.shows=D.shows.filter(x=>x.id!=='${id}');save('刪除成發');closeModal();render()}">刪除</button></div>`:'')}
+function printShow(id){const s=D.shows.find(x=>x.id===id);
+ openModal(`<div style="text-align:center"><h2>${h(s.title)}</h2><div class="muted">${h(s.date)}</div></div><table style="margin-top:14px;font-size:16px">${s.items.map((x,i)=>`<tr><td>${i+1}</td><td>${h(x[0])}</td><td>${h(x[1])}</td></tr>`).join('')}</table><div class="actions"><button onclick="window.print()">🖨 列印</button></div>`)}
+
+/* ============ 孩子點數 ============ */
+let showInactive=false;
+function pKids(){
+ const ks=D.kids.filter(k=>showInactive||k.active).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
+ return `<div class="row" style="margin-bottom:10px"><h2 class="sp">孩子點數</h2><label class="muted"><input type="checkbox" ${showInactive?'checked':''} onchange="showInactive=this.checked;render()"> 顯示已停用</label><button class="blue" onclick="editKid()">＋新增孩子</button></div>
+ <div class="card"><table><tr><th>名字</th><th>點數</th><th></th></tr>${ks.map(k=>`<tr style="${k.active?'':'opacity:.5'}"><td><b>${h(k.name)}</b> ${k.flag?'<span class="flag" title="需要留意">⚠️</span>':''}<div class="muted">${h(k.group)}${k.flag&&k.flagNote?' · '+h(k.flagNote):''}</div></td><td><b>⭐ ${bal(k.id)}</b></td>
+ <td style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="adjDlg('${k.id}')">加減點</button> <button class="sm pri" onclick="redeemDlg('${k.id}')">兌換</button> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button> <button class="sm ghost" onclick="editKid('${k.id}')">編輯</button></td></tr>`).join('')}</table></div>
+ <p class="muted">停用的孩子不會出現在點名畫面，但點數和紀錄都會保留，回來時再啟用就好。</p>`;
+}
+function editKid(id){const k=id?kid(id):{active:true};
+ form(id?'編輯孩子資料':'新增孩子',[['name','稱呼'],['group','班別／年齡組（選填）'],['active','啟用（出現在點名畫面）','bool'],['flag','需要老師留意','bool'],['flagNote','留意事項（只有老師看得到）']],k,v=>{
+  if(!v.name){toast('請填稱呼');return false}if(id)Object.assign(k,v);else D.kids.push({id:uid(),...v});save((id?'修改':'新增')+'孩子 '+v.name)},
+  '<p class="muted">建議只存稱呼，不存生日、地址或電話。</p>')}
+function adjDlg(id){const k=kid(id);
+ openModal(`<h2>${h(k.name)} 加減點</h2><div class="muted">目前 ⭐ ${bal(id)}</div>
+ <div class="items" style="margin-top:10px">${D.settings.items.map(it=>`<button onclick="addPts('${id}',${it.pts},'${h(it.name)}');save();closeModal();render();toast('+${it.pts}')">${h(it.name)} +${it.pts}</button>`).join('')}</div>
+ <div class="row"><input id="adjN" type="number" style="width:90px" placeholder="點數"><input id="adjR" class="sp" placeholder="原因（扣點請輸入負數）"><button class="blue" onclick="const n=Number(document.getElementById('adjN').value);if(!n)return;addPts('${id}',n,document.getElementById('adjR').value||'手動調整');save('${h(k.name)} 手動調整 '+n);closeModal();render()">確定</button></div>`)}
+function redeemDlg(id){const k=kid(id),b=bal(id);
+ openModal(`<h2>${h(k.name)} 兌換獎勵</h2><div class="muted">目前 ⭐ ${b}</div>
+ ${D.settings.rewards.map(r=>`<div class="row card" style="margin:8px 0"><b class="sp">${h(r.name)}</b><span>⭐ ${r.cost}</span><button class="pri sm" ${b<r.cost?'disabled':''} onclick="addPts('${id}',-${r.cost},'兌換：${h(r.name)}');save('${h(k.name)} 兌換 ${h(r.name)}');closeModal();render();toast('兌換成功')">兌換</button></div>`).join('')}`)}
+function kidHist(id){const k=kid(id);
+ const L=D.ledger.filter(x=>x.kidId===id).sort((a,b)=>b.ts-a.ts);
+ const notes=D.sessions.flatMap(s=>(s.kidNotes||[]).filter(n=>n.kidId===id).map(n=>({...n,date:s.date}))).sort((a,b)=>b.date.localeCompare(a.date));
+ const days=Object.keys(D.attend).filter(d=>D.attend[d][id]).length;
+ openModal(`<h2>${h(k.name)}</h2><div class="muted">累計 ⭐ ${bal(id)} · 出席 ${days} 次</div>
+ ${notes.length?`<div class="sec"><h4>老師備註</h4>${notes.map(n=>`<div class="entry">${n.flag?'⚠️ ':''}<b>${h(n.date)}</b> ${h(n.note)}</div>`).join('')}</div>`:''}
+ <div class="sec"><h4>點數紀錄</h4><table>${L.map(x=>`<tr><td>${h(x.date)}</td><td>${h(x.reason)}</td><td style="color:${x.pts<0?'#c33':'var(--ok)'}">${x.pts>0?'+':''}${x.pts}</td><td class="muted">${h(x.by)}</td></tr>`).join('')||'<tr><td class="muted">無</td></tr>'}</table></div>`)}
+
+/* ============ 上課紀錄與交接 ============ */
+function pSessions(){
+ const ss=[...D.sessions].sort((a,b)=>b.date.localeCompare(a.date));const last=ss[0];const flagged=D.kids.filter(k=>k.flag&&k.active);
+ return `<div class="row" style="margin-bottom:10px"><h2 class="sp">上課紀錄與交接</h2><button class="blue" onclick="sessionDlg()">＋今天的紀錄</button></div>
+ ${last?`<div class="card" style="border-color:var(--blue)"><h3>📌 上次交接（${h(last.date)}，${h((last.teachers||[]).join('、'))}）</h3><div class="pre">${h(last.handover)||'<span class="muted">（沒有寫交接）</span>'}</div></div>`:''}
+ ${flagged.length?`<div class="card" style="border-color:var(--warn)"><h3>⚠️ 需要留意的孩子</h3>${flagged.map(k=>`<div><b>${h(k.name)}</b> <span class="muted">${h(k.flagNote)}</span> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button></div>`).join('')}</div>`:''}
+ ${ss.map(s=>{const l=lessonById(s.lessonId);return `<div class="card"><div class="row"><div class="sp"><b>${h(s.date)}</b> ${l?h(l.title):''}<div class="muted">老師：${h((s.teachers||[]).join('、'))} · 出席 ${(s.attendance||[]).length} 人 · 記錄者 ${h(s.by)}</div></div><button class="sm ghost" onclick="sessionDlg('${s.id}')">編輯</button></div>
+ ${s.overall?`<div class="sec"><h4>整體狀況</h4><div class="pre">${h(s.overall)}</div></div>`:''}
+ ${s.handover?`<div class="sec"><h4>交接</h4><div class="pre">${h(s.handover)}</div></div>`:''}
+ ${(s.kidNotes||[]).length?`<div class="sec"><h4>個別孩子</h4>${s.kidNotes.map(n=>`<div>${n.flag?'⚠️ ':''}<b>${h((kid(n.kidId)||{}).name||'?')}</b>：${h(n.note)}</div>`).join('')}</div>`:''}</div>`}).join('')||'<div class="empty">還沒有上課紀錄</div>'}`;
+}
+let sessAll=false;
+function sessionDlg(id,preset){
+ const s=preset||(id?D.sessions.find(x=>x.id===id):{date:today(),lessonId:(thisWeek()||{}).id,teachers:[who()].filter(n=>teacherNames().includes(n)),overall:'',handover:'',kidNotes:[]});
+ window._sess={id,s,date:s.date};
+ const present=Object.keys(D.attend[s.date]||{});
+ const ks=D.kids.filter(k=>k.active&&(sessAll||present.includes(k.id)||(s.kidNotes||[]).some(n=>n.kidId===k.id)));
+ const note=k=>(s.kidNotes||[]).find(n=>n.kidId===k.id)||{};
+ openModal(`<h2>${id?'編輯':'新增'}上課紀錄</h2>
+ <label class="f">日期<input type="date" id="s_date" value="${h(s.date)}"></label>
+ <label class="f">這堂課<select id="s_lesson"><option value="">（未指定）</option>${lessonOpts(s.lessonId)}</select></label>
+ <label class="f">上課老師<div class="checks" id="s_t">${teacherNames().map(n=>`<label><input type="checkbox" value="${h(n)}" ${(s.teachers||[]).includes(n)?'checked':''}> ${h(n)}</label>`).join('')}</div></label>
+ <div class="muted" style="margin-top:8px">當天點名出席：${present.length} 人（從「點名加點」自動帶入）</div>
+ <label class="f">整體狀況（秩序、參與度、活動進行得如何）<textarea id="s_o">${h(s.overall)}</textarea></label>
+ <label class="f">交接給下一位老師<textarea id="s_h">${h(s.handover)}</textarea></label>
+ <div class="sec"><h4>個別孩子備註</h4><label class="muted"><input type="checkbox" ${sessAll?'checked':''} onchange="sessAll=this.checked;keepSess()"> 顯示所有孩子（預設只顯示當天出席）</label>
+ ${ks.map(k=>`<div class="row" style="margin-top:6px"><b style="width:70px">${h(k.name)}</b><input class="sp kn" data-k="${k.id}" value="${h(note(k).note)}" placeholder="狀況備註（可空白）"><label class="muted"><input type="checkbox" class="kf" data-k="${k.id}" ${note(k).flag?'checked':''}> 需留意</label></div>`).join('')||'<div class="muted">當天還沒有人簽到</div>'}</div>
+ <div class="actions"><button class="blue" onclick="saveSession()">儲存</button>${id?`<button class="danger" onclick="if(confirm('刪除這筆紀錄？')){D.sessions=D.sessions.filter(x=>x.id!=='${id}');save('刪除上課紀錄');closeModal();render()}">刪除</button>`:''}</div>`);
+}
+function readSess(){const s=window._sess.s;
+ const v={date:document.getElementById('s_date').value||today(),lessonId:document.getElementById('s_lesson').value,
+  teachers:[...document.querySelectorAll('#s_t input:checked')].map(x=>x.value),overall:document.getElementById('s_o').value.trim(),handover:document.getElementById('s_h').value.trim()};
+ const flags={};document.querySelectorAll('.kf').forEach(e=>flags[e.dataset.k]=e.checked);
+ v.kidNotes=[...document.querySelectorAll('.kn')].map(e=>({kidId:e.dataset.k,note:e.value.trim(),flag:flags[e.dataset.k]})).filter(n=>n.note||n.flag);
+ return v}
+function keepSess(){const v=readSess();sessionDlg(window._sess.id,{...window._sess.s,...v})}
+function saveSession(){const v=readSess();const {id}=window._sess;
+ v.attendance=Object.keys(D.attend[v.date]||{});v.by=who();
+ if(id)Object.assign(D.sessions.find(x=>x.id===id),v);else D.sessions.push({id:uid(),...v});
+ v.kidNotes.forEach(n=>{const k=kid(n.kidId);if(k&&n.flag){k.flag=true;k.flagNote=n.note||k.flagNote}});
+ save((id?'修改':'新增')+'上課紀錄 '+v.date);closeModal();render();toast('已儲存')}
+
+/* ============ 會議 ============ */
+function pMeetings(){
+ return `<div class="row" style="margin-bottom:10px"><h2 class="sp">會議</h2><button class="blue" onclick="newMeeting()">＋新會議</button></div>
+ <p class="muted">開會時每位老師在自己手機登入、進入同一個會議，各自在議程下輸入意見、決議、待辦，系統會整合成一份會議記錄。（初版資料存在本機，要接上雲端後才能多支手機同步。）</p>
+ ${[...D.meetings].sort((a,b)=>b.date.localeCompare(a.date)).map(m=>`<div class="card row"><div class="sp"><b>${h(m.title)}</b><div class="muted">${h(m.date)} · ${m.agenda.length} 項議程 · ${m.entries.length} 則紀錄</div></div><button class="sm blue" onclick="curMeeting='${m.id}';go('meeting')">進入</button></div>`).join('')||'<div class="empty">還沒有會議</div>'}`;
+}
+function newMeeting(){form('新會議',[['title','會議名稱'],['date','日期','date'],['agenda','議程（一行一項）','lines']],{date:today(),title:'主日學同工會'},v=>{
+ if(!v.title)return false;const m={id:uid(),title:v.title,date:v.date,agenda:v.agenda.map(t=>({id:uid(),title:t})),entries:[]};if(!m.agenda.length)m.agenda.push({id:uid(),title:'一般討論'});
+ D.meetings.push(m);curMeeting=m.id;tab='meeting';save('新增會議 '+v.title)})}
+function pMeeting(){
+ const m=D.meetings.find(x=>x.id===curMeeting);if(!m)return pMeetings();
+ return `<div class="row" style="margin-bottom:6px"><button class="sm ghost" onclick="go('meetings')">← 會議列表</button><span class="sp"></span><button class="sm ghost" onclick="render()">↻ 重新整理</button><button class="blue" onclick="compileDlg()">📋 整合會議記錄</button></div>
+ <h2>${h(m.title)}</h2>${authOn()?'':`<div class="row" style="margin:6px 0"><span class="muted">我是：</span><select onchange="myName=this.value;try{sessionStorage.setItem('ss_name',myName)}catch(e){};render()"><option value="">請選擇</option>${teacherNames().map(n=>`<option ${n===myName?'selected':''}>${h(n)}</option>`).join('')}</select></div>`}<div class="muted" style="margin-bottom:10px">${h(m.date)} · 參與輸入：${[...new Set(m.entries.map(e=>e.by))].map(h).join('、')||'尚無'}</div>
+ ${m.agenda.map((a,ai)=>{const es=m.entries.filter(e=>e.aid===a.id);return `<div class="card"><h3>${ai+1}. ${h(a.title)}</h3>
+  ${es.map(e=>`<div class="entry ${e.type}"><span class="tag ${{決議:'d',待辦:'t',意見:'o'}[e.type]}">${e.type}</span> ${h(e.text)}${e.type==='待辦'?` <span class="muted">→ ${h(e.owner||'未指定')}${e.due?'，'+h(e.due)+'前':''}</span>`:''} <span class="muted">— ${h(e.by)}</span>${e.by===who()?` <button class="sm ghost" onclick="delEntry('${e.id}')">✕</button>`:''}</div>`).join('')}
+  <div class="row" style="margin-top:8px"><select id="ty_${a.id}" onchange="document.getElementById('td_${a.id}').style.display=this.value==='待辦'?'flex':'none'"><option>意見</option><option>決議</option><option>待辦</option></select>
+   <input class="sp" id="tx_${a.id}" placeholder="輸入內容" onkeydown="if(event.key==='Enter')addEntry('${a.id}')"><button class="blue" onclick="addEntry('${a.id}')">送出</button></div>
+  <div class="row" id="td_${a.id}" style="display:none;margin-top:6px"><input id="ow_${a.id}" placeholder="負責人" style="width:110px"><input id="du_${a.id}" type="date"></div></div>`}).join('')}
+ <div class="row"><input id="newAg" class="sp" placeholder="臨時動議／新增議程"><button class="ghost" onclick="const v=document.getElementById('newAg').value.trim();if(v){D.meetings.find(x=>x.id==='${m.id}').agenda.push({id:uid(),title:v});save();render()}">＋議程</button></div>`;
+}
+function addEntry(aid){if(!authOn()&&!myName){toast('請先在上方選擇「我是」哪位老師');return}const m=D.meetings.find(x=>x.id===curMeeting);const g=k=>document.getElementById(k+'_'+aid).value.trim();
+ const text=g('tx');if(!text)return;const type=document.getElementById('ty_'+aid).value;
+ m.entries.push({id:uid(),aid,type,text,owner:type==='待辦'?g('ow'):'',due:type==='待辦'?g('du'):'',by:who(),ts:Date.now()});save();render();
+ const n=document.getElementById('tx_'+aid);n&&n.focus()}
+function delEntry(id){const m=D.meetings.find(x=>x.id===curMeeting);m.entries=m.entries.filter(e=>e.id!==id);save();render()}
+function compileMeeting(m){
+ const ppl=[...new Set(m.entries.map(e=>e.by))];const E=t=>m.entries.filter(e=>e.type===t);
+ let s=`【${m.title}】會議記錄\n日期：${m.date}\n參與：${ppl.join('、')}\n\n`;
+ m.agenda.forEach((a,i)=>{const es=m.entries.filter(e=>e.aid===a.id).sort((x,y)=>x.ts-y.ts);s+=`${i+1}. ${a.title}\n`;
+  const op=es.filter(e=>e.type==='意見'),dc=es.filter(e=>e.type==='決議'),td=es.filter(e=>e.type==='待辦');
+  if(op.length)s+='  討論：\n'+op.map(e=>`   • ${e.text}（${e.by}）`).join('\n')+'\n';
+  if(dc.length)s+='  決議：\n'+dc.map(e=>`   ✔ ${e.text}`).join('\n')+'\n';
+  if(td.length)s+='  待辦：\n'+td.map(e=>`   □ ${e.text} → ${e.owner||'未指定'}${e.due?'（'+e.due+'前）':''}`).join('\n')+'\n';
+  if(!es.length)s+='  （無紀錄）\n';s+='\n'});
+ if(E('決議').length)s+='━━ 決議總表 ━━\n'+E('決議').map((e,i)=>`${i+1}. ${e.text}`).join('\n')+'\n\n';
+ if(E('待辦').length)s+='━━ 待辦事項 ━━\n'+E('待辦').sort((a,b)=>(a.due||'9').localeCompare(b.due||'9')).map((e,i)=>`${i+1}. ${e.text}｜${e.owner||'未指定'}｜${e.due||'無期限'}`).join('\n')+'\n';
+ return s}
+function compileDlg(){const m=D.meetings.find(x=>x.id===curMeeting);const t=compileMeeting(m);window._mt=t;
+ openModal(`<h2>整合會議記錄</h2><div class="pre card" style="font-size:14px">${h(t)}</div>
+ <div class="actions"><button class="blue" onclick="copy(window._mt)">複製</button><button onclick="window.print()">🖨 列印</button>
+ <button class="ghost" onclick="copy('請把以下教會兒童主日學同工會的會議紀錄整理成通順、條理清楚的正式會議記錄，保留所有決議與待辦（負責人與期限），不要增加原文沒有的內容：\\n\\n'+window._mt)">複製給 Claude 整理</button></div>`)}
+
+/* ============ 設定 ============ */
+function myAccount(){return `<div class="card"><h3>我的帳號：${h(user)}</h3>
+ <label class="f">目前密碼<input id="mp_o" type="password"></label><label class="f">新密碼（至少 6 碼）<input id="mp_n" type="password"></label><label class="f">再輸入一次<input id="mp_n2" type="password"></label>
+ <div class="actions"><button class="blue" onclick="changeMyPw()">修改密碼</button></div></div>`}
+async function changeMyPw(){const t=me();if(t.pwHash!==await hashPw(document.getElementById('mp_o').value)){toast('目前密碼不正確');return}
+ const p=document.getElementById('mp_n').value;if(!pwOk(p,document.getElementById('mp_n2').value))return;t.pwHash=await hashPw(p);save('修改自己的密碼');render();toast('密碼已更新')}
+function pSettings(){const S=D.settings;
+ if(authOn()&&!isAdmin())return `<h2>設定</h2>${myAccount()}<div class="card"><h3>資料備份</h3><button onclick="exportAll()">⬇ 匯出備份</button></div><p class="muted">系統設定與老師帳號由主控管理。</p>`;
+ const now=Date.now();const open=D.invites.filter(i=>!i.usedBy&&!i.revoked&&i.expires>now);const used=D.invites.filter(i=>i.usedBy).slice(-5).reverse();
+ const admins=D.teachers.filter(t=>t.role==='admin'&&t.active!==false).length;
+ const authCard=authOn()?`<div class="card"><div class="row"><h3 class="sp">🔐 老師帳號登入：已啟用</h3><button class="sm danger" onclick="if(confirm('關閉帳號登入？帳號資料會保留')){D.settings.auth=false;setUser(null);save('關閉老師帳號登入');render()}">關閉</button></div></div>`
+  :`<div class="card"><h3>🔐 老師帳號（規劃中，目前未啟用）</h3><p class="muted">啟用後，老師要用自己的帳號登入才能進老師區；新老師需要主控發的驗證碼才能註冊。目前未啟用，任何人都能進老師區。</p>
+   <button class="ghost" onclick="enableAuth()">試用帳號功能</button></div>`;
+ return `<h2>設定${authOn()?'（主控）':''}</h2>${authCard}${authOn()?`
+ <div class="card"><h3>🔑 發驗證碼給新老師</h3><p class="muted">每組驗證碼限用一次、7 天內有效。用 LINE 傳給老師，老師在登入畫面點「用驗證碼註冊」。</p>
+ <div class="row"><input id="iv_note" class="sp" placeholder="給誰（例如：陳姊妹）"><button class="blue" onclick="genInvite()">產生驗證碼</button></div>
+ ${open.map(i=>`<div class="row card" style="margin:8px 0"><b style="font-size:22px;letter-spacing:3px;font-family:monospace">${i.code}</b><span class="sp muted">${h(i.note)} · ${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效</span><button class="sm ghost" onclick="copyInvite('${i.code}')">複製訊息</button><button class="sm danger" onclick="revokeInvite('${i.code}')">作廢</button></div>`).join('')}
+ ${used.length?`<div class="muted" style="margin-top:6px">最近使用：${used.map(i=>`${i.code} → ${h(i.usedBy)}（${h(i.usedAt)}）`).join('、')}</div>`:''}</div>
+ <div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.map(t=>`<tr style="${t.active===false?'opacity:.5':''}"><td><b>${h(t.name)}</b> ${t.role==='admin'?'<span class="tag t">主控</span>':'<span class="tag o">老師</span>'}${t.active===false?' <span class="tag">已停用</span>':''}<div class="muted">${h(t.created||'')} 加入</div></td>
+ <td style="text-align:right">${t.name===user?'<span class="muted">（你）</span>':`<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <button class="sm ghost" onclick="toggleRole('${t.id}')">${t.role==='admin'?'改為老師':'設為主控'}</button> <button class="sm ${t.active===false?'ghost':'danger'}" onclick="toggleT('${t.id}')">${t.active===false?'啟用':'停用'}</button>`}</td></tr>`).join('')}</table>
+ <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前主控 ${admins} 位，建議至少兩位，避免主控忘記密碼時沒人能管理。</p></div>
+`:''}
+ <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
+ ${authOn()?'':`<label class="f">老師名單（一行一位，用於上課紀錄與會議）<textarea id="st_tn">${h((S.teacherNames||[]).join('\n'))}</textarea></label>`}
+ ${authOn()?`<label class="f"><input type="checkbox" id="st_r" ${S.requireLogin?'checked':''}> 教學模式點名加點需要老師登入</label>`:''}
+ <label class="f">出席點數<input id="st_a" type="number" value="${S.attendPts}"></label>
+ <label class="f">加分項目（一行一個：名稱 | 點數）<textarea id="st_i">${h(S.items.map(i=>i.name+' | '+i.pts).join('\n'))}</textarea></label>
+ <label class="f">獎勵（一行一個：名稱 | 所需點數）<textarea id="st_w">${h(S.rewards.map(i=>i.name+' | '+i.cost).join('\n'))}</textarea></label>
+ <div class="actions"><button class="blue" onclick="saveSettings()">儲存設定</button></div></div>
+ ${authOn()?myAccount():''}
+ <div class="card"><h3>資料備份</h3><p class="muted">初版資料只存在這台裝置的瀏覽器裡，請定期匯出備份。</p>
+ <div class="row"><button onclick="exportAll()">⬇ 匯出備份</button><label style="border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer">⬆ 匯入備份<input type="file" accept=".json" style="display:none" onchange="importAll(this.files[0])"></label>
+ <button class="danger" onclick="if(confirm('清除所有資料（含老師帳號）並恢復範例？此動作無法復原')){D=demo();setUser(null);save();setMode('teach')}">重置</button></div></div>
+ <div class="card"><h3>最近異動</h3><table>${D.log.slice(0,30).map(l=>`<tr><td class="muted" style="white-space:nowrap">${h(l.ts)}</td><td>${h(l.by)}</td><td>${h(l.act)}</td></tr>`).join('')||'<tr><td class="muted">無</td></tr>'}</table></div>`}
+function enableAuth(){if(!confirm('啟用老師帳號登入？之後進老師區需要登入。（可以隨時關閉）'))return;D.settings.auth=true;save('啟用老師帳號登入');if(!D.teachers.some(t=>t.role==='admin'))setupDlg();else{setMode('teach');loginDlg()}}
+function genInvite(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c;do{c=[...Array(6)].map(()=>A[Math.floor(Math.random()*A.length)]).join('')}while(D.invites.some(i=>i.code===c));
+ D.invites.push({code:c,note:val('iv_note'),by:user,created:today(),expires:Date.now()+7*864e5});save('產生驗證碼 '+c);render();copyInvite(c)}
+function copyInvite(c){const i=D.invites.find(x=>x.code===c);copy(`🐑 小羊樂園 老師註冊驗證碼：${c}\n打開小羊樂園 app → 老師登入 → 用驗證碼註冊。\n驗證碼限用一次，${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效。`)}
+function revokeInvite(c){if(!confirm('作廢驗證碼 '+c+'？'))return;D.invites.find(x=>x.code===c).revoked=true;save('作廢驗證碼 '+c);render()}
+function toggleT(id){const t=D.teachers.find(x=>x.id===id);t.active=t.active===false;save((t.active?'啟用':'停用')+'老師 '+t.name);render()}
+function toggleRole(id){const t=D.teachers.find(x=>x.id===id);t.role=t.role==='admin'?'teacher':'admin';save(t.name+' 改為'+(t.role==='admin'?'主控':'老師'));render()}
+async function resetPw(id){const t=D.teachers.find(x=>x.id===id);const p=prompt(`替「${t.name}」設定臨時密碼（至少 6 碼），請對方登入後自己修改`);if(p===null)return;
+ if(p.length<6){toast('密碼至少 6 碼');return}t.pwHash=await hashPw(p);save('重設 '+t.name+' 的密碼');toast('已重設')}
+function saveSettings(){const v=k=>document.getElementById(k).value;const S=D.settings;
+ S.church=v('st_c').trim()||'小羊樂園';const r=document.getElementById('st_r');if(r)S.requireLogin=r.checked;const tn=document.getElementById('st_tn');if(tn)S.teacherNames=tn.value.split('\n').map(x=>x.trim()).filter(Boolean);S.attendPts=Number(v('st_a'))||1;
+ S.items=pairs(v('st_i').split('\n')).map(p=>({name:p[0],pts:Number(p[1])||1}));
+ S.rewards=pairs(v('st_w').split('\n')).map(p=>({name:p[0],cost:Number(p[1])||1}));
+ save('修改設定');render();toast('設定已儲存')}
+function exportAll(){const b=new Blob([JSON.stringify(D,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='little-lambs-meadow-backup_'+today()+'.json';a.click()}
+async function importAll(f){if(!f)return;try{const d=JSON.parse(await f.text());if(!d.settings)throw Error('格式不符');if(!confirm('用備份檔取代目前所有資料？'))return;D=d;save('匯入備份');render();toast('已匯入')}catch(e){toast('匯入失敗：'+e.message)}}
+
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+render();
+</script>
+</body>
+</html>
