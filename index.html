@@ -133,6 +133,46 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 .empty{text-align:center;color:#7a7068;padding:30px 10px}
 .notice{background:#fff1df;border-radius:10px;padding:10px 12px;font-size:14px}
 a{color:#2a6fd6}
+/* ===== 手機版 ===== */
+.show-m{display:none}
+nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+.items::-webkit-scrollbar,.tbar::-webkit-scrollbar{display:none}
+@media (max-width:600px){
+ input,select,textarea{font-size:16px!important}
+ button{min-height:38px}
+ .hrow{padding:8px 12px 2px}
+ header h1{font-size:16px}
+ nav{padding:4px 10px 8px}
+ nav button{padding:7px 10px}
+ main{padding:12px 12px 50px}
+ main.teach{padding:8px 10px 6px}
+ .stephead{flex-wrap:wrap;margin-bottom:6px}
+ .stephead .num{width:32px;height:32px;line-height:32px;font-size:17px;margin-right:8px}
+ .stephead h2{font-size:21px}
+ .lsel{order:9;max-width:none;width:100%;margin:6px 0 0;padding:7px 8px}
+ .stepnav{margin-top:8px;gap:8px}
+ .stepnav button{font-size:16px;padding:12px 6px}
+ .tbar.scroll,.items{flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+ .tbar.scroll>*,.items>*{flex-shrink:0}
+ .tbar.scroll .sp{display:none}
+ .bigcard{padding:18px 16px;border-radius:14px}
+ .qcard{padding:18px 14px}
+ .hide-m{display:none!important}
+ .show-m{display:inline!important}
+ .kidsfit{overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+ .kidsfit .kids{grid-template-columns:repeat(3,1fr);gap:6px}
+ .kidsfit .kid{padding:10px 4px}
+ .kidsfit .kid .n{font-size:18px}.kidsfit .kid .p{font-size:12px}
+ .ktable tr.krow{display:flex;flex-wrap:wrap;align-items:center;border-bottom:1px solid #e6ddd0;padding:8px 0}
+ .ktable tr.krow td{border:0;padding:2px 4px}
+ .ktable tr.krow td.nm{flex:1}
+ .ktable tr.krow td.act{width:100%;text-align:left!important;white-space:normal!important}
+ .ktable tr.khead{display:none}
+ .panel{padding:16px 14px;border-radius:12px}
+ .modal{padding:10px 6px}
+ h2{font-size:19px}
+ .card{padding:12px}
+}
 @media print{header,main,.actions,.close,.noprint{display:none!important}.modal{position:static;display:block!important;background:none;padding:0}.panel{max-width:none}}
 
 @supports not (display:grid){.kids,.grid{display:flex;flex-wrap:wrap}.kid{width:6.5em;margin:.2em}}
@@ -995,6 +1035,13 @@ function render() {
       n = _ref8[1];
     return `<button class="${k === tab ? 'on' : ''}" onclick="go('${k}')">${n}</button>`;
   }).join('')}</nav>`;
+  {
+    var on = hd.querySelector('nav .on');
+    if (on) {
+      var n = on.parentNode;
+      n.scrollLeft = on.offsetLeft - (n.clientWidth - on.offsetWidth) / 2;
+    }
+  }
   var f = {
     rules: tRules,
     worship: tWorship,
@@ -1297,6 +1344,10 @@ function layout() {
   document.querySelectorAll('.fit').forEach(fitText);
 }
 function fitText(e) {
+  if (window.innerWidth <= 600 && e.classList.contains('kidsfit')) {
+    e.style.fontSize = '';
+    return;
+  }
   var f = Number(e.getAttribute('data-max')) || 40;
   e.style.fontSize = f + 'px';
   while (f > 12 && (e.scrollHeight > e.clientHeight + 1 || e.scrollWidth > e.clientWidth + 1)) {
@@ -1335,7 +1386,7 @@ function tWorship() {
   if (s) curSong = s.id;
   var yt = s && ytId(s.video);
   var box = yt || q;
-  var bar = `<div class="tbar">${q ? `<button class="pri" style="font-size:18px" onclick="playFull('${box}','${q}')">▶ 全部連續播放（${vids.length} 首）</button>` : ''}
+  var bar = `<div class="tbar scroll">${q ? `<button class="pri" style="font-size:18px" onclick="playFull('${box}','${q}')">▶ 全部連續播放（${vids.length} 首）</button>` : ''}
   ${list.map((x, i) => `<button class="${x.id === s.id ? 'blue' : 'ghost'}" onclick="curSong='${x.id}';showLyrics=false;render()">${i + 1}. ${x.theme ? '⭐ ' : ''}${h(x.title)}</button>`).join('')}
   <span class="sp"></span>${yt ? `<button class="pri" onclick="playFull('${yt}')">▶ 全螢幕播放這首</button>` : ''}${s && hasLyrics(s) ? `<button class="ghost" onclick="showLyrics=!showLyrics;render()">${showLyrics ? '🎬 看影片' : '📝 歌詞'}</button>` : ''}<button class="ghost" onclick="quickSongDlg()">＋ 加歌</button></div>`;
   if (!s) return stepPage(bar + '<div class="empty">這一課還沒有敬拜詩歌，按「＋ 加歌」貼上 YouTube 網址</div>');
@@ -1402,7 +1453,7 @@ function tQA() {
   if (!q.length) return stepPage('<div class="empty">這一課還沒有問答題目</div>');
   if (qIdx >= q.length) qIdx = q.length - 1;
   if (qAll) return stepPage(`<div class="tbar"><span class="sp"></span><button class="ghost" onclick="qAll=false;render()">一題一題看</button></div><div class="bigcard fit" data-max="36"><ol>${q.map(x => `<li>${h(x)}</li>`).join('')}</ol></div>`);
-  return stepPage(`<div class="tbar"><b style="font-size:18px">第 ${qIdx + 1} 題 / 共 ${q.length} 題</b><span class="sp"></span><button class="ghost" ${qIdx ? '' : 'disabled'} onclick="qIdx--;render()">← 上一題</button><button class="blue" ${qIdx < q.length - 1 ? '' : 'disabled'} onclick="qIdx++;render()">下一題 →</button><button class="ghost" onclick="qAll=true;render()">全部列出</button></div>
+  return stepPage(`<div class="tbar scroll"><b style="font-size:18px;white-space:nowrap">第 ${qIdx + 1} 題 / 共 ${q.length} 題</b><span class="sp"></span><button class="ghost" ${qIdx ? '' : 'disabled'} onclick="qIdx--;render()">← 上一題</button><button class="blue" ${qIdx < q.length - 1 ? '' : 'disabled'} onclick="qIdx++;render()">下一題 →</button><button class="ghost" onclick="qAll=true;render()">全部列出</button></div>
   <div class="qcard fit" data-max="56">${h(q[qIdx])}</div>`);
 }
 function tPray() {
@@ -1432,7 +1483,7 @@ function verseHtml(s, lang) {
 function tVerse() {
   var l = cur();
   if (!l.id) return stepPage('');
-  return stepPage(`<div class="tbar">${[['both', '中英'], ['zh', '中文'], ['en', 'English']].map(_ref9 => {
+  return stepPage(`<div class="tbar scroll">${[['both', '中英'], ['zh', '中文'], ['en', 'English']].map(_ref9 => {
     var _ref0 = _slicedToArray(_ref9, 2),
       k = _ref0[0],
       n = _ref0[1];
@@ -1486,10 +1537,10 @@ function tPoints() {
   var kids = D.kids.filter(k => k.active).sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'));
   var auto = nowHM() < S.cutoff;
   var hint = manageKids ? '管理名單中：點孩子的名字可以隱藏、改名或刪除' + (D.kids.some(k => !k.active) ? `　<a href="#" onclick="hiddenKidsDlg();return false">查看已隱藏的孩子（${D.kids.filter(k => !k.active).length}）</a>` : '') : pickItem === null ? `點名字＝報到（現在 ${nowHM()}，${auto ? '準時 +' + S.onPts : '晚到 +' + S.latePts}）` : pickItem === 'on' ? '點名字＝準時報到 +' + S.onPts : pickItem === 'late' ? '點名字＝晚到報到 +' + S.latePts : '點名字＝「' + h(S.items[pickItem].name) + '」，再點一次取消';
-  return `<div class="stage"><div class="stephead"><h2>⭐ ${d} 點名加點</h2><span class="sp"></span><span class="muted" style="margin-right:10px">報到 ${Object.keys(at).length} 人</span><button class="${manageKids ? 'blue' : 'ghost'}" onclick="manageKids=!manageKids;render()">${manageKids ? '✓ 完成管理' : '👥 管理名單'}</button></div>
+  return `<div class="stage"><div class="stephead"><h2>⭐ <span class="hide-m">${d} </span>點名加點</h2><span class="sp"></span><span class="muted" style="margin-right:10px;white-space:nowrap">報到 ${Object.keys(at).length} 人</span><button class="${manageKids ? 'blue' : 'ghost'}" style="white-space:nowrap" onclick="manageKids=!manageKids;render()">${manageKids ? '✓ 完成管理' : '👥 管理名單'}</button></div>
   <div class="fill"><div class="tbar items">
    <button class="${pickItem === null ? 'on' : ''}" onclick="pickItem=null;render()">✅ 報到（自動判斷）</button><button class="${pickItem === 'on' ? 'on' : ''}" onclick="pickItem='on';render()">準時 +${S.onPts}</button><button class="${pickItem === 'late' ? 'on' : ''}" onclick="pickItem='late';render()">晚到 +${S.latePts}</button>
-   <span style="width:12px"></span>
+   <span class="hide-m" style="width:12px"></span>
    ${S.items.map((it, i) => `<button class="${pickItem === i ? 'on' : ''}" onclick="pickItem=${i};render()">${h(it.name)} +${it.pts}</button>`).join('')}</div>
   <div class="muted" style="flex-shrink:0;margin-bottom:6px">${hint}</div>
   <div class="fit kidsfit" data-max="28"><div class="kids">${kids.map(k => {
@@ -1499,8 +1550,8 @@ function tPoints() {
     var done = pickItem !== null && typeof pickItem === 'number' && t.some(x => x.reason === S.items[pickItem].name);
     return `<div class="kid ${ci ? ci.reason === ciLabel(true) ? 'here' : 'here late' : ''} ${done ? 'got' : ''}" id="k_${k.id}" onclick="${manageKids ? 'kidManage' : 'tapKid'}('${k.id}')"><div class="n">${manageKids ? '✏️ ' : ''}${h(k.name)}</div><div class="p">今日 +${tp}</div><div class="p">⭐ ${bal(k.id)}</div></div>`;
   }).join('')}</div></div></div>
-  <div class="row" style="margin-top:8px;flex-shrink:0"><input id="newKid" class="sp" style="font-size:16px" placeholder="新朋友的名字" onkeydown="if(event.key==='Enter')quickKid()"><button class="pri" onclick="quickKid()">＋加入並報到</button>
-   <button class="ghost" onclick="undo()" ${undoStack.length ? '' : 'disabled'}>↶ 復原</button></div></div>`;
+  <div class="row" style="margin-top:8px;flex-shrink:0;flex-wrap:nowrap"><input id="newKid" class="sp" style="font-size:16px;min-width:0" placeholder="新朋友的名字" onkeydown="if(event.key==='Enter')quickKid()"><button class="pri" style="white-space:nowrap" onclick="quickKid()">＋<span class="hide-m">加入並報到</span><span class="show-m">新朋友</span></button>
+   <button class="ghost" style="white-space:nowrap" onclick="undo()" ${undoStack.length ? '' : 'disabled'}>↶<span class="hide-m"> 復原</span></button></div></div>`;
 }
 var manageKids = false;
 function kidManage(id) {
@@ -1923,8 +1974,8 @@ var showInactive = false;
 function pKids() {
   var ks = D.kids.filter(k => showInactive || k.active).sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'));
   return `<div class="row" style="margin-bottom:10px"><h2 class="sp">孩子點數</h2><label class="muted"><input type="checkbox" ${showInactive ? 'checked' : ''} onchange="showInactive=this.checked;render()"> 顯示已停用</label><button class="blue" onclick="editKid()">＋新增孩子</button></div>
- <div class="card"><table><tr><th>名字</th><th>點數</th><th></th></tr>${ks.map(k => `<tr style="${k.active ? '' : 'opacity:.5'}"><td><b>${h(k.name)}</b> ${k.flag ? '<span class="flag" title="需要留意">⚠️</span>' : ''}<div class="muted">${h(k.group)}${k.flag && k.flagNote ? ' · ' + h(k.flagNote) : ''}</div></td><td><b>⭐ ${bal(k.id)}</b></td>
- <td style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="adjDlg('${k.id}')">加減點</button> <button class="sm pri" onclick="redeemDlg('${k.id}')">兌換</button> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button> <button class="sm ghost" onclick="editKid('${k.id}')">編輯</button> <button class="sm danger" onclick="deleteKid('${k.id}')">刪除</button></td></tr>`).join('')}</table></div>
+ <div class="card"><table class="ktable"><tr class="khead"><th>名字</th><th>點數</th><th></th></tr>${ks.map(k => `<tr class="krow" style="${k.active ? '' : 'opacity:.5'}"><td class="nm"><b>${h(k.name)}</b> ${k.flag ? '<span class="flag" title="需要留意">⚠️</span>' : ''}<div class="muted">${h(k.group)}${k.flag && k.flagNote ? ' · ' + h(k.flagNote) : ''}</div></td><td class="pt"><b>⭐ ${bal(k.id)}</b></td>
+ <td class="act" style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="adjDlg('${k.id}')">加減點</button> <button class="sm pri" onclick="redeemDlg('${k.id}')">兌換</button> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button> <button class="sm ghost" onclick="editKid('${k.id}')">編輯</button> <button class="sm danger" onclick="deleteKid('${k.id}')">刪除</button></td></tr>`).join('')}</table></div>
  <p class="muted">「啟用」取消勾選＝隱藏。隱藏的孩子不會出現在點名畫面，但點數和紀錄都會保留，回來時再啟用就好。</p>`;
 }
 function editKid(id) {
@@ -2057,7 +2108,7 @@ function saveSession() {
 /* ============ 會議 ============ */
 function pMeetings() {
   return `<div class="row" style="margin-bottom:10px"><h2 class="sp">會議</h2><button class="blue" onclick="newMeeting()">＋新會議</button></div>
- <p class="muted">開會時每位老師在自己手機登入、進入同一個會議，各自在議程下輸入意見、決議、待辦，系統會整合成一份會議記錄。（初版資料存在本機，要接上雲端後才能多支手機同步。）</p>
+ <p class="muted">開會時每位老師用自己的手機進入同一個會議，各自在議程下輸入意見、決議、待辦，幾秒內大家都看得到，最後按「整合會議記錄」合成一份。</p>
  ${[...D.meetings].sort((a, b) => b.date.localeCompare(a.date)).map(m => `<div class="card row"><div class="sp"><b>${h(m.title)}</b><div class="muted">${h(m.date)} · ${m.agenda.length} 項議程 · ${m.entries.length} 則紀錄</div></div><button class="sm blue" onclick="curMeeting='${m.id}';go('meeting')">進入</button></div>`).join('') || '<div class="empty">還沒有會議</div>'}`;
 }
 function newMeeting() {
