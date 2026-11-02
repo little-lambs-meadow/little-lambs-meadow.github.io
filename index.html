@@ -51,6 +51,8 @@ body.bpmf .zy .zh,body.bpmf .zy .en,body.bpmf .zy b{font-weight:400}
 body.bpmf .zy .en,body.bpmf .zy .ref{font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
 .zybtn.on{background:#fff;color:#e2572a}
 .proj .en{line-height:1.45}.tok.tap{cursor:pointer}.tok.tap:hover{text-decoration:underline dotted}
+.rules2{display:flex;flex-direction:row;align-items:flex-start;gap:0}.rules2 .rcol{flex:1;min-width:0}.rules2 .rhd{color:#f2c46b;margin-bottom:.2em}.rules2 .rsep{align-self:stretch;width:0;border-left:2px dashed rgba(255,255,255,0.25);margin:0 .8em}.rules2 ol{margin:0;padding-left:1.4em}
+@media (max-width:700px){.rules2{flex-direction:column;align-items:stretch}.rules2 .rsep{width:auto;border-left:0;border-top:2px dashed rgba(255,255,255,0.25);margin:.4em 0}}
 .tok.say{background:#f2c46b;color:#1f1b2e;border-radius:4px}
 .video{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000}
 .video:fullscreen{padding-top:0!important;border-radius:0;width:100%!important;height:100%!important}.video:-webkit-full-screen{padding-top:0!important;border-radius:0;width:100%!important;height:100%!important}
@@ -1511,8 +1513,8 @@ window.addEventListener('resize', () => {
 function tRules() {
   var r = D.settings.rules || [],
     w = D.settings.reasons || [];
-  return stepPage(`<div class="bigcard fit zy" data-max="44"><div style="color:#f2c46b;margin-bottom:.2em">📏 主日學規則 —— 我們一起念一遍！</div><ol>${r.map(x => `<li>${h(x)}</li>`).join('')}</ol>
-  ${w.length ? `<div style="border-top:2px dashed #ffffff40;margin:.35em 0 .3em"></div><div style="color:#f2c46b;margin-bottom:.2em">❤️ 參加主日學的原因</div><ol>${w.map(x => `<li>${h(x)}</li>`).join('')}</ol>` : ''}</div>`, false);
+  return stepPage(`<div class="bigcard fit zy" data-max="44"><div class="rules2"><div class="rcol"><div class="rhd">📏 主日學規則</div><ol>${r.map(x => `<li>${h(x)}</li>`).join('')}</ol></div>
+  ${w.length ? `<div class="rsep"></div><div class="rcol"><div class="rhd">❤️ 參加主日學的原因</div><ol>${w.map(x => `<li>${h(x)}</li>`).join('')}</ol></div>` : ''}</div></div>`, false);
 }
 function worshipList(l) {
   var ids = [];
