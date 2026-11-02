@@ -327,7 +327,7 @@ function cloudStart(){if(!Cloud.url)return;
 }
 
 /* ============ 狀態 ============ */
-let user=null;try{user=sessionStorage.getItem('ss_user')}catch(e){}
+let user=null;try{user=localStorage.getItem('llm_user')||sessionStorage.getItem('ss_user')}catch(e){}
 let mode=user?'staff':'teach', tab=user?'lessons':'rules';
 let curLesson=null, curSong=null, curMeeting=null, verseLang='both', hidTok=new Set(), fontSize=26, pickItem=null, undoStack=[];
 
@@ -408,7 +408,7 @@ function render(){
  const hd=document.getElementById('hdr');hd.className=mode;
  const tabs=mode==='teach'?TEACH_TABS:STAFF_TABS;
  hd.innerHTML=`<div class="hrow"><h1>🐑 ${h(D.settings.church)}${mode==='teach'?' · 教學':' · '+h(user||'老師區')}</h1>
-  <div class="who">${cloudBadge()}${user?`<span class="uname">👤 ${h(user)}${isAdmin()?'（主控）':''}</span>`:''}
+  <div class="who">${cloudBadge()}${user?`<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>`:''}
    ${mode==='teach'?`<button class="sm" onclick="${user||!authOn()?"setMode('staff')":'loginDlg()'}">${user||!authOn()?'老師區':'老師登入'}</button>`:`<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn()&&user?`<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>`:''}`}</div></div>
   <nav>${tabs.map(([k,n])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${n}</button>`).join('')}</nav>`;
  {const on=hd.querySelector('nav .on');if(on){const n=on.parentNode;n.scrollLeft=on.offsetLeft-(n.clientWidth-on.offsetWidth)/2}}
@@ -422,37 +422,47 @@ const val=id=>document.getElementById(id).value.trim();
 const activeT=()=>D.teachers.filter(t=>t.active!==false);
 const me=()=>D.teachers.find(t=>t.name===user);
 const authOn=()=>!!D.settings.auth;
-const isAdmin=()=>!authOn()||(me()||{}).role==='admin';
+const ROLES={admin:'主控',designer:'設計師',teacher:'老師'};
+const isAdminRole=r=>r==='admin'||r==='designer';
+const isAdmin=()=>!authOn()||isAdminRole((me()||{}).role);
+const roleName=t=>ROLES[(t||{}).role]||'老師';
 const teacherNames=()=>authOn()?activeT().map(t=>t.name):(D.settings.teacherNames||[]);
 async function hashPw(pw){const t=new TextEncoder().encode('xiaoyang|'+pw);
  try{const b=await crypto.subtle.digest('SHA-256',t);return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
  catch(e){let a=5381,c=52711;for(const x of t){a=((a*33)^x)>>>0;c=((c*31)+x)>>>0}return 'f'+a.toString(16)+c.toString(16)}}
 function pwOk(p,p2){if(p.length<6){toast('密碼至少 6 碼');return false}if(p!==p2){toast('兩次密碼不一樣');return false}return true}
-function setUser(n){user=n;try{n?sessionStorage.setItem('ss_user',n):sessionStorage.removeItem('ss_user')}catch(e){}}
+function setUser(n){user=n;try{if(n)localStorage.setItem('llm_user',n);else localStorage.removeItem('llm_user');sessionStorage.removeItem('ss_user')}catch(e){}}
+function cloudNow(){return new Promise(r=>{if(!Cloud.pw)return r();let n=0;
+ const w2=()=>{if(Cloud.busy&&n++<60)return setTimeout(w2,200);if(Cloud.needRebuild)cloudRebuild();r()};
+ const w1=()=>{if(Cloud.busy&&n++<60)return setTimeout(w1,200);cloudTick();setTimeout(w2,150)};w1()})}
+function needCloud(){if(Cloud.url&&!Cloud.pw){toast('請先輸入教會密碼連上雲端');cloudDlg();return true}return false}
 function loginDlg(){
- if(!D.teachers.some(t=>t.role==='admin'))return setupDlg();
+ if(Cloud.needRebuild)cloudRebuild();if(needCloud())return;
+ if(!D.teachers.some(t=>isAdminRole(t.role)))return setupDlg();
  const ts=activeT();
  openModal(`<h2>🐑 老師登入</h2>
  <label class="f">你是哪位老師<select id="lg_u">${ts.map(t=>`<option>${h(t.name)}</option>`).join('')}</select></label>
  <label class="f">密碼<input id="lg_p" type="password" onkeydown="if(event.key==='Enter')doLogin()"></label>
  <div class="actions"><button class="blue" onclick="doLogin()">登入</button></div>
- <div class="notice" style="margin-top:14px">第一次使用？請向主控同工索取驗證碼，再 <a href="#" onclick="registerDlg();return false"><b>用驗證碼註冊</b></a>。<br>忘記密碼請找主控重設。</div>`);
+ <div class="notice" style="margin-top:14px">第一次使用？請向主控同工索取驗證碼，再 <a href="#" onclick="registerDlg();return false"><b>用驗證碼註冊</b></a>。<br>忘記密碼請找主控重設。</div>
+ <p class="muted">登入後會記住在這台裝置，不用每次輸入；換人使用請按「登出」。</p>`);
  setTimeout(()=>{const e=document.getElementById('lg_p');e&&e.focus()},50);
 }
 async function doLogin(){const t=D.teachers.find(x=>x.name===val('lg_u'));
  if(!t||t.active===false||t.pwHash!==await hashPw(document.getElementById('lg_p').value)){toast('密碼不正確');return}
  setUser(t.name);closeModal();setMode('staff');toast('歡迎，'+t.name)}
 function setupDlg(){openModal(`<h2>🐑 小羊樂園 初次設定</h2>
- <p class="muted">建立第一個「主控」帳號。主控可以發驗證碼讓其他老師註冊、管理老師帳號和系統設定。</p>
- <label class="f">你的稱呼<input id="su_n" placeholder="例如：林傳道"></label>
+ <p class="muted">建立第一個管理帳號。主控和設計師都可以發驗證碼讓老師註冊、管理老師帳號和系統設定。</p>
+ <label class="f">你的稱呼<input id="su_n" placeholder="例如：Jimmy、林傳道"></label>
+ <label class="f">身分<select id="su_r"><option value="admin">主控（負責同工、院長）</option><option value="designer">設計師（負責 app 程式）</option></select></label>
  <label class="f">設定密碼（至少 6 碼）<input id="su_p" type="password"></label>
  <label class="f">再輸入一次<input id="su_p2" type="password"></label>
- <div class="actions"><button class="blue" onclick="doSetup()">建立主控帳號</button></div>`)}
+ <div class="actions"><button class="blue" onclick="doSetup()">建立帳號</button></div>`)}
 async function doSetup(){const n=val('su_n'),p=document.getElementById('su_p').value;
  if(!n){toast('請填稱呼');return}if(!pwOk(p,document.getElementById('su_p2').value))return;
- D.settings.auth=true;D.teachers.push({id:uid(),name:n,role:'admin',active:true,pwHash:await hashPw(p),created:today()});
- setUser(n);save('建立主控帳號 '+n);closeModal();setMode('staff');go('settings');toast('主控帳號建立完成')}
-function registerDlg(){openModal(`<h2>🐑 老師註冊</h2>
+ const r=val('su_r')||'admin';D.settings.auth=true;D.teachers.push({id:uid(),name:n,role:r,active:true,pwHash:await hashPw(p),created:today()});
+ setUser(n);save('建立'+ROLES[r]+'帳號 '+n);closeModal();setMode('staff');go('settings');toast(ROLES[r]+'帳號建立完成')}
+function registerDlg(){if(Cloud.needRebuild)cloudRebuild();if(needCloud())return;openModal(`<h2>🐑 老師註冊</h2>
  <p class="muted">請輸入主控同工給你的驗證碼（6 碼，限用一次）。</p>
  <label class="f">驗證碼<input id="rg_c" style="text-transform:uppercase;letter-spacing:4px;font-size:20px" maxlength="8"></label>
  <label class="f">你的稱呼（例如：陳老師、美玲姊妹）<input id="rg_n"></label>
@@ -461,7 +471,8 @@ function registerDlg(){openModal(`<h2>🐑 老師註冊</h2>
  <div class="actions"><button class="blue" onclick="doRegister()">註冊</button><button class="ghost" onclick="loginDlg()">返回登入</button></div>`)}
 async function doRegister(){
  const code=val('rg_c').toUpperCase().replace(/\s/g,''),n=val('rg_n'),p=document.getElementById('rg_p').value;
- const inv=D.invites.find(i=>i.code===code);
+ let inv=D.invites.find(i=>i.code===code);
+ if(!inv&&Cloud.pw){toast('正在確認驗證碼…');await cloudNow();inv=D.invites.find(i=>i.code===code)}
  if(!inv||inv.revoked){toast('驗證碼不正確');return}
  if(inv.usedBy){toast('這組驗證碼已經被使用過');return}
  if(Date.now()>inv.expires){toast('驗證碼已過期，請向主控重新索取');return}
@@ -469,7 +480,7 @@ async function doRegister(){
  if(D.teachers.some(t=>t.name===n)){toast('已經有同名的老師，請換個稱呼');return}
  if(!pwOk(p,document.getElementById('rg_p2').value))return;
  D.teachers.push({id:uid(),name:n,role:'teacher',active:true,pwHash:await hashPw(p),created:today()});
- inv.usedBy=n;inv.usedAt=today();setUser(n);save('用驗證碼 '+code+' 註冊');closeModal();setMode('staff');toast('註冊完成，歡迎 '+n)}
+ inv.usedBy=n;inv.usedAt=today();setUser(n);save('用驗證碼 '+code+' 註冊');closeModal();setMode('staff');toast('註冊完成，歡迎 '+n);cloudSoon()}
 function logout(){setUser(null);setMode('teach')}
 
 /* ============ 教學模式 ============ */
@@ -616,10 +627,10 @@ function kidManage(id){const k=kid(id);
  <label class="f">改名<input id="km_n" value="${h(k.name)}"></label>
  <div class="actions"><button class="blue" onclick="renameKid('${id}')">儲存名字</button></div>
  <div class="card" style="margin-top:12px"><b>🙈 隱藏</b><p class="muted">不再出現在點名畫面，點數和紀錄都保留，之後可以恢復。適合暫時不來的孩子。</p><button onclick="hideKid('${id}')">隱藏這位孩子</button></div>
- <div class="card" style="border-color:#f0c4c4"><b style="color:#c33">🗑 刪除</b><p class="muted">連同所有點數和紀錄一起永久刪除，無法復原。適合輸入錯誤的名字。</p><button class="danger" onclick="deleteKid('${id}')">永久刪除</button></div>`)}
+ ${isAdmin()?'':'<p class="muted">永久刪除只有主控或設計師可以做。</p>'}${!isAdmin()?'':`<div class="card" style="border-color:#f0c4c4"><b style="color:#c33">🗑 刪除</b><p class="muted">連同所有點數和紀錄一起永久刪除，無法復原。適合輸入錯誤的名字。</p><button class="danger" onclick="deleteKid('${id}')">永久刪除</button></div>`}`)}
 function renameKid(id){const n=document.getElementById('km_n').value.trim();if(!n)return;const k=kid(id);const o=k.name;k.name=n;save('孩子改名 '+o+' → '+n);closeModal();render();toast('已改名為 '+n)}
 function hideKid(id){const k=kid(id);k.active=false;save('隱藏孩子 '+k.name);closeModal();render();toast('已隱藏 '+k.name)}
-function deleteKid(id){const k=kid(id);if(!confirm(`確定要永久刪除「${k.name}」和他所有的點數紀錄嗎？`))return;
+function deleteKid(id){if(!isAdmin()){toast('只有主控或設計師可以刪除');return}const k=kid(id);if(!confirm(`確定要永久刪除「${k.name}」和他所有的點數紀錄嗎？`))return;
  D.kids=D.kids.filter(x=>x.id!==id);D.ledger=D.ledger.filter(x=>x.kidId!==id);
  for(const d in D.attend)delete D.attend[d][id];D.sessions.forEach(s=>{s.kidNotes=(s.kidNotes||[]).filter(n=>n.kidId!==id)});
  undoStack=[];save('刪除孩子 '+k.name);closeModal();render();toast('已刪除 '+k.name)}
@@ -667,7 +678,7 @@ function editLesson(id){
   v.songIds=v.songIds.map(t=>(D.songs.find(s=>s.title===t)||{}).id).filter(Boolean);
   if(!v.title){toast('請填課名');return false}
   if(id)Object.assign(l,v);else D.lessons.push({id:uid(),...v});save((id?'修改':'新增')+'課程 '+v.title);
- },id?`<div class="actions"><button class="danger" onclick="if(confirm('刪除這一課？')){D.lessons=D.lessons.filter(x=>x.id!=='${id}');save('刪除課程');closeModal();render()}">刪除這一課</button></div>`:'');
+ },id&&isAdmin()?`<div class="actions"><button class="danger" onclick="if(confirm('刪除這一課？')){D.lessons=D.lessons.filter(x=>x.id!=='${id}');save('刪除課程');closeModal();render()}">刪除這一課</button></div>`:'');
 }
 const IMP_MAP={'前言':'intro','妙妙書前言':'intro','破冰':'expSteps','破冰遊戲':'iceName','問答':'questions','禱告':'prayer','日期':'date','經文':'scripture','影片':'video','故事':'story','重點':'story','故事重點':'story','體驗':'expSteps','體驗活動':'expSteps','道具':'props','安全':'safety','安全提醒':'safety','討論':'questions','討論問題':'questions','金句出處':'verseRef','中文金句':'verseZh','金句':'verseZh','英文金句':'verseEn','備註':'notes'};
 const IMP_LISTS=['expSteps','props','questions'];
@@ -724,7 +735,7 @@ function pSongs(){
 function editSong(id){const s=id?D.songs.find(x=>x.id===id):{};
  form(id?'編輯詩歌':'新增詩歌',[['title','歌名'],['season','季（例如 第一季）'],['theme','⭐ 本季主題詩歌（每堂敬拜都會出現）','bool'],['video','YouTube 網址（單首或播放清單）'],['lyrics','歌詞（選填）','textarea'],['notes','教唱重點／動作提示','textarea']],s,v=>{
   if(!v.title){toast('請填歌名');return false}if(id)Object.assign(s,v);else D.songs.push({id:uid(),...v});save((id?'修改':'新增')+'詩歌 '+v.title)},
-  id?`<div class="actions"><button class="danger" onclick="if(confirm('刪除這首詩歌？')){D.songs=D.songs.filter(x=>x.id!=='${id}');save('刪除詩歌');closeModal();render()}">刪除</button></div>`:'')}
+  id&&isAdmin()?`<div class="actions"><button class="danger" onclick="if(confirm('刪除這首詩歌？')){D.songs=D.songs.filter(x=>x.id!=='${id}');save('刪除詩歌');closeModal();render()}">刪除</button></div>`:'')}
 
 /* ============ 成發 ============ */
 function pShows(){
@@ -740,7 +751,7 @@ function editShow(id){const s=id?D.shows.find(x=>x.id===id):{items:[],tasks:[]};
  form(id?'編輯成發':'新增成發',[['title','名稱'],['season','季'],['date','日期','date'],['items','節目（一行一個：節目 | 負責 | 分鐘）','lines'],['tasks','準備事項（一行一個：事項 | 負責人）','lines'],['notes','備註（彩排時間、場地等）','textarea']],o,v=>{
   v.items=pairs(v.items);v.tasks=pairs(v.tasks).map(p=>({t:p[0],o:p[1]||'',done:!!(s.tasks.find(x=>x.t===p[0])||{}).done}));
   if(!v.title){toast('請填名稱');return false}if(id)Object.assign(s,v);else D.shows.push({id:uid(),...v});save((id?'修改':'新增')+'成發 '+v.title)},
-  id?`<div class="actions"><button class="danger" onclick="if(confirm('刪除？')){D.shows=D.shows.filter(x=>x.id!=='${id}');save('刪除成發');closeModal();render()}">刪除</button></div>`:'')}
+  id&&isAdmin()?`<div class="actions"><button class="danger" onclick="if(confirm('刪除？')){D.shows=D.shows.filter(x=>x.id!=='${id}');save('刪除成發');closeModal();render()}">刪除</button></div>`:'')}
 function printShow(id){const s=D.shows.find(x=>x.id===id);
  openModal(`<div style="text-align:center"><h2>${h(s.title)}</h2><div class="muted">${h(s.date)}</div></div><table style="margin-top:14px;font-size:16px">${s.items.map((x,i)=>`<tr><td>${i+1}</td><td>${h(x[0])}</td><td>${h(x[1])}</td></tr>`).join('')}</table><div class="actions"><button onclick="window.print()">🖨 列印</button></div>`)}
 
@@ -750,7 +761,7 @@ function pKids(){
  const ks=D.kids.filter(k=>showInactive||k.active).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
  return `<div class="row" style="margin-bottom:10px"><h2 class="sp">孩子點數</h2><label class="muted"><input type="checkbox" ${showInactive?'checked':''} onchange="showInactive=this.checked;render()"> 顯示已停用</label><button class="blue" onclick="editKid()">＋新增孩子</button></div>
  <div class="card"><table class="ktable"><tr class="khead"><th>名字</th><th>點數</th><th></th></tr>${ks.map(k=>`<tr class="krow" style="${k.active?'':'opacity:.5'}"><td class="nm"><b>${h(k.name)}</b> ${k.flag?'<span class="flag" title="需要留意">⚠️</span>':''}<div class="muted">${h(k.group)}${k.flag&&k.flagNote?' · '+h(k.flagNote):''}</div></td><td class="pt"><b>⭐ ${bal(k.id)}</b></td>
- <td class="act" style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="adjDlg('${k.id}')">加減點</button> <button class="sm pri" onclick="redeemDlg('${k.id}')">兌換</button> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button> <button class="sm ghost" onclick="editKid('${k.id}')">編輯</button> <button class="sm danger" onclick="deleteKid('${k.id}')">刪除</button></td></tr>`).join('')}</table></div>
+ <td class="act" style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="adjDlg('${k.id}')">加減點</button> <button class="sm pri" onclick="redeemDlg('${k.id}')">兌換</button> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button> <button class="sm ghost" onclick="editKid('${k.id}')">編輯</button>${isAdmin()?` <button class="sm danger" onclick="deleteKid('${k.id}')">刪除</button>`:''}</td></tr>`).join('')}</table></div>
  <p class="muted">「啟用」取消勾選＝隱藏。隱藏的孩子不會出現在點名畫面，但點數和紀錄都會保留，回來時再啟用就好。</p>`;
 }
 function editKid(id){const k=id?kid(id):{active:true};
@@ -799,7 +810,7 @@ function sessionDlg(id,preset){
  <label class="f">交接給下一位老師<textarea id="s_h">${h(s.handover)}</textarea></label>
  <div class="sec"><h4>個別孩子備註</h4><label class="muted"><input type="checkbox" ${sessAll?'checked':''} onchange="sessAll=this.checked;keepSess()"> 顯示所有孩子（預設只顯示當天出席）</label>
  ${ks.map(k=>`<div class="row" style="margin-top:6px"><b style="width:70px">${h(k.name)}</b><input class="sp kn" data-k="${k.id}" value="${h(note(k).note)}" placeholder="狀況備註（可空白）"><label class="muted"><input type="checkbox" class="kf" data-k="${k.id}" ${note(k).flag?'checked':''}> 需留意</label></div>`).join('')||'<div class="muted">當天還沒有人簽到</div>'}</div>
- <div class="actions"><button class="blue" onclick="saveSession()">儲存</button>${id?`<button class="danger" onclick="if(confirm('刪除這筆紀錄？')){D.sessions=D.sessions.filter(x=>x.id!=='${id}');save('刪除上課紀錄');closeModal();render()}">刪除</button>`:''}</div>`);
+ <div class="actions"><button class="blue" onclick="saveSession()">儲存</button>${id&&(isAdmin()||s.by===user)?`<button class="danger" onclick="if(confirm('刪除這筆紀錄？')){D.sessions=D.sessions.filter(x=>x.id!=='${id}');save('刪除上課紀錄');closeModal();render()}">刪除</button>`:''}</div>`);
 }
 function readSess(){const s=window._sess.s;
  const v={date:document.getElementById('s_date').value||today(),lessonId:document.getElementById('s_lesson').value,
@@ -865,18 +876,18 @@ async function changeMyPw(){const t=me();if(t.pwHash!==await hashPw(document.get
 function pSettings(){const S=D.settings;
  if(authOn()&&!isAdmin())return `<h2>設定</h2>${myAccount()}<div class="card"><h3>資料備份</h3><button onclick="exportAll()">⬇ 匯出備份</button></div><p class="muted">系統設定與老師帳號由主控管理。</p>`;
  const now=Date.now();const open=D.invites.filter(i=>!i.usedBy&&!i.revoked&&i.expires>now);const used=D.invites.filter(i=>i.usedBy).slice(-5).reverse();
- const admins=D.teachers.filter(t=>t.role==='admin'&&t.active!==false).length;
+ const admins=D.teachers.filter(t=>isAdminRole(t.role)&&t.active!==false).length;
  const authCard=authOn()?`<div class="card"><div class="row"><h3 class="sp">🔐 老師帳號登入：已啟用</h3><button class="sm danger" onclick="if(confirm('關閉帳號登入？帳號資料會保留')){D.settings.auth=false;setUser(null);save('關閉老師帳號登入');render()}">關閉</button></div></div>`
-  :`<div class="card"><h3>🔐 老師帳號（規劃中，目前未啟用）</h3><p class="muted">啟用後，老師要用自己的帳號登入才能進老師區；新老師需要主控發的驗證碼才能註冊。目前未啟用，任何人都能進老師區。</p>
-   <button class="ghost" onclick="enableAuth()">試用帳號功能</button></div>`;
- return `<h2>設定${authOn()?'（主控）':''}</h2>${authCard}${authOn()?`
+  :`<div class="card" style="border-color:var(--blue)"><h3>🔐 老師帳號（尚未啟用）</h3><p class="muted">啟用後：老師用自己的帳號登入才能進老師區；新老師需要主控或設計師發的驗證碼才能註冊；刪除孩子、課程和修改設定只有主控和設計師能做。教學模式（上課畫面）不需要登入。</p>
+   <button class="blue" onclick="enableAuth()">啟用老師帳號</button></div>`;
+ return `<h2>設定${authOn()?'（'+roleName(me())+'）':''}</h2>${authCard}${authOn()?`
  <div class="card"><h3>🔑 發驗證碼給新老師</h3><p class="muted">每組驗證碼限用一次、7 天內有效。用 LINE 傳給老師，老師在登入畫面點「用驗證碼註冊」。</p>
  <div class="row"><input id="iv_note" class="sp" placeholder="給誰（例如：陳姊妹）"><button class="blue" onclick="genInvite()">產生驗證碼</button></div>
  ${open.map(i=>`<div class="row card" style="margin:8px 0"><b style="font-size:22px;letter-spacing:3px;font-family:monospace">${i.code}</b><span class="sp muted">${h(i.note)} · ${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效</span><button class="sm ghost" onclick="copyInvite('${i.code}')">複製訊息</button><button class="sm danger" onclick="revokeInvite('${i.code}')">作廢</button></div>`).join('')}
  ${used.length?`<div class="muted" style="margin-top:6px">最近使用：${used.map(i=>`${i.code} → ${h(i.usedBy)}（${h(i.usedAt)}）`).join('、')}</div>`:''}</div>
- <div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.map(t=>`<tr style="${t.active===false?'opacity:.5':''}"><td><b>${h(t.name)}</b> ${t.role==='admin'?'<span class="tag t">主控</span>':'<span class="tag o">老師</span>'}${t.active===false?' <span class="tag">已停用</span>':''}<div class="muted">${h(t.created||'')} 加入</div></td>
- <td style="text-align:right">${t.name===user?'<span class="muted">（你）</span>':`<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <button class="sm ghost" onclick="toggleRole('${t.id}')">${t.role==='admin'?'改為老師':'設為主控'}</button> <button class="sm ${t.active===false?'ghost':'danger'}" onclick="toggleT('${t.id}')">${t.active===false?'啟用':'停用'}</button>`}</td></tr>`).join('')}</table>
- <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前主控 ${admins} 位，建議至少兩位，避免主控忘記密碼時沒人能管理。</p></div>
+ <div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.map(t=>`<tr style="${t.active===false?'opacity:.5':''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role)?'t':'o'}">${roleName(t)}</span>${t.active===false?' <span class="tag">已停用</span>':''}<div class="muted">${h(t.created||'')} 加入</div></td>
+ <td style="text-align:right">${t.name===user?'<span class="muted">（你）</span>':`<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).map(r=>`<option value="${r}" ${(t.role||'teacher')===r?'selected':''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active===false?'ghost':'danger'}" onclick="toggleT('${t.id}')">${t.active===false?'啟用':'停用'}</button>`}</td></tr>`).join('')}</table>
+ <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議。</p></div>
 `:''}
  <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
  <label class="f">① 主日學規則（一行一條，上課時大家一起念）<textarea id="st_rules">${h((S.rules||[]).join('\n'))}</textarea></label>
@@ -892,13 +903,14 @@ function pSettings(){const S=D.settings;
  <div class="row"><button onclick="exportAll()">⬇ 匯出備份</button><label style="border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer">⬆ 匯入備份<input type="file" accept=".json" style="display:none" onchange="importAll(this.files[0])"></label>
  ${Cloud.pw?'':`<button class="danger" onclick="if(confirm('清除所有資料（含老師帳號）並恢復範例？此動作無法復原')){D=demo();setUser(null);save();setMode('teach')}">重置</button>`}</div></div>
  <div class="card"><h3>最近異動</h3><table>${D.log.slice(0,30).map(l=>`<tr><td class="muted" style="white-space:nowrap">${h(l.ts)}</td><td>${h(l.by)}</td><td>${h(l.act)}</td></tr>`).join('')||'<tr><td class="muted">無</td></tr>'}</table></div>`}
-function enableAuth(){if(!confirm('啟用老師帳號登入？之後進老師區需要登入。（可以隨時關閉）'))return;D.settings.auth=true;save('啟用老師帳號登入');if(!D.teachers.some(t=>t.role==='admin'))setupDlg();else{setMode('teach');loginDlg()}}
+function enableAuth(){if(needCloud())return;if(!confirm('啟用老師帳號？之後進老師區需要登入，所有裝置都會套用。（可以隨時關閉）'))return;if(!D.teachers.some(t=>isAdminRole(t.role)))return setupDlg();D.settings.auth=true;setUser(null);save('啟用老師帳號登入');setMode('teach');loginDlg()}
 function genInvite(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c;do{c=[...Array(6)].map(()=>A[Math.floor(Math.random()*A.length)]).join('')}while(D.invites.some(i=>i.code===c));
  D.invites.push({code:c,note:val('iv_note'),by:user,created:today(),expires:Date.now()+7*864e5});save('產生驗證碼 '+c);render();copyInvite(c)}
 function copyInvite(c){const i=D.invites.find(x=>x.code===c);copy(`🐑 小羊樂園 老師註冊驗證碼：${c}\n打開小羊樂園 app → 老師登入 → 用驗證碼註冊。\n驗證碼限用一次，${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效。`)}
 function revokeInvite(c){if(!confirm('作廢驗證碼 '+c+'？'))return;D.invites.find(x=>x.code===c).revoked=true;save('作廢驗證碼 '+c);render()}
-function toggleT(id){const t=D.teachers.find(x=>x.id===id);t.active=t.active===false;save((t.active?'啟用':'停用')+'老師 '+t.name);render()}
-function toggleRole(id){const t=D.teachers.find(x=>x.id===id);t.role=t.role==='admin'?'teacher':'admin';save(t.name+' 改為'+(t.role==='admin'?'主控':'老師'));render()}
+function lastAdmin(t){return isAdminRole(t.role)&&t.active!==false&&D.teachers.filter(x=>isAdminRole(x.role)&&x.active!==false).length<=1}
+function toggleT(id){const t=D.teachers.find(x=>x.id===id);if(t.active!==false&&lastAdmin(t)){toast('至少要保留一位主控或設計師');return}t.active=t.active===false;save((t.active?'啟用':'停用')+'老師 '+t.name);render()}
+function setRole(id,r){const t=D.teachers.find(x=>x.id===id);if(!isAdminRole(r)&&lastAdmin(t)){toast('至少要保留一位主控或設計師');render();return}t.role=r;save(t.name+' 改為'+ROLES[r]);render();toast(t.name+' 改為'+ROLES[r])}
 async function resetPw(id){const t=D.teachers.find(x=>x.id===id);const p=prompt(`替「${t.name}」設定臨時密碼（至少 6 碼），請對方登入後自己修改`);if(p===null)return;
  if(p.length<6){toast('密碼至少 6 碼');return}t.pwHash=await hashPw(p);save('重設 '+t.name+' 的密碼');toast('已重設')}
 function saveSettings(){const v=k=>document.getElementById(k).value;const S=D.settings;
