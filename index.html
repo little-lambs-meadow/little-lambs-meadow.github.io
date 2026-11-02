@@ -1508,9 +1508,79 @@ function tIntro() {
   return stepPage(`<div class="bigcard fit" data-max="40"><div style="font-size:1.25em;font-weight:700">${h(l.title)}</div><div style="color:#f2c46b;font-size:.7em;margin-bottom:.4em">📜 ${h(l.scripture)}</div>
   <div class="pre">${h(t) || '（這一課還沒有寫前言）'}</div></div>`);
 }
-/* ===== 超級妙妙書官網（superbookchinese.com）52 集 ===== */
+/* ===== 超級妙妙書 67 集：雲端硬碟（主要）＋ 官網（備用，第一～四季） ===== */
 var SB_CF = 'customer-0thff6zd3v6ksb4k';
-var SB_SEASONS = ['第一季', '第二季', '第三季', '第四季'];
+var SB_SEASONS = ['第一季', '第二季', '第三季', '第四季', '第五季'];
+/* 雲端硬碟影片（資源外部化）：小羊樂園/超級妙妙書/第X季，檔名 SX-YY */
+var SB_DRV = {
+  "s1-01": "14ABJOu_SIls_VizYua1agFraA7CjwZO6",
+  "s1-02": "1H82dQkhqIsxQD4yS_o6GZPEo66phe7Mp",
+  "s1-03": "1LiFTcnbaa2M6hWYXTYEFzj8WoUM9uYii",
+  "s1-04": "1Q2YGjhXi4Wq77rv3_x71Yb_FHcLtm010",
+  "s1-05": "10fFjjrwnpUOQBAA7bmQqgxsNKXynMSF1",
+  "s1-06": "1JZRsoEZn2c3-wwy_JuQN3PG7_ZnfrlSd",
+  "s1-07": "1ChiY0_-CMov__qgvJZhIQkuB25xgRQ2S",
+  "s1-08": "1Ld__q8476qBTIHF7l0pRvw68MPKHuXi_",
+  "s1-09": "1WceOT-LmByoc5Pu_AR6cK1XyqwNU8BhR",
+  "s1-10": "1ie29kQwQfg-RIGfG-1ufQTNwq4L6QUBs",
+  "s1-11": "1ec4Zsvn5BLkHdxehFFH75EixkD_arURf",
+  "s1-12": "1TuEjapjMHjciNVsL2V4fll08963tWwp_",
+  "s1-13": "1eJLKvaT8DyvXvaV3HsmtaOIx8mMki7D3",
+  "s2-01": "1mKfY9yBa1SZ3yHXbRPH69nLgMV9e6SQq",
+  "s2-02": "1hBfOKtm-0yHppxoD90sq1X68nJILTNrD",
+  "s2-03": "1fzXtX-7Jr3o8CKKJeC2sZmwIek8mBh46",
+  "s2-04": "1Tt4QfTOuaVRzKfRAp3YcClGKnsCH09mh",
+  "s2-05": "19z0IC__tdjhjAkEPGu1UBU9yMQUgc1SI",
+  "s2-06": "1GRNDzlyDU1_7aOq5wB6Dx0wI1N7DcbQP",
+  "s2-07": "1NtSUOMDUFukmWxfq31kRbqFPeS1LEqLA",
+  "s2-08": "1r6Kkr4sLir2lGwApSW0KT6RU4Bo2-X5K",
+  "s2-09": "1YiMS7RY8KmdXWXF3lqnyqb5tWRF5Sq8D",
+  "s2-10": "1SZjpwee8Uw8qYr2Sz8vRW3yMNKsBRWaM",
+  "s2-11": "1CbgNm5mA9eQs2lFcuf8sF8zPt_-urvjK",
+  "s2-12": "1LbjFKn5diTNaKRVh61iHSi37ZfkMfsU5",
+  "s2-13": "1IpgCwS2xNjv9pMaooav86FSTGVRIIkRi",
+  "s3-01": "15DeQg2JDA-tDVVBE2HTwtN0ZfkNMZRQ1",
+  "s3-02": "1zoLrhBhPuclH3IOp2EsaLISEzyxOjyOd",
+  "s3-03": "1PzXGHXmmnm63Fx7h0zY1YQmGeUfWCOaA",
+  "s3-04": "1s5VlR5DFW_uoCA_dV7USXTmoqY2CX6ZZ",
+  "s3-05": "1fe5O6PvWPFw8GAxRT4GPsW2BXwKY8WUC",
+  "s3-06": "11WGozVhX7j0G0xP_bTpN_qOFC1ILij5p",
+  "s3-07": "1lgbQpgel4xkb4l5YES5v6mZOOFrI-0ay",
+  "s3-08": "1yZfnu0qa2vLaZM8783jScM2kmNz-m56O",
+  "s3-09": "1yk0JMHpbGh8hB7ZO-F-NrRkmc6fd1qzj",
+  "s3-10": "15RubwdkmXzdS0dTmK_5BFcSMVeTcgTzl",
+  "s3-11": "1tYwT-wnH_zbozM1lbhM-VLS3OoJa8K4G",
+  "s3-12": "1HITB_enCPPhX4k09FiPks55gp1f9e3h3",
+  "s3-13": "19YYn36jZnBt5G4TrYGB3-8JUdOo0pVJe",
+  "s4-01": "1zqlpPXP6G3GdWDL_sJmFobLvHOl7_y13",
+  "s4-02": "1WK4ZJwQnpYiuxtCdBkgIVGgvrLjtImIQ",
+  "s4-03": "1pQgKtpyc-c3_qkyI2YncdgpwyR4vFHwU",
+  "s4-04": "1cUVS9sfuA5Rtrnci5l-IKL_pBsGaNCdV",
+  "s4-05": "1wD8NDRComZftxtO9ZIMFJY-jnek8oVVi",
+  "s4-06": "1mYKFZ49_dbKlzGm7Ti_JJo2BK-KlsXlO",
+  "s4-07": "1bxZ9gInegkdHWLB-jeoHBpuMDLdulKio",
+  "s4-08": "19ek-7BLjo76M7tR8rFdyz3yiF0lP2VPV",
+  "s4-09": "1MHboYywWEdgYFobTAH41jld2ZYi6Nikq",
+  "s4-10": "1paKPRDZRvVmokjKOYgTOBSrlRuoJy7ck",
+  "s4-11": "14ch62eVwBQQciEOK-jlT1WPXY5S9FTru",
+  "s4-12": "1oO00BI1-_ZyAhldZibzKvnns3U0zh5Df",
+  "s4-13": "1S9JJ2SrxrspX8YwUpokkH8zpnoT7SBvh",
+  "s5-01": "1rOHdyhHr8FWigI7W2rphcftX63NpcY8D",
+  "s5-02": "1VydPm9aLbVrZYenew-3Ye8rsnDoXAnKr",
+  "s5-03": "1AGqL_rSiBIdORii3UjqzVdLb28lH-R7N",
+  "s5-04": "1oO_E-XC4-oUEpY0yWTdYIZ-SH00OAlAy",
+  "s5-05": "1vCjEUyKLyZYFMrfa30DDKoEOnbtr95Sh",
+  "s5-06": "14ENQv2JQREF4DL7zJpblDdsazRjvyhVY",
+  "s5-07": "1TFf1IiCskQR6Uk5q0wsLhoFQGzBj0Y21",
+  "s5-08": "1Px2jM-_NFFRmyexIhOn6ha5A-7mec8z2",
+  "s5-09": "1SzBZNzQob978JqLVh-CqFomfdBsWw1PI",
+  "s5-10": "11JhbWEF9RuQLUtoQeoe-drrYKqgOSUDq",
+  "s5-11": "1a--VvYSPRdT7gguIsdGtj6LgSkhQlHd3",
+  "s5-12": "13vKOxhE2L0h2pzwujQR_KuWCX3e8COIl",
+  "s5-13": "1X-2e8YhaQbAU90-AZUAOLma2onBFQAAE",
+  "s5-14": "1HjjgqxNHBmioJ4Kto79EaAqk9cw_ywPc",
+  "s5-15": "1lPz_1hGmoJ9I47PHVTpD2gm87--CSRNP"
+};
 var SB_EPS = [{
   "c": "s1-01",
   "cf": "7b0acc1b4fcfa1c084c62c8194da58df",
@@ -1823,6 +1893,66 @@ var SB_EPS = [{
   "p": 227,
   "t": "能力大不同",
   "d": "克里斯想利用爸爸的新發明讓自己出名賺錢。妙妙書帶孩子們來到撒瑪利亞，見到腓利、彼得和約翰，讓當地的術士認識到聖靈的真能力；又見證了腓利為衣索比亞太監施洗。回家後，克里斯被聖靈的能力震撼，決心參加查經，邁出受洗的第一步。"
+}, {
+  "c": "s5-01",
+  "t": "尼羅河上的嬰孩",
+  "d": ""
+}, {
+  "c": "s5-02",
+  "t": "真的可以重生嗎",
+  "d": ""
+}, {
+  "c": "s5-03",
+  "t": "小壞蛋的悔改",
+  "d": ""
+}, {
+  "c": "s5-04",
+  "t": "了不起的開始",
+  "d": ""
+}, {
+  "c": "s5-05",
+  "t": "誰願意為上帝說話",
+  "d": ""
+}, {
+  "c": "s5-06",
+  "t": "一個美妙的邀請",
+  "d": ""
+}, {
+  "c": "s5-07",
+  "t": "老朋友和新朋友",
+  "d": ""
+}, {
+  "c": "s5-08",
+  "t": "苦難中如何得勝",
+  "d": ""
+}, {
+  "c": "s5-09",
+  "t": "以德報怨",
+  "d": ""
+}, {
+  "c": "s5-10",
+  "t": "科學的頂峰是什麼（上）",
+  "d": ""
+}, {
+  "c": "s5-11",
+  "t": "科學的頂峰是什麼（下）",
+  "d": ""
+}, {
+  "c": "s5-12",
+  "t": "看不見就信的有福了",
+  "d": ""
+}, {
+  "c": "s5-13",
+  "t": "真英雄",
+  "d": ""
+}, {
+  "c": "s5-14",
+  "t": "上帝的拯救",
+  "d": ""
+}, {
+  "c": "s5-15",
+  "t": "如何支配你的金錢",
+  "d": ""
 }];
 function sbCode(u) {
   u = String(u || '').trim();
@@ -1840,13 +1970,35 @@ function sbLabel(e) {
   return SB_SEASONS[s - 1] + ' 第' + Number(n) + '集';
 }
 function sbPoster(e) {
-  return 'https://www.superbookchinese.com/media/covers/' + e.p + '.jpg?v=2';
+  return e.p ? 'https://www.superbookchinese.com/media/covers/' + e.p + '.jpg?v=2' : '';
+}
+function sbDrv(c) {
+  return SB_DRV[c] || null;
+}
+function sbUseDrv(e) {
+  if (!sbDrv(e.c)) return false;
+  if (!e.cf) return true;
+  var v = 'drv';
+  try {
+    v = localStorage.getItem('llm_vsrc') || 'drv';
+  } catch (x) {}
+  return v !== 'cf';
+}
+function sbSetSrc(v) {
+  try {
+    localStorage.setItem('llm_vsrc', v);
+  } catch (x) {}
+  render();
+  toast(v === 'cf' ? '改用官網播放' : '改用雲端硬碟播放');
+}
+function drvSrc(id) {
+  return 'https://drive.google.com/file/d/' + id + '/preview';
 }
 function sbSrc(e, auto) {
   return 'https://' + SB_CF + '.cloudflarestream.com/' + e.cf + '/iframe?poster=' + encodeURIComponent(sbPoster(e)) + (auto ? '&autoplay=true' : '');
 }
 function sbBox(e, id) {
-  return `<div class="vwrap"><div class="video" id="${id}"><iframe src="${sbSrc(e)}" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div></div>`;
+  return `<div class="vwrap"><div class="video" id="${id}"><iframe src="${sbUseDrv(e) ? drvSrc(sbDrv(e.c)) : sbSrc(e)}" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div></div>`;
 }
 function sbPlayFull(c) {
   var e = sbEp(c),
@@ -1854,16 +2006,23 @@ function sbPlayFull(c) {
   if (!e || !box) return;
   var f = box.querySelector('iframe');
   var fs = box.requestFullscreen || box.webkitRequestFullscreen;
+  var drv = sbUseDrv(e);
   if (fs) {
     try {
       var r = fs.call(box);
       r && r.catch && r.catch(() => {});
     } catch (x) {}
   } else {
-    window.open('https://www.superbookchinese.com/video/' + c, '_blank');
+    window.open(drv ? 'https://drive.google.com/file/d/' + sbDrv(c) + '/view' : 'https://www.superbookchinese.com/video/' + c, '_blank');
     return;
   }
-  f.src = sbSrc(e, true);
+  if (!drv) f.src = sbSrc(e, true);
+}
+function sbSrcBtn(e) {
+  var d = sbDrv(e.c),
+    u = sbUseDrv(e);
+  if (d && e.cf) return `<button class="ghost" style="white-space:nowrap" onclick="sbSetSrc('${u ? 'cf' : 'drv'}')" title="雲端播不出來時，可以切換成官網">${u ? '☁️ 雲端 → 改官網' : '🌐 官網 → 改雲端'}</button>`;
+  return d ? '<span class="muted" style="white-space:nowrap">☁️ 雲端</span>' : '<span class="muted" style="white-space:nowrap">🌐 官網</span>';
 }
 function sbOptions(sel) {
   return SB_SEASONS.map((sn, i) => `<optgroup label="${sn}">${SB_EPS.filter(e => e.c[1] == String(i + 1)).map(e => `<option value="${e.c}" ${e.c === sel ? 'selected' : ''}>${sbLabel(e)}｜${h(e.t)}</option>`).join('')}</optgroup>`).join('');
@@ -1927,11 +2086,11 @@ function sbImport() {
       add++;
     }
   });
-  save('匯入超級妙妙書官網 52 集（新增 ' + add + '、更新 ' + upd + '）');
+  save('匯入超級妙妙書 67 集（新增 ' + add + '、更新 ' + upd + '）');
   return [add, upd];
 }
 function sbImportBtn() {
-  if (!confirm('從超級妙妙書官網匯入第一～四季共 52 集？\n已有的課程只會把影片換成官網版本、補上空白的故事重點，其他內容不會動。')) return;
+  if (!confirm('匯入超級妙妙書第一～五季共 67 集？\n影片從雲端硬碟播放。已有的課程只會把影片換成妙妙書版本、補上空白的故事重點，其他內容不會動。')) return;
   var r = sbImport();
   render();
   toast('匯入完成：新增 ' + r[0] + ' 課、更新 ' + r[1] + ' 課');
@@ -1949,7 +2108,7 @@ function tVideo() {
   var gt = gtvUrl(l.video);
   var sc = sbCode(l.video),
     se = sc && sbEp(sc);
-  if (se) return stepPage(`<div class="tbar scroll"><button class="pri" style="flex:1;font-size:20px;padding:12px" onclick="sbPlayFull('${se.c}')">▶ 全螢幕播放〈${h(se.t)}〉</button><span class="muted" style="white-space:nowrap">${sbLabel(se)}</span><a class="ghost" style="padding:10px 12px;border:1px solid #e6ddd0;border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="https://www.superbookchinese.com/video/${se.c}" target="_blank" rel="noopener">官網 ↗</a></div>${sbBox(se, 'sbbox')}`);
+  if (se) return stepPage(`<div class="tbar scroll"><button class="pri" style="flex:1;font-size:20px;padding:12px" onclick="sbPlayFull('${se.c}')">▶ 全螢幕播放〈${h(se.t)}〉</button><span class="muted" style="white-space:nowrap">${sbLabel(se)}</span>${sbSrcBtn(se)}</div>${sbBox(se, 'sbbox')}`);
   if (gt) return stepPage(`<div class="tbar scroll"><button class="pri" style="flex:1;font-size:20px;padding:12px" onclick="fsEl('#gtvbox')">⛶ 全螢幕〈${h(l.title)}〉</button><a class="ghost" style="padding:10px 12px;border:1px solid #e6ddd0;border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="${h(gt)}" target="_blank" rel="noopener">在 GOODTV 開啟 ↗</a></div>
   <div class="muted" style="flex-shrink:0;margin-bottom:6px">GOODTV 影片：按下方畫面裡的播放鍵開始；全螢幕後若影片沒有放大，再按播放器右下角的全螢幕鍵。</div>${gtvBox(gt, 'gtvbox')}`);
   return stepPage(yt ? `<div class="tbar"><button class="pri" style="flex:1;font-size:22px;padding:12px" onclick="playFull('${yt}')">▶ 全螢幕播放〈${h(l.title)}〉</button></div><div class="vwrap">${ytBox(yt)}</div>` : l.video ? `<div class="empty"><a class="pri" style="display:inline-block;padding:16px 30px;border-radius:10px;background:#e2572a;color:#fff;font-size:22px;text-decoration:none" href="${h(l.video)}" target="_blank" rel="noopener">▶ 開啟影片〈${h(l.title)}〉</a></div>` : '<div class="empty">這一課還沒有影片網址</div>');
@@ -2221,7 +2380,7 @@ var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['d
 function pLessons() {
   var by = {};
   sortedLessons().forEach(l => (by[l.season || '未分季'] = by[l.season || '未分季'] || []).push(l));
-  return `<div class="row" style="margin-bottom:10px"><h2 class="sp">備課</h2>${isAdmin() ? '<button class="ghost" onclick="sbImportBtn()">📥 匯入妙妙書 52 集</button>' : ''}<button class="ghost" onclick="importDlg()">匯入</button><button class="blue" onclick="editLesson()">＋新增課程</button></div>
+  return `<div class="row" style="margin-bottom:10px"><h2 class="sp">備課</h2>${isAdmin() ? '<button class="ghost" onclick="sbImportBtn()">📥 匯入妙妙書 67 集</button>' : ''}<button class="ghost" onclick="importDlg()">匯入</button><button class="blue" onclick="editLesson()">＋新增課程</button></div>
  ${Object.entries(by).map(_ref1 => {
     var _ref10 = _slicedToArray(_ref1, 2),
       s = _ref10[0],
