@@ -363,8 +363,13 @@ function cloudDlg(){
  <p>狀態：<b>${{ok:'已同步',saving:'儲存中',off:'離線（資料先存在這台裝置，恢復網路後自動上傳）',err:'同步錯誤',pw:'需要密碼'}[Cloud.state]||''}</b><br><span class="muted">上次同步：${ago}・每 3 秒自動檢查更新</span></p>
  <div class="actions"><button class="blue" onclick="closeModal();cloudTick()">🔄 立即同步</button>
  <button class="ghost" onclick="if(confirm('這台裝置登出雲端？（資料不會刪除，下次需要重新輸入密碼）')){Cloud.pw='';Cloud.state='pw';cloudPersist();closeModal();render()}">這台裝置登出</button></div>`)}
-function cloudChangePw(){if(mode!=='staff'||!isAdmin()){toast('只有主控或設計師可以在「老師區 → 設定」更改教會密碼');return}const n=prompt('新的教會密碼（至少 4 碼）。改了之後，其他裝置都要重新輸入新密碼。');if(n===null)return;if(n.length<4){toast('密碼至少 4 碼');return}
- cloudPost({op:'setpw',pw:Cloud.pw,newpw:n}).then(r=>{if(r.ok){Cloud.pw=n;cloudPersist();toast('教會密碼已更改');closeModal()}else toast('更改失敗')},()=>toast('連線失敗'))}
+function cloudChangePw(){if(mode!=='staff'||!isAdmin()){toast('只有主控或設計師可以在「老師區 → 設定」更改教會密碼');return}
+ openModal(`<h2>☁️ 更改教會密碼</h2><p class="muted">改了之後，所有裝置都要重新輸入新的教會密碼。</p>
+ <label class="f">目前的教會密碼<input id="cp_o" type="password"></label><label class="f">新的教會密碼（至少 4 碼）<input id="cp_n" type="password"></label><label class="f">再輸入一次<input id="cp_n2" type="password"></label>
+ <div class="actions"><button class="blue" onclick="cloudChangePwOk()">更改</button><button class="ghost" onclick="closeModal()">取消</button></div>`);setTimeout(()=>{const e=document.getElementById('cp_o');e&&e.focus()},50)}
+function cloudChangePwOk(){const o=document.getElementById('cp_o').value,n=document.getElementById('cp_n').value;
+ if(!o){toast('請輸入目前的教會密碼');return}if(n.length<4){toast('新密碼至少 4 碼');return}if(n!==document.getElementById('cp_n2').value){toast('兩次新密碼不一樣');return}
+ cloudPost({op:'setpw',pw:o,newpw:n}).then(r=>{if(r.ok){Cloud.pw=n;cloudPersist();closeModal();toast('教會密碼已更改');save('更改教會密碼')}else toast(r.err==='pw'?'目前的教會密碼不正確':'更改失敗')},()=>toast('連線失敗'))}
 function cloudStart(){if(!Cloud.url)return;
  setInterval(cloudTick,3000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudTick()});
