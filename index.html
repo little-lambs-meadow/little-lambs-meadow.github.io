@@ -442,6 +442,18 @@ function save(act) {
 /* ============ 雲端同步（Google 試算表） ============ */
 var CLOUD_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycby5cqFp80G1Cdg6EYMbmY40zP1wckca4k2dFedeQ0dJ1bSQLbZS-gqY6qRGGUR0geiaRw/exec';
 var CK = 'llm_cloud_v1';
+function splitSettings(b) {
+  if (b['settings/main']) {
+    try {
+      var s = JSON.parse(b['settings/main']);
+      Object.keys(s).forEach(k => {
+        if (!('settings/' + k in b)) b['settings/' + k] = JSON.stringify(s[k]);
+      });
+    } catch (e) {}
+    delete b['settings/main'];
+  }
+  return b;
+}
 var Cloud = {
   url: '',
   pw: '',
@@ -464,7 +476,7 @@ var Cloud = {
   Cloud.url = c.url || CLOUD_URL_DEFAULT;
   Cloud.pw = c.pw || '';
   Cloud.ver = c.ver || 0;
-  Cloud.base = c.base || {};
+  Cloud.base = splitSettings(c.base || {});
   Cloud.snap = Object.assign({}, Cloud.base);
   Cloud.skip = !!c.skip;
 })();
@@ -480,9 +492,12 @@ function cloudPersist() {
   } catch (e) {}
 }
 var COLS = ['teachers', 'invites', 'lessons', 'songs', 'shows', 'kids', 'ledger', 'sessions', 'log'];
+/* 設定每一項分開同步（settings/規則、settings/點數項目…），避免舊裝置整包覆蓋別人剛改好的設定 */
 function toRecs(d) {
   var r = {};
-  r['settings/main'] = JSON.stringify(d.settings);
+  Object.keys(d.settings || {}).forEach(k => {
+    if (d.settings[k] !== undefined) r['settings/' + k] = JSON.stringify(d.settings[k]);
+  });
   COLS.forEach(c => (d[c] || []).forEach(x => {
     var id = c === 'invites' ? x.code : x.id;
     if (id) r[c + '/' + id] = JSON.stringify(x);
@@ -514,6 +529,8 @@ function fromRecs(r) {
   };
   COLS.forEach(c => d[c] = []);
   var ents = [];
+  var sMain = null;
+  var sPer = {};
   Object.keys(r).forEach(k => {
     var c = k.slice(0, k.indexOf('/'));
     var v;
@@ -522,7 +539,10 @@ function fromRecs(r) {
     } catch (e) {
       return;
     }
-    if (c === 'settings') d.settings = v;else if (c === 'meetings') {
+    if (c === 'settings') {
+      var sk = k.slice(9);
+      if (sk === 'main') sMain = v;else sPer[sk] = v;
+    } else if (c === 'meetings') {
       v.entries = [];
       d.meetings.push(v);
     } else if (c === 'mentries') ents.push(v);else if (c === 'attend') (d.attend[v.d] = d.attend[v.d] || {})[v.k] = v.lid;else if (d[c]) d[c].push(v);
@@ -537,6 +557,7 @@ function fromRecs(r) {
   });
   d.log.sort((a, b) => (b.t || 0) - (a.t || 0));
   d.log = d.log.slice(0, 300);
+  if (sMain || Object.keys(sPer).length) d.settings = Object.assign({}, sMain || {}, sPer);
   if (!d.settings) d.settings = demo().settings;
   return DB.fix(d);
 }

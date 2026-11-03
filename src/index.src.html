@@ -255,23 +255,26 @@ function save(act){if(act){D.log.unshift({id:uid(),t:Date.now(),ts:new Date().to
 /* ============ 雲端同步（Google 試算表） ============ */
 const CLOUD_URL_DEFAULT='https://script.google.com/macros/s/AKfycby5cqFp80G1Cdg6EYMbmY40zP1wckca4k2dFedeQ0dJ1bSQLbZS-gqY6qRGGUR0geiaRw/exec';
 const CK='llm_cloud_v1';
+function splitSettings(b){if(b['settings/main']){try{const s=JSON.parse(b['settings/main']);Object.keys(s).forEach(k=>{if(!(('settings/'+k) in b))b['settings/'+k]=JSON.stringify(s[k])})}catch(e){}delete b['settings/main']}return b}
 const Cloud={url:'',pw:'',ver:0,base:{},snap:{},busy:false,state:'off',lastOk:0,needRebuild:false,needRender:false,skip:false,t2:null};
 (function(){let c={};try{c=JSON.parse(localStorage.getItem(CK)||'{}')}catch(e){}
- Cloud.url=c.url||CLOUD_URL_DEFAULT;Cloud.pw=c.pw||'';Cloud.ver=c.ver||0;Cloud.base=c.base||{};Cloud.snap=Object.assign({},Cloud.base);Cloud.skip=!!c.skip})();
+ Cloud.url=c.url||CLOUD_URL_DEFAULT;Cloud.pw=c.pw||'';Cloud.ver=c.ver||0;Cloud.base=splitSettings(c.base||{});Cloud.snap=Object.assign({},Cloud.base);Cloud.skip=!!c.skip})();
 function cloudPersist(){try{localStorage.setItem(CK,JSON.stringify({url:Cloud.url,pw:Cloud.pw,ver:Cloud.bver||Cloud.ver,base:Cloud.base,skip:Cloud.skip}))}catch(e){}}
 const COLS=['teachers','invites','lessons','songs','shows','kids','ledger','sessions','log'];
-function toRecs(d){const r={};r['settings/main']=JSON.stringify(d.settings);
+/* 設定每一項分開同步（settings/規則、settings/點數項目…），避免舊裝置整包覆蓋別人剛改好的設定 */
+function toRecs(d){const r={};Object.keys(d.settings||{}).forEach(k=>{if(d.settings[k]!==undefined)r['settings/'+k]=JSON.stringify(d.settings[k])});
  COLS.forEach(c=>(d[c]||[]).forEach(x=>{const id=c==='invites'?x.code:x.id;if(id)r[c+'/'+id]=JSON.stringify(x)}));
  (d.meetings||[]).forEach(m=>{const o=Object.assign({},m);delete o.entries;r['meetings/'+m.id]=JSON.stringify(o);
   (m.entries||[]).forEach(e=>{r['mentries/'+e.id]=JSON.stringify(Object.assign({mid:m.id},e))})});
  Object.keys(d.attend||{}).forEach(dt=>Object.keys(d.attend[dt]).forEach(k=>{r['attend/'+dt+'|'+k]=JSON.stringify({d:dt,k:k,lid:d.attend[dt][k]})}));
  return r}
-function fromRecs(r){const d={settings:null,meetings:[],attend:{}};COLS.forEach(c=>d[c]=[]);const ents=[];
+function fromRecs(r){const d={settings:null,meetings:[],attend:{}};COLS.forEach(c=>d[c]=[]);const ents=[];let sMain=null;const sPer={};
  Object.keys(r).forEach(k=>{const c=k.slice(0,k.indexOf('/'));let v;try{v=JSON.parse(r[k])}catch(e){return}
-  if(c==='settings')d.settings=v;else if(c==='meetings'){v.entries=[];d.meetings.push(v)}else if(c==='mentries')ents.push(v);
+  if(c==='settings'){const sk=k.slice(9);if(sk==='main')sMain=v;else sPer[sk]=v}else if(c==='meetings'){v.entries=[];d.meetings.push(v)}else if(c==='mentries')ents.push(v);
   else if(c==='attend')(d.attend[v.d]=d.attend[v.d]||{})[v.k]=v.lid;else if(d[c])d[c].push(v)});
  ents.sort((a,b)=>(a.ts||0)-(b.ts||0)).forEach(e=>{const m=d.meetings.find(x=>x.id===e.mid);if(m){const o=Object.assign({},e);delete o.mid;m.entries.push(o)}});
  d.log.sort((a,b)=>(b.t||0)-(a.t||0));d.log=d.log.slice(0,300);
+ if(sMain||Object.keys(sPer).length)d.settings=Object.assign({},sMain||{},sPer);
  if(!d.settings)d.settings=demo().settings;
  return DB.fix(d)}
 function cloudDirty(){const L=toRecs(D),B=Cloud.base,out=[];
