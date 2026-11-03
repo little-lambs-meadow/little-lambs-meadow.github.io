@@ -289,7 +289,11 @@ function fromRecs(r){const d={settings:null,meetings:[],attend:{}};COLS.forEach(
  if(sMain||Object.keys(sPer).length)d.settings=Object.assign({},demo().settings,sMain||{},sPer);  // 缺少的設定用預設值補上
  if(!d.settings)d.settings=demo().settings;
  return DB.fix(d)}
-function cloudDirty(){const L=toRecs(D),B=Cloud.base,out=[];
+/* 雲端沒有、由預設值補上的設定，視為已同步（不可當成本機修改推回雲端，否則會蓋掉別台剛改的設定） */
+let DEF_SET=null;
+function baseWithDefaults(snap){const b=Object.assign({},snap),df=DEF_SET||(DEF_SET=demo().settings);
+ Object.keys(df).forEach(k=>{const key='settings/'+k;if(!(key in b)&&df[k]!==undefined&&D.settings&&JSON.stringify(D.settings[k])===JSON.stringify(df[k]))b[key]=JSON.stringify(df[k])});return b}
+function cloudDirty(){const L=toRecs(D),B=baseWithDefaults(Cloud.base),out=[];
  Object.keys(L).forEach(k=>{if(L[k]!==B[k])out.push({k,j:L[k]})});
  Object.keys(B).forEach(k=>{if(!(k in L))out.push({k,j:null})});return out}
 function cloudPost(body){
@@ -300,7 +304,7 @@ function cloudSafe(){return !document.getElementById('modal').classList.contains
 function cloudRebuild(){
  const dirty=cloudDirty();const m=Object.assign({},Cloud.snap);
  dirty.forEach(x=>{if(x.j===null)delete m[x.k];else m[x.k]=x.j});
- D=fromRecs(m);DB.save(D);Cloud.base=Object.assign({},Cloud.snap);Cloud.bver=Cloud.ver;Cloud.needRebuild=false;cloudPersist();cloudRender()}
+ D=fromRecs(m);DB.save(D);Cloud.base=baseWithDefaults(Cloud.snap);Cloud.bver=Cloud.ver;Cloud.needRebuild=false;cloudPersist();cloudRender()}
 function cloudRender(){
  const busyUI=document.querySelector('#app iframe')||document.fullscreenElement||document.webkitFullscreenElement;
  if(busyUI){Cloud.needRender=true;cloudBadgeUpdate();return}
@@ -326,7 +330,7 @@ function cloudTick(){
   (res.recs||[]).forEach(x=>{if(x.j===null){if(x.k in Cloud.snap){delete Cloud.snap[x.k];changed=true}}else if(Cloud.snap[x.k]!==x.j){Cloud.snap[x.k]=x.j;changed=true}});
   Cloud.ver=res.ver;Cloud.pulled=true;
   if(first){
-   if(Object.keys(Cloud.snap).length){try{localStorage.setItem('llm_local_backup',JSON.stringify(D))}catch(e){}Cloud.base={};D=fromRecs(Cloud.snap);DB.save(D);Cloud.base=Object.assign({},Cloud.snap);Cloud.bver=Cloud.ver;cloudPersist();cloudRender();toast('☁️ 已從雲端載入資料')}
+   if(Object.keys(Cloud.snap).length){try{localStorage.setItem('llm_local_backup',JSON.stringify(D))}catch(e){}Cloud.base={};D=fromRecs(Cloud.snap);DB.save(D);Cloud.base=baseWithDefaults(Cloud.snap);Cloud.bver=Cloud.ver;cloudPersist();cloudRender();toast('☁️ 已從雲端載入資料')}
    else{Cloud.bver=0;cloudPersist();toast('☁️ 第一次連線，正在上傳這台裝置的資料');setTimeout(cloudTick,50)}
    return}
   if(changed){if(cloudSafe())cloudRebuild();else Cloud.needRebuild=true}
@@ -466,7 +470,7 @@ function render(){applyZy();
  const tabs=mode==='teach'?TEACH_TABS:STAFF_TABS;
  hd.innerHTML=`<div class="hrow"><h1><img class="hlogo" src="icon-192.png" alt=""><span class="hname">${h(D.settings.church)}</span><span class="hdot"> · </span><span class="hsub">${mode==='teach'?'兒童主日學':h(user||'老師區')}</span></h1>
   <div class="who"><button class="sm rld" onclick="hardReload()" title="重新整理（載入最新版）">⟳<span class="hide-m"> 重新整理</span></button>${mode==='teach'?`<button class="sm zybtn ${zyOn?'on':''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>`:''}${cloudBadge()}${user?`<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>`:''}
-   ${mode==='teach'?`<button class="sm" onclick="${user||!authOn()?"setMode('staff')":'loginDlg()'}">${user||!authOn()?'老師區':'老師登入'}</button>`:`<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn()&&user?`<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>`:''}`}</div></div>
+   ${mode==='teach'?`<button class="sm" onclick="enterStaff()">${user||!authOn()?'老師區':'老師登入'}</button>`:`<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn()&&user?`<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>`:''}`}</div></div>
   <div class="nrow"><nav>${tabs.map(([k,n])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${n}</button>`).join('')}</nav>
   ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id)}</select>`:''}</div>`;
  {const on=hd.querySelector('nav .on');if(on){const n=on.parentNode;n.scrollLeft=on.offsetLeft-(n.clientWidth-on.offsetWidth)/2}}
@@ -475,6 +479,13 @@ function render(){applyZy();
  layout();
 }
 function go(t){Cloud.needRender=false;tab=t;render();scrollTo(0,0)}
+/* 進老師區：必須先連上雲端（拿到最新的登入設定），啟用登入時一定要登入 */
+function enterStaff(){
+ if(Cloud.url){if(!Cloud.pw){needCloud();return}
+  if(!Cloud.pulled&&!Cloud.ver){toast('正在從雲端載入資料，請稍候再按一次');cloudTick();return}}
+ if(Cloud.needRebuild)cloudRebuild();
+ if(authOn()&&!(user&&me()&&me().active!==false))return loginDlg();
+ setMode('staff')}
 function setMode(m){mode=m;tab=m==='teach'?'rules':'lessons';render()}
 const val=id=>document.getElementById(id).value.trim();
 const activeT=()=>D.teachers.filter(t=>t.active!==false);

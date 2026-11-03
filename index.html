@@ -579,9 +579,20 @@ function fromRecs(r) {
   if (!d.settings) d.settings = demo().settings;
   return DB.fix(d);
 }
+/* 雲端沒有、由預設值補上的設定，視為已同步（不可當成本機修改推回雲端，否則會蓋掉別台剛改的設定） */
+var DEF_SET = null;
+function baseWithDefaults(snap) {
+  var b = Object.assign({}, snap),
+    df = DEF_SET || (DEF_SET = demo().settings);
+  Object.keys(df).forEach(k => {
+    var key = 'settings/' + k;
+    if (!(key in b) && df[k] !== undefined && D.settings && JSON.stringify(D.settings[k]) === JSON.stringify(df[k])) b[key] = JSON.stringify(df[k]);
+  });
+  return b;
+}
 function cloudDirty() {
   var L = toRecs(D),
-    B = Cloud.base,
+    B = baseWithDefaults(Cloud.base),
     out = [];
   Object.keys(L).forEach(k => {
     if (L[k] !== B[k]) out.push({
@@ -627,7 +638,7 @@ function cloudRebuild() {
   });
   D = fromRecs(m);
   DB.save(D);
-  Cloud.base = Object.assign({}, Cloud.snap);
+  Cloud.base = baseWithDefaults(Cloud.snap);
   Cloud.bver = Cloud.ver;
   Cloud.needRebuild = false;
   cloudPersist();
@@ -735,7 +746,7 @@ function cloudTick() {
         Cloud.base = {};
         D = fromRecs(Cloud.snap);
         DB.save(D);
-        Cloud.base = Object.assign({}, Cloud.snap);
+        Cloud.base = baseWithDefaults(Cloud.snap);
         Cloud.bver = Cloud.ver;
         cloudPersist();
         cloudRender();
@@ -1166,7 +1177,7 @@ function render() {
   var tabs = mode === 'teach' ? TEACH_TABS : STAFF_TABS;
   hd.innerHTML = `<div class="hrow"><h1><img class="hlogo" src="icon-192.png" alt=""><span class="hname">${h(D.settings.church)}</span><span class="hdot"> · </span><span class="hsub">${mode === 'teach' ? '兒童主日學' : h(user || '老師區')}</span></h1>
   <div class="who"><button class="sm rld" onclick="hardReload()" title="重新整理（載入最新版）">⟳<span class="hide-m"> 重新整理</span></button>${mode === 'teach' ? `<button class="sm zybtn ${zyOn ? 'on' : ''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>` : ''}${cloudBadge()}${user ? `<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>` : ''}
-   ${mode === 'teach' ? `<button class="sm" onclick="${user || !authOn() ? "setMode('staff')" : 'loginDlg()'}">${user || !authOn() ? '老師區' : '老師登入'}</button>` : `<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn() && user ? `<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>` : ''}`}</div></div>
+   ${mode === 'teach' ? `<button class="sm" onclick="enterStaff()">${user || !authOn() ? '老師區' : '老師登入'}</button>` : `<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn() && user ? `<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>` : ''}`}</div></div>
   <div class="nrow"><nav>${tabs.map(_ref7 => {
     var _ref8 = _slicedToArray(_ref7, 2),
       k = _ref8[0],
@@ -1211,6 +1222,23 @@ function go(t) {
   tab = t;
   render();
   scrollTo(0, 0);
+}
+/* 進老師區：必須先連上雲端（拿到最新的登入設定），啟用登入時一定要登入 */
+function enterStaff() {
+  if (Cloud.url) {
+    if (!Cloud.pw) {
+      needCloud();
+      return;
+    }
+    if (!Cloud.pulled && !Cloud.ver) {
+      toast('正在從雲端載入資料，請稍候再按一次');
+      cloudTick();
+      return;
+    }
+  }
+  if (Cloud.needRebuild) cloudRebuild();
+  if (authOn() && !(user && me() && me().active !== false)) return loginDlg();
+  setMode('staff');
 }
 function setMode(m) {
   mode = m;
