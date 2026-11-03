@@ -21,10 +21,11 @@ header{color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0
 header.teach{background:linear-gradient(135deg,#e2572a,#f2a128)}
 header.staff{background:linear-gradient(135deg,#2a5bd6,#3f8fe0)}
 .hrow{display:flex;gap:8px;align-items:center;justify-content:space-between;max-width:1400px;margin:auto;padding:10px 16px 4px}
+.hlogo{width:30px;height:30px;border-radius:8px;vertical-align:middle;margin:-3px 8px 0 0;box-shadow:0 1px 3px rgba(0,0,0,0.20)}
 header h1{margin:0;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .who button{white-space:nowrap}
 #snack{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#2b2b2b;color:#fff;padding:10px 14px;border-radius:10px;display:none;gap:12px;align-items:center;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,0.33);font-size:15px;white-space:nowrap}#snack.on{display:flex}#snack button{background:#f2a128;color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:15px}
-@media(max-width:480px){.uname{display:none}.hideS{display:none}}
+@media(max-width:480px){header h1{font-size:15px;line-height:1.15}.hlogo{width:24px;height:24px;margin-right:5px}.hsub{display:block;font-size:12px;font-weight:600;opacity:.95}.hdot{display:none}header h1{display:flex;align-items:center;flex-wrap:wrap}header h1 .hsub{flex-basis:100%;padding-left:29px;margin-top:-2px}.uname{display:none}.hideS{display:none}}
 .who{font-size:13px;display:flex;gap:6px;align-items:center;flex-shrink:0;white-space:nowrap}
 nav{display:flex;gap:4px;overflow-x:auto;max-width:1400px;margin:auto;padding:4px 12px 8px}
 nav button{background:rgba(255,255,255,0.15);color:#fff;white-space:nowrap}
@@ -153,7 +154,7 @@ a{color:#2a6fd6}
 nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
 /* 手機橫放（畫面很矮）：上方精簡，把空間留給內容 */
 @media (orientation:landscape) and (max-height:500px){
- header .hrow{padding:4px 10px 0;gap:6px}header h1{font-size:15px;max-width:22vw}.uname{display:none}
+ header .hrow{padding:4px 10px 0;gap:6px}header h1{font-size:15px;max-width:30vw}.hlogo{width:22px;height:22px;margin-right:5px}.uname{display:none}
  header .who button,header .who .badge,header .who span{font-size:12px!important;padding:4px 8px!important}
  .hsel{padding:3px 6px;font-size:13px}
  nav{padding:3px 10px 5px;gap:3px}nav button{padding:4px 9px;font-size:13px}nav button .n{width:16px;height:16px;line-height:16px;font-size:10px}
@@ -1146,7 +1147,7 @@ function render() {
   var hd = document.getElementById('hdr');
   hd.className = mode;
   var tabs = mode === 'teach' ? TEACH_TABS : STAFF_TABS;
-  hd.innerHTML = `<div class="hrow"><h1>🐑 ${h(D.settings.church)}${mode === 'teach' ? ' · 教學' : ' · ' + h(user || '老師區')}</h1>
+  hd.innerHTML = `<div class="hrow"><h1><img class="hlogo" src="icon-192.png" alt=""><span class="hname">${h(D.settings.church)}</span><span class="hdot"> · </span><span class="hsub">${mode === 'teach' ? '兒童主日學' : h(user || '老師區')}</span></h1>
   ${mode === 'teach' && tab !== 'rules' && STEPS.some(x => x[0] === tab) && D.lessons.length ? `<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id)}</select>` : ''}
   <div class="who"><button class="sm rld" onclick="hardReload()" title="重新整理（載入最新版）">⟳<span class="hide-m"> 重新整理</span></button>${mode === 'teach' ? `<button class="sm zybtn ${zyOn ? 'on' : ''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>` : ''}${cloudBadge()}${user ? `<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>` : ''}
    ${mode === 'teach' ? `<button class="sm" onclick="${user || !authOn() ? "setMode('staff')" : 'loginDlg()'}">${user || !authOn() ? '老師區' : '老師登入'}</button>` : `<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn() && user ? `<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>` : ''}`}</div></div>
