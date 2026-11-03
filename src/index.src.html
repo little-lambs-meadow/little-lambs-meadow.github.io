@@ -217,19 +217,19 @@ window.onerror=function(m,u,l){var a=document.getElementById("app");if(a){a.inne
 const DEFAULT_RULES=['我會準時上課','我會聽從老師的指令','我會先舉手再發言'];
 const DEFAULT_REASONS=['愛神，把神放在 No.1','學習神的話','帶人認識神','做對的事'];
 const DEFAULT_PRAYER='親愛的天父，謝謝祢今天帶領我們一起學習祢的話語。求祢幫助每一位小朋友把今天學到的放在心裡，這一週平平安安。奉主耶穌基督的名禱告，阿們。';
-const DEFAULT_ITEMS=[{name:'認真唱歌',pts:2},{name:'認真上課',pts:2},{name:'朗誦英文經句',pts:1},{name:'背誦英文經句',pts:2},{name:'上台複寫經句',pts:1},{name:'默寫金句',pts:2},{name:'當天值日生',pts:1}];
+const DEFAULT_ITEMS=[{name:'認真唱歌',pts:2},{name:'認真上課',pts:2},{name:'朗誦英文經句',pts:1},{name:'背誦英文經句',pts:2},{name:'上台複寫經句',pts:1},{name:'默寫金句',pts:2}];
 const KEY='little_lambs_meadow_v1';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const DB={
  load(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(d&&d.settings)return DB.fix(d)}}catch(e){}return demo()},
- fix(d){{{d.invites=d.invites||[];(d.log||[]).forEach(l=>{if(!l.id){l.id=uid();l.t=l.t||0}});if(d.settings.auth===undefined)d.settings.auth=false;if(!d.settings.rules)d.settings.rules=DEFAULT_RULES.slice();if(!d.settings.reasons)d.settings.reasons=DEFAULT_REASONS.slice();if(!d.settings.prayer)d.settings.prayer=DEFAULT_PRAYER;if(!d.settings.cutoff){d.settings.cutoff='10:30';d.settings.onPts=2;d.settings.latePts=1}if((d.settings.items||[]).map(x=>x.name).join()==='背金句,帶聖經,幫忙收拾,熱心參與')d.settings.items=DEFAULT_ITEMS.map(x=>Object.assign({},x));const dm=demo();(d.lessons||[]).forEach(l=>{const x=dm.lessons.find(y=>y.title===l.title&&y.video===l.video);if(x){['intro','iceName','prayer'].forEach(k=>{if(!l[k])l[k]=x[k]})}});(d.songs||[]).forEach(sg=>{if(sg.title==='（示範）本季主題詩歌'&&sg.theme===undefined)sg.theme=true});d.settings.teacherNames=d.settings.teacherNames||['王老師','李老師'];d.teachers=(d.teachers||[]).filter(t=>t.pwHash);return d}}},
+ fix(d){{{d.invites=d.invites||[];(d.log||[]).forEach(l=>{if(!l.id){l.id=uid();l.t=l.t||0}});if(d.settings.auth===undefined)d.settings.auth=false;if(!d.settings.rules)d.settings.rules=DEFAULT_RULES.slice();if(!d.settings.reasons)d.settings.reasons=DEFAULT_REASONS.slice();if(d.settings.dailyCap===undefined)d.settings.dailyCap=10;if(!d.settings.prayer)d.settings.prayer=DEFAULT_PRAYER;if(!d.settings.cutoff){d.settings.cutoff='10:30';d.settings.onPts=2;d.settings.latePts=1}if((d.settings.items||[]).map(x=>x.name).join()==='背金句,帶聖經,幫忙收拾,熱心參與')d.settings.items=DEFAULT_ITEMS.map(x=>Object.assign({},x));const dm=demo();(d.lessons||[]).forEach(l=>{const x=dm.lessons.find(y=>y.title===l.title&&y.video===l.video);if(x){['intro','iceName','prayer'].forEach(k=>{if(!l[k])l[k]=x[k]})}});(d.songs||[]).forEach(sg=>{if(sg.title==='（示範）本季主題詩歌'&&sg.theme===undefined)sg.theme=true});d.settings.teacherNames=d.settings.teacherNames||['王老師','李老師'];d.teachers=(d.teachers||[]).filter(t=>t.pwHash);return d}}},
  save(d){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){toast('無法儲存，請用「設定 → 匯出備份」')}}
 };
 function demo(){
  const k=['小明','小美','小恩','小約翰'].map(n=>({id:uid(),name:n,group:'',active:true,flag:false,flagNote:''}));
  return {
-  settings:{church:'小羊樂園',rules:DEFAULT_RULES.slice(),reasons:DEFAULT_REASONS.slice(),prayer:DEFAULT_PRAYER,auth:false,teacherNames:['王老師','李老師'],requireLogin:false,cutoff:'10:30',onPts:2,latePts:1,
+  settings:{church:'小羊樂園',rules:DEFAULT_RULES.slice(),reasons:DEFAULT_REASONS.slice(),prayer:DEFAULT_PRAYER,auth:false,teacherNames:['王老師','李老師'],requireLogin:false,cutoff:'10:30',onPts:2,latePts:1,dailyCap:10,
    items:DEFAULT_ITEMS.map(x=>Object.assign({},x)),
    rewards:[{name:'貼紙',cost:5},{name:'文具',cost:15},{name:'小禮物',cost:30}]},
   teachers:[],invites:[],
@@ -771,9 +771,9 @@ function tPoints(){
    <span class="hide-m" style="width:12px"></span>
    ${S.items.map((it,i)=>`<button class="${pickItem===i?'on':''}" onclick="pickItem=${i};render()">${h(it.name)} +${it.pts}</button>`).join('')}</div>
   <div class="muted" style="flex-shrink:0;margin-bottom:6px">${hint}</div>
-  <div class="fit kidsfit" data-max="28"><div class="kids">${kids.map(k=>{const t=todayOf(k.id);const tp=t.reduce((a,x)=>a+x.pts,0);const ci=t.find(x=>x.id===at[k.id]);
+  <div class="fit kidsfit" data-max="28"><div class="kids">${kids.map(k=>{const t=todayOf(k.id);const tp=earnedOn(k.id,d),cap=capOf(),full=cap&&tp>=cap;const ci=t.find(x=>x.id===at[k.id]);
    const done=pickItem!==null&&typeof pickItem==='number'&&t.some(x=>x.reason===S.items[pickItem].name);
-   return `<div class="kid ${ci?(ci.reason===ciLabel(true)?'here':'here late'):''} ${done?'got':''}" id="k_${k.id}" onclick="${manageKids?'kidManage':'tapKid'}('${k.id}')"><div class="n">${manageKids?'✏️ ':''}${h(k.name)}</div><div class="p">今日 +${tp}</div><div class="p">⭐ ${bal(k.id)}</div></div>`}).join('')}</div></div></div>
+   return `<div class="kid ${ci?(ci.reason===ciLabel(true)?'here':'here late'):''} ${done?'got':''}" id="k_${k.id}" onclick="${manageKids?'kidManage':'tapKid'}('${k.id}')"><div class="n">${manageKids?'✏️ ':''}${h(k.name)}</div><div class="p" ${full?'style="color:#c33;font-weight:700"':''}>今日 +${tp}${cap?'/'+cap:''}${full?' 滿':''}</div><div class="p">⭐ ${bal(k.id)}</div></div>`}).join('')}</div></div></div>
   <div class="row" style="margin-top:8px;flex-shrink:0;flex-wrap:nowrap"><input id="newKid" class="sp" style="font-size:16px;min-width:0" placeholder="新朋友的名字" onkeydown="if(event.key==='Enter')quickKid()"><button class="pri" style="white-space:nowrap" onclick="quickKid()">＋<span class="hide-m">加入並報到</span><span class="show-m">新朋友</span></button>
    <button class="ghost" style="white-space:nowrap" onclick="undo()" ${undoStack.length?'':'disabled'}>↶<span class="hide-m"> 復原</span></button></div></div>`;
 }
@@ -793,16 +793,25 @@ function deleteKid(id){if(!isAdmin()){toast('只有主控或設計師可以刪�
 function hiddenKidsDlg(){const ks=D.kids.filter(k=>!k.active);
  openModal(`<h2>已隱藏的孩子</h2>${ks.map(k=>`<div class="row card" style="margin:6px 0"><b class="sp">${h(k.name)}</b><span class="muted">⭐ ${bal(k.id)}</span><button class="blue sm" onclick="kid('${k.id}').active=true;save('恢復孩子 '+kid('${k.id}').name);hiddenKidsDlg();render()">恢復</button><button class="danger sm" onclick="deleteKid('${k.id}')">刪除</button></div>`).join('')||'<p class="muted">沒有隱藏的孩子</p>'}`)}
 function addPts(kidId,pts,reason){const e={id:uid(),kidId,pts,reason,date:today(),by:who(),ts:Date.now()};D.ledger.push(e);return e}
+/* 每日上限：每個孩子一天最多得幾點（補登舊點數、兌換不算） */
+function capOf(){const c=Number(D.settings.dailyCap);return c>0?c:0}
+function earnedOn(id,d,excl){return D.ledger.reduce((a,x)=>x.kidId===id&&x.date===d&&x.id!==excl&&!x.legacy&&x.pts>0?a+x.pts:a,0)}
+function giveCapped(id,pts,reason,zeroOk){if(pts<=0)return addPts(id,pts,reason);const cap=capOf();if(!cap)return addPts(id,pts,reason);
+ const left=cap-earnedOn(id,today());const k=kid(id);
+ if(left<=0){if(zeroOk)return addPts(id,0,reason);toast('⛔ '+k.name+' 今天已經拿滿 '+cap+' 點了');return null}
+ if(pts>left){toast('⚠️ '+k.name+' 今天只剩 '+left+' 點額度（上限 '+cap+'）');_capNote=true}
+ return addPts(id,Math.min(pts,left),reason)}
+let _capNote=false;
 function delLedger(lid){D.ledger=D.ledger.filter(x=>x.id!==lid);undoStack=undoStack.filter(u=>u.lid!==lid)}
 function tapKid(id){
  const S=D.settings,d=today();D.attend[d]=D.attend[d]||{};const k=kid(id);
  if(pickItem===null||pickItem==='on'||pickItem==='late'){
   const on=pickItem===null?nowHM()<S.cutoff:pickItem==='on';const old=D.ledger.find(x=>x.id===D.attend[d][id]);
   if(old&&(pickItem===null||old.reason===ciLabel(on))){delLedger(old.id);delete D.attend[d][id];save();toast('取消 '+k.name+' 的報到')}
-  else{if(old)delLedger(old.id);const e=addPts(id,on?S.onPts:S.latePts,ciLabel(on));D.attend[d][id]=e.id;undoStack.push({lid:e.id,att:true,d});save();toast(k.name+' '+e.reason+' +'+e.pts)}
+  else{if(old)delLedger(old.id);_capNote=false;const e=giveCapped(id,on?S.onPts:S.latePts,ciLabel(on),true);D.attend[d][id]=e.id;undoStack.push({lid:e.id,att:true,d});save();if(!_capNote)toast(k.name+' '+e.reason+' +'+e.pts)}
  }else{const it=S.items[pickItem];const old=todayOf(id).find(x=>x.reason===it.name);
   if(old){delLedger(old.id);save();toast('取消 '+k.name+' 的「'+it.name+'」')}
-  else{const e=addPts(id,it.pts,it.name);undoStack.push({lid:e.id});save();toast(k.name+' '+it.name+' +'+it.pts)}}
+  else{_capNote=false;const e=giveCapped(id,it.pts,it.name);if(e){undoStack.push({lid:e.id});save();if(!_capNote)toast(k.name+' '+it.name+' +'+e.pts)}}}
  render();const el=document.getElementById('k_'+id);el&&el.classList.add('pop');
 }
 function undo(){const u=undoStack.pop();if(!u)return;D.ledger=D.ledger.filter(x=>x.id!==u.lid);if(u.att){for(const k in D.attend[u.d])if(D.attend[u.d][k]===u.lid)delete D.attend[u.d][k]}save();render();toast('已復原')}
@@ -916,7 +925,7 @@ function printShow(id){const s=D.shows.find(x=>x.id===id);
 let showInactive=false;
 function pKids(){
  const ks=D.kids.filter(k=>showInactive||k.active).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
- return `<div class="row" style="margin-bottom:10px"><h2 class="sp">孩子點數</h2><label class="muted"><input type="checkbox" ${showInactive?'checked':''} onchange="showInactive=this.checked;render()"> 顯示已停用</label><button class="blue" onclick="editKid()">＋新增孩子</button></div>
+ return `<div class="row" style="margin-bottom:10px"><h2 class="sp">孩子點數</h2><label class="muted"><input type="checkbox" ${showInactive?'checked':''} onchange="showInactive=this.checked;render()"> 顯示已停用</label><button class="ghost" onclick="legacyDlg()">📒 補舊點數</button><button class="blue" onclick="editKid()">＋新增孩子</button></div>
  <div class="card"><table class="ktable"><tr class="khead"><th>名字</th><th>點數</th><th></th></tr>${ks.map(k=>`<tr class="krow" style="${k.active?'':'opacity:.5'}"><td class="nm"><b>${h(k.name)}</b> ${k.flag?'<span class="flag" title="需要留意">⚠️</span>':''}<div class="muted">${h(k.group)}${k.flag&&k.flagNote?' · '+h(k.flagNote):''}</div></td><td class="pt"><b>⭐ ${bal(k.id)}</b></td>
  <td class="act" style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="adjDlg('${k.id}')">加減點</button> <button class="sm pri" onclick="redeemDlg('${k.id}')">兌換</button> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button> <button class="sm ghost" onclick="editKid('${k.id}')">編輯</button>${isAdmin()?` <button class="sm danger" onclick="deleteKid('${k.id}')">刪除</button>`:''}</td></tr>`).join('')}</table></div>
  <p class="muted">「啟用」取消勾選＝隱藏。隱藏的孩子不會出現在點名畫面，但點數和紀錄都會保留，回來時再啟用就好。</p>`;
@@ -925,10 +934,20 @@ function editKid(id){const k=id?kid(id):{active:true};
  form(id?'編輯孩子資料':'新增孩子',[['name','稱呼'],['group','班別／年齡組（選填）'],['active','啟用（出現在點名畫面）','bool'],['flag','需要老師留意','bool'],['flagNote','留意事項（只有老師看得到）']],k,v=>{
   if(!v.name){toast('請填稱呼');return false}if(id)Object.assign(k,v);else D.kids.push({id:uid(),...v});save((id?'修改':'新增')+'孩子 '+v.name)},
   '<p class="muted">建議只存稱呼，不存生日、地址或電話。</p>')}
+/* 補舊點數：系統上線前用紙本點數卡記的點，一次補登進來（不受每日上限） */
+function legacyDlg(){const ks=D.kids.filter(k=>k.active).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
+ openModal(`<h2>📒 補登紙本點數卡</h2><p class="muted">把系統上線前紙本點數卡上的點數補進來。只要填有點數的孩子，空白的會略過；這些點數不受每日上限限制。</p>
+ <div class="row"><label class="f">紙本卡登記到哪一天<input id="lg_d" type="date" value="${today()}"></label><label class="f sp">備註<input id="lg_r" value="補登紙本點數卡"></label></div>
+ <div class="card" style="max-height:50vh;overflow:auto">${ks.map(k=>`<div class="row" style="margin:4px 0"><b class="sp">${h(k.name)}</b><span class="muted" style="font-size:13px">目前 ⭐ ${bal(k.id)}</span><input class="lgn" data-k="${k.id}" type="number" min="0" inputmode="numeric" style="width:90px" placeholder="點數"></div>`).join('')||'<p class="muted">還沒有孩子，請先新增孩子</p>'}</div>
+ <div class="actions"><button class="blue" onclick="legacySave()">補登</button></div>`)}
+function legacySave(){const d=document.getElementById('lg_d').value||today();const r=(document.getElementById('lg_r').value||'補登紙本點數卡').trim();let n=0,sum=0;
+ document.querySelectorAll('.lgn').forEach(i=>{const v=Math.round(Number(i.value));if(v>0){const e=addPts(i.dataset.k,v,r);e.date=d;e.legacy=true;n++;sum+=v}});
+ if(!n){toast('沒有填任何點數');return}save('補登紙本點數卡：'+n+' 位孩子，共 '+sum+' 點');closeModal();render();toast('已補登 '+n+' 位孩子，共 '+sum+' 點')}
 function adjDlg(id){const k=kid(id);
  openModal(`<h2>${h(k.name)} 加減點</h2><div class="muted">目前 ⭐ ${bal(id)}</div>
- <div class="items" style="margin-top:10px">${D.settings.items.map(it=>`<button onclick="addPts('${id}',${it.pts},'${h(it.name)}');save();closeModal();render();toast('+${it.pts}')">${h(it.name)} +${it.pts}</button>`).join('')}</div>
- <div class="row"><input id="adjN" type="number" style="width:90px" placeholder="點數"><input id="adjR" class="sp" placeholder="原因（扣點請輸入負數）"><button class="blue" onclick="const n=Number(document.getElementById('adjN').value);if(!n)return;addPts('${id}',n,document.getElementById('adjR').value||'手動調整');save('${h(k.name)} 手動調整 '+n);closeModal();render()">確定</button></div>`)}
+ <div class="items" style="margin-top:10px">${D.settings.items.map(it=>`<button onclick="_capNote=false;const e=giveCapped('${id}',${it.pts},'${h(it.name)}');if(e){save();closeModal();render();if(!_capNote)toast('+'+e.pts)}">${h(it.name)} +${it.pts}</button>`).join('')}</div>
+ <div class="row"><input id="adjN" type="number" style="width:90px" placeholder="點數"><input id="adjR" class="sp" placeholder="原因（扣點請輸入負數）"><button class="blue" onclick="const n=Number(document.getElementById('adjN').value);if(!n)return;const e=giveCapped('${id}',n,document.getElementById('adjR').value||'手動調整');if(!e)return;save('${h(k.name)} 手動調整 '+e.pts);closeModal();render()">確定</button></div>
+ ${capOf()?`<p class="muted">今天已得 ${earnedOn(id,today())} / ${capOf()} 點（每日上限；扣點、兌換、補登舊點數不受限制）</p>`:''}`)}
 function redeemDlg(id){const k=kid(id),b=bal(id);
  openModal(`<h2>${h(k.name)} 兌換獎勵</h2><div class="muted">目前 ⭐ ${b}</div>
  ${D.settings.rewards.map(r=>`<div class="row card" style="margin:8px 0"><b class="sp">${h(r.name)}</b><span>⭐ ${r.cost}</span><button class="pri sm" ${b<r.cost?'disabled':''} onclick="addPts('${id}',-${r.cost},'兌換：${h(r.name)}');save('${h(k.name)} 兌換 ${h(r.name)}');closeModal();render();toast('兌換成功')">兌換</button></div>`).join('')}`)}
@@ -1065,7 +1084,7 @@ function pSettings(){const S=D.settings;
  <label class="f">⑧ 預設結束禱告<textarea id="st_pray">${h(S.prayer||'')}</textarea></label>
  ${authOn()?'':`<label class="f">老師名單（一行一位，用於上課紀錄與會議）<textarea id="st_tn">${h((S.teacherNames||[]).join('\n'))}</textarea></label>`}
  ${authOn()?`<label class="f"><input type="checkbox" id="st_r" ${S.requireLogin?'checked':''}> 教學模式點名加點需要老師登入</label>`:''}
- <div class="row"><label class="f">報到截止時間<input id="st_cut" type="time" value="${h(S.cutoff)}"></label><label class="f">準時報到點數<input id="st_on" type="number" value="${S.onPts}"></label><label class="f">晚到報到點數<input id="st_late" type="number" value="${S.latePts}"></label></div><p class="muted">準時與晚到不重複計算；其他項目每人每天各算一次。</p>
+ <div class="row"><label class="f">報到截止時間<input id="st_cut" type="time" value="${h(S.cutoff)}"></label><label class="f">準時報到點數<input id="st_on" type="number" value="${S.onPts}"></label><label class="f">晚到報到點數<input id="st_late" type="number" value="${S.latePts}"></label></div><label class="f">每日點數上限（每個孩子一天最多得幾點，0＝不限）<input id="st_cap" type="number" min="0" value="${S.dailyCap||0}"></label><p class="muted">準時與晚到不重複計算；其他項目每人每天各算一次。補登舊點數、扣點、兌換不受上限影響。</p>
  <label class="f">其他加分項目（一行一個：名稱 | 點數）<textarea id="st_i">${h(S.items.map(i=>i.name+' | '+i.pts).join('\n'))}</textarea></label>
  <label class="f">獎勵（一行一個：名稱 | 所需點數）<textarea id="st_w">${h(S.rewards.map(i=>i.name+' | '+i.cost).join('\n'))}</textarea></label>
  <div class="actions"><button class="blue" onclick="saveSettings()">儲存設定</button></div></div>
@@ -1086,7 +1105,7 @@ async function resetPw(id){const t=D.teachers.find(x=>x.id===id);const p=prompt(
  if(p.length<6){toast('密碼至少 6 碼');return}t.pwHash=await hashPw(p);save('重設 '+t.name+' 的密碼');toast('已重設')}
 function saveSettings(){const v=k=>document.getElementById(k).value;const S=D.settings;
  S.church=v('st_c').trim()||'小羊樂園';S.rules=v('st_rules').split('\n').map(x=>x.trim()).filter(Boolean);S.reasons=v('st_reasons').split('\n').map(x=>x.trim()).filter(Boolean);S.prayer=v('st_pray').trim()||DEFAULT_PRAYER;const r=document.getElementById('st_r');if(r)S.requireLogin=r.checked;const tn=document.getElementById('st_tn');if(tn)S.teacherNames=tn.value.split('\n').map(x=>x.trim()).filter(Boolean);S.cutoff=v('st_cut')||'10:30';S.onPts=Number(v('st_on'))||2;S.latePts=Number(v('st_late'))||1;
- S.items=pairs(v('st_i').split('\n')).map(p=>({name:p[0],pts:Number(p[1])||1}));
+ S.dailyCap=Math.max(0,Number(v('st_cap'))||0);S.items=pairs(v('st_i').split('\n')).map(p=>({name:p[0],pts:Number(p[1])||1}));
  S.rewards=pairs(v('st_w').split('\n')).map(p=>({name:p[0],cost:Number(p[1])||1}));
  save('修改設定');render();toast('設定已儲存')}
 function exportAll(){const b=new Blob([JSON.stringify(D,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='little-lambs-meadow-backup_'+today()+'.json';a.click()}

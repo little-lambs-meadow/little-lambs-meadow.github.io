@@ -256,9 +256,6 @@ var DEFAULT_ITEMS = [{
 }, {
   name: '默寫金句',
   pts: 2
-}, {
-  name: '當天值日生',
-  pts: 1
 }];
 var KEY = 'little_lambs_meadow_v1';
 var uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -290,6 +287,7 @@ var DB = {
         if (d.settings.auth === undefined) d.settings.auth = false;
         if (!d.settings.rules) d.settings.rules = DEFAULT_RULES.slice();
         if (!d.settings.reasons) d.settings.reasons = DEFAULT_REASONS.slice();
+        if (d.settings.dailyCap === undefined) d.settings.dailyCap = 10;
         if (!d.settings.prayer) d.settings.prayer = DEFAULT_PRAYER;
         if (!d.settings.cutoff) {
           d.settings.cutoff = '10:30';
@@ -344,6 +342,7 @@ function demo() {
       cutoff: '10:30',
       onPts: 2,
       latePts: 1,
+      dailyCap: 10,
       items: DEFAULT_ITEMS.map(x => Object.assign({}, x)),
       rewards: [{
         name: '貼紙',
@@ -2647,10 +2646,12 @@ function tPoints() {
   <div class="muted" style="flex-shrink:0;margin-bottom:6px">${hint}</div>
   <div class="fit kidsfit" data-max="28"><div class="kids">${kids.map(k => {
     var t = todayOf(k.id);
-    var tp = t.reduce((a, x) => a + x.pts, 0);
+    var tp = earnedOn(k.id, d),
+      cap = capOf(),
+      full = cap && tp >= cap;
     var ci = t.find(x => x.id === at[k.id]);
     var done = pickItem !== null && typeof pickItem === 'number' && t.some(x => x.reason === S.items[pickItem].name);
-    return `<div class="kid ${ci ? ci.reason === ciLabel(true) ? 'here' : 'here late' : ''} ${done ? 'got' : ''}" id="k_${k.id}" onclick="${manageKids ? 'kidManage' : 'tapKid'}('${k.id}')"><div class="n">${manageKids ? '✏️ ' : ''}${h(k.name)}</div><div class="p">今日 +${tp}</div><div class="p">⭐ ${bal(k.id)}</div></div>`;
+    return `<div class="kid ${ci ? ci.reason === ciLabel(true) ? 'here' : 'here late' : ''} ${done ? 'got' : ''}" id="k_${k.id}" onclick="${manageKids ? 'kidManage' : 'tapKid'}('${k.id}')"><div class="n">${manageKids ? '✏️ ' : ''}${h(k.name)}</div><div class="p" ${full ? 'style="color:#c33;font-weight:700"' : ''}>今日 +${tp}${cap ? '/' + cap : ''}${full ? ' 滿' : ''}</div><div class="p">⭐ ${bal(k.id)}</div></div>`;
   }).join('')}</div></div></div>
   <div class="row" style="margin-top:8px;flex-shrink:0;flex-wrap:nowrap"><input id="newKid" class="sp" style="font-size:16px;min-width:0" placeholder="新朋友的名字" onkeydown="if(event.key==='Enter')quickKid()"><button class="pri" style="white-space:nowrap" onclick="quickKid()">＋<span class="hide-m">加入並報到</span><span class="show-m">新朋友</span></button>
    <button class="ghost" style="white-space:nowrap" onclick="undo()" ${undoStack.length ? '' : 'disabled'}>↶<span class="hide-m"> 復原</span></button></div></div>`;
@@ -2719,6 +2720,32 @@ function addPts(kidId, pts, reason) {
   D.ledger.push(e);
   return e;
 }
+/* 每日上限：每個孩子一天最多得幾點（補登舊點數、兌換不算） */
+function capOf() {
+  var c = Number(D.settings.dailyCap);
+  return c > 0 ? c : 0;
+}
+function earnedOn(id, d, excl) {
+  return D.ledger.reduce((a, x) => x.kidId === id && x.date === d && x.id !== excl && !x.legacy && x.pts > 0 ? a + x.pts : a, 0);
+}
+function giveCapped(id, pts, reason, zeroOk) {
+  if (pts <= 0) return addPts(id, pts, reason);
+  var cap = capOf();
+  if (!cap) return addPts(id, pts, reason);
+  var left = cap - earnedOn(id, today());
+  var k = kid(id);
+  if (left <= 0) {
+    if (zeroOk) return addPts(id, 0, reason);
+    toast('⛔ ' + k.name + ' 今天已經拿滿 ' + cap + ' 點了');
+    return null;
+  }
+  if (pts > left) {
+    toast('⚠️ ' + k.name + ' 今天只剩 ' + left + ' 點額度（上限 ' + cap + '）');
+    _capNote = true;
+  }
+  return addPts(id, Math.min(pts, left), reason);
+}
+var _capNote = false;
 function delLedger(lid) {
   D.ledger = D.ledger.filter(x => x.id !== lid);
   undoStack = undoStack.filter(u => u.lid !== lid);
@@ -2738,7 +2765,8 @@ function tapKid(id) {
       toast('取消 ' + k.name + ' 的報到');
     } else {
       if (old) delLedger(old.id);
-      var e = addPts(id, on ? S.onPts : S.latePts, ciLabel(on));
+      _capNote = false;
+      var e = giveCapped(id, on ? S.onPts : S.latePts, ciLabel(on), true);
       D.attend[d][id] = e.id;
       undoStack.push({
         lid: e.id,
@@ -2746,7 +2774,7 @@ function tapKid(id) {
         d
       });
       save();
-      toast(k.name + ' ' + e.reason + ' +' + e.pts);
+      if (!_capNote) toast(k.name + ' ' + e.reason + ' +' + e.pts);
     }
   } else {
     var it = S.items[pickItem];
@@ -2756,12 +2784,15 @@ function tapKid(id) {
       save();
       toast('取消 ' + k.name + ' 的「' + it.name + '」');
     } else {
-      var _e = addPts(id, it.pts, it.name);
-      undoStack.push({
-        lid: _e.id
-      });
-      save();
-      toast(k.name + ' ' + it.name + ' +' + it.pts);
+      _capNote = false;
+      var _e = giveCapped(id, it.pts, it.name);
+      if (_e) {
+        undoStack.push({
+          lid: _e.id
+        });
+        save();
+        if (!_capNote) toast(k.name + ' ' + it.name + ' +' + _e.pts);
+      }
     }
   }
   render();
@@ -3091,7 +3122,7 @@ function printShow(id) {
 var showInactive = false;
 function pKids() {
   var ks = D.kids.filter(k => showInactive || k.active).sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'));
-  return `<div class="row" style="margin-bottom:10px"><h2 class="sp">孩子點數</h2><label class="muted"><input type="checkbox" ${showInactive ? 'checked' : ''} onchange="showInactive=this.checked;render()"> 顯示已停用</label><button class="blue" onclick="editKid()">＋新增孩子</button></div>
+  return `<div class="row" style="margin-bottom:10px"><h2 class="sp">孩子點數</h2><label class="muted"><input type="checkbox" ${showInactive ? 'checked' : ''} onchange="showInactive=this.checked;render()"> 顯示已停用</label><button class="ghost" onclick="legacyDlg()">📒 補舊點數</button><button class="blue" onclick="editKid()">＋新增孩子</button></div>
  <div class="card"><table class="ktable"><tr class="khead"><th>名字</th><th>點數</th><th></th></tr>${ks.map(k => `<tr class="krow" style="${k.active ? '' : 'opacity:.5'}"><td class="nm"><b>${h(k.name)}</b> ${k.flag ? '<span class="flag" title="需要留意">⚠️</span>' : ''}<div class="muted">${h(k.group)}${k.flag && k.flagNote ? ' · ' + h(k.flagNote) : ''}</div></td><td class="pt"><b>⭐ ${bal(k.id)}</b></td>
  <td class="act" style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="adjDlg('${k.id}')">加減點</button> <button class="sm pri" onclick="redeemDlg('${k.id}')">兌換</button> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button> <button class="sm ghost" onclick="editKid('${k.id}')">編輯</button>${isAdmin() ? ` <button class="sm danger" onclick="deleteKid('${k.id}')">刪除</button>` : ''}</td></tr>`).join('')}</table></div>
  <p class="muted">「啟用」取消勾選＝隱藏。隱藏的孩子不會出現在點名畫面，但點數和紀錄都會保留，回來時再啟用就好。</p>`;
@@ -3111,11 +3142,44 @@ function editKid(id) {
     save((id ? '修改' : '新增') + '孩子 ' + v.name);
   }, '<p class="muted">建議只存稱呼，不存生日、地址或電話。</p>');
 }
+/* 補舊點數：系統上線前用紙本點數卡記的點，一次補登進來（不受每日上限） */
+function legacyDlg() {
+  var ks = D.kids.filter(k => k.active).sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'));
+  openModal(`<h2>📒 補登紙本點數卡</h2><p class="muted">把系統上線前紙本點數卡上的點數補進來。只要填有點數的孩子，空白的會略過；這些點數不受每日上限限制。</p>
+ <div class="row"><label class="f">紙本卡登記到哪一天<input id="lg_d" type="date" value="${today()}"></label><label class="f sp">備註<input id="lg_r" value="補登紙本點數卡"></label></div>
+ <div class="card" style="max-height:50vh;overflow:auto">${ks.map(k => `<div class="row" style="margin:4px 0"><b class="sp">${h(k.name)}</b><span class="muted" style="font-size:13px">目前 ⭐ ${bal(k.id)}</span><input class="lgn" data-k="${k.id}" type="number" min="0" inputmode="numeric" style="width:90px" placeholder="點數"></div>`).join('') || '<p class="muted">還沒有孩子，請先新增孩子</p>'}</div>
+ <div class="actions"><button class="blue" onclick="legacySave()">補登</button></div>`);
+}
+function legacySave() {
+  var d = document.getElementById('lg_d').value || today();
+  var r = (document.getElementById('lg_r').value || '補登紙本點數卡').trim();
+  var n = 0,
+    sum = 0;
+  document.querySelectorAll('.lgn').forEach(i => {
+    var v = Math.round(Number(i.value));
+    if (v > 0) {
+      var e = addPts(i.dataset.k, v, r);
+      e.date = d;
+      e.legacy = true;
+      n++;
+      sum += v;
+    }
+  });
+  if (!n) {
+    toast('沒有填任何點數');
+    return;
+  }
+  save('補登紙本點數卡：' + n + ' 位孩子，共 ' + sum + ' 點');
+  closeModal();
+  render();
+  toast('已補登 ' + n + ' 位孩子，共 ' + sum + ' 點');
+}
 function adjDlg(id) {
   var k = kid(id);
   openModal(`<h2>${h(k.name)} 加減點</h2><div class="muted">目前 ⭐ ${bal(id)}</div>
- <div class="items" style="margin-top:10px">${D.settings.items.map(it => `<button onclick="addPts('${id}',${it.pts},'${h(it.name)}');save();closeModal();render();toast('+${it.pts}')">${h(it.name)} +${it.pts}</button>`).join('')}</div>
- <div class="row"><input id="adjN" type="number" style="width:90px" placeholder="點數"><input id="adjR" class="sp" placeholder="原因（扣點請輸入負數）"><button class="blue" onclick="const n=Number(document.getElementById('adjN').value);if(!n)return;addPts('${id}',n,document.getElementById('adjR').value||'手動調整');save('${h(k.name)} 手動調整 '+n);closeModal();render()">確定</button></div>`);
+ <div class="items" style="margin-top:10px">${D.settings.items.map(it => `<button onclick="_capNote=false;const e=giveCapped('${id}',${it.pts},'${h(it.name)}');if(e){save();closeModal();render();if(!_capNote)toast('+'+e.pts)}">${h(it.name)} +${it.pts}</button>`).join('')}</div>
+ <div class="row"><input id="adjN" type="number" style="width:90px" placeholder="點數"><input id="adjR" class="sp" placeholder="原因（扣點請輸入負數）"><button class="blue" onclick="const n=Number(document.getElementById('adjN').value);if(!n)return;const e=giveCapped('${id}',n,document.getElementById('adjR').value||'手動調整');if(!e)return;save('${h(k.name)} 手動調整 '+e.pts);closeModal();render()">確定</button></div>
+ ${capOf() ? `<p class="muted">今天已得 ${earnedOn(id, today())} / ${capOf()} 點（每日上限；扣點、兌換、補登舊點數不受限制）</p>` : ''}`);
 }
 function redeemDlg(id) {
   var k = kid(id),
@@ -3438,7 +3502,7 @@ function pSettings() {
  <label class="f">⑧ 預設結束禱告<textarea id="st_pray">${h(S.prayer || '')}</textarea></label>
  ${authOn() ? '' : `<label class="f">老師名單（一行一位，用於上課紀錄與會議）<textarea id="st_tn">${h((S.teacherNames || []).join('\n'))}</textarea></label>`}
  ${authOn() ? `<label class="f"><input type="checkbox" id="st_r" ${S.requireLogin ? 'checked' : ''}> 教學模式點名加點需要老師登入</label>` : ''}
- <div class="row"><label class="f">報到截止時間<input id="st_cut" type="time" value="${h(S.cutoff)}"></label><label class="f">準時報到點數<input id="st_on" type="number" value="${S.onPts}"></label><label class="f">晚到報到點數<input id="st_late" type="number" value="${S.latePts}"></label></div><p class="muted">準時與晚到不重複計算；其他項目每人每天各算一次。</p>
+ <div class="row"><label class="f">報到截止時間<input id="st_cut" type="time" value="${h(S.cutoff)}"></label><label class="f">準時報到點數<input id="st_on" type="number" value="${S.onPts}"></label><label class="f">晚到報到點數<input id="st_late" type="number" value="${S.latePts}"></label></div><label class="f">每日點數上限（每個孩子一天最多得幾點，0＝不限）<input id="st_cap" type="number" min="0" value="${S.dailyCap || 0}"></label><p class="muted">準時與晚到不重複計算；其他項目每人每天各算一次。補登舊點數、扣點、兌換不受上限影響。</p>
  <label class="f">其他加分項目（一行一個：名稱 | 點數）<textarea id="st_i">${h(S.items.map(i => i.name + ' | ' + i.pts).join('\n'))}</textarea></label>
  <label class="f">獎勵（一行一個：名稱 | 所需點數）<textarea id="st_w">${h(S.rewards.map(i => i.name + ' | ' + i.cost).join('\n'))}</textarea></label>
  <div class="actions"><button class="blue" onclick="saveSettings()">儲存設定</button></div></div>
@@ -3542,6 +3606,7 @@ function saveSettings() {
   S.cutoff = v('st_cut') || '10:30';
   S.onPts = Number(v('st_on')) || 2;
   S.latePts = Number(v('st_late')) || 1;
+  S.dailyCap = Math.max(0, Number(v('st_cap')) || 0);
   S.items = pairs(v('st_i').split('\n')).map(p => ({
     name: p[0],
     pts: Number(p[1]) || 1
