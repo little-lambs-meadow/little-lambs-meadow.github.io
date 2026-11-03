@@ -224,7 +224,7 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const DB={
  load(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(d&&d.settings)return DB.fix(d)}}catch(e){}return demo()},
- fix(d){{{d.invites=d.invites||[];(d.log||[]).forEach(l=>{if(!l.id){l.id=uid();l.t=l.t||0}});if(d.settings.auth===undefined)d.settings.auth=false;if(!d.settings.rules)d.settings.rules=DEFAULT_RULES.slice();if(!d.settings.reasons)d.settings.reasons=DEFAULT_REASONS.slice();if(d.settings.dailyCap===undefined)d.settings.dailyCap=10;if(!d.settings.prayer)d.settings.prayer=DEFAULT_PRAYER;if(!d.settings.cutoff){d.settings.cutoff='10:30';d.settings.onPts=2;d.settings.latePts=1}if((d.settings.items||[]).map(x=>x.name).join()==='背金句,帶聖經,幫忙收拾,熱心參與')d.settings.items=DEFAULT_ITEMS.map(x=>Object.assign({},x));const dm=demo();(d.lessons||[]).forEach(l=>{const x=dm.lessons.find(y=>y.title===l.title&&y.video===l.video);if(x){['intro','iceName','prayer'].forEach(k=>{if(!l[k])l[k]=x[k]})}});(d.songs||[]).forEach(sg=>{if(sg.title==='（示範）本季主題詩歌'&&sg.theme===undefined)sg.theme=true});d.settings.teacherNames=d.settings.teacherNames||['王老師','李老師'];d.teachers=(d.teachers||[]).filter(t=>t.pwHash);return d}}},
+ fix(d){{{d.invites=d.invites||[];(d.log||[]).forEach(l=>{if(!l.id){l.id=uid();l.t=l.t||0}});if(d.settings.auth===undefined)d.settings.auth=false;if(!d.settings.rules)d.settings.rules=DEFAULT_RULES.slice();if(!d.settings.reasons)d.settings.reasons=DEFAULT_REASONS.slice();if(d.settings.dailyCap===undefined)d.settings.dailyCap=10;Object.keys(d.settings).forEach(k=>{if(!/^[A-Za-z_]\w*$/.test(k))delete d.settings[k]});if(!d.settings.church)d.settings.church='小羊樂園';if(!d.settings.prayer)d.settings.prayer=DEFAULT_PRAYER;if(!d.settings.cutoff){d.settings.cutoff='10:30';d.settings.onPts=2;d.settings.latePts=1}if((d.settings.items||[]).map(x=>x.name).join()==='背金句,帶聖經,幫忙收拾,熱心參與')d.settings.items=DEFAULT_ITEMS.map(x=>Object.assign({},x));const dm=demo();(d.lessons||[]).forEach(l=>{const x=dm.lessons.find(y=>y.title===l.title&&y.video===l.video);if(x){['intro','iceName','prayer'].forEach(k=>{if(!l[k])l[k]=x[k]})}});(d.songs||[]).forEach(sg=>{if(sg.title==='（示範）本季主題詩歌'&&sg.theme===undefined)sg.theme=true});d.settings.teacherNames=d.settings.teacherNames||['王老師','李老師'];d.teachers=(d.teachers||[]).filter(t=>t.pwHash);return d}}},
  save(d){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){toast('無法儲存，請用「設定 → 匯出備份」')}}
 };
 function demo(){
@@ -263,7 +263,7 @@ const Cloud={url:'',pw:'',ver:0,base:{},snap:{},busy:false,state:'off',lastOk:0,
 function cloudPersist(){try{localStorage.setItem(CK,JSON.stringify({url:Cloud.url,pw:Cloud.pw,ver:Cloud.bver||Cloud.ver,base:Cloud.base,skip:Cloud.skip}))}catch(e){}}
 const COLS=['teachers','invites','lessons','songs','shows','kids','ledger','sessions','log'];
 /* 設定每一項分開同步（settings/規則、settings/點數項目…），避免舊裝置整包覆蓋別人剛改好的設定 */
-function toRecs(d){const r={};Object.keys(d.settings||{}).forEach(k=>{if(d.settings[k]!==undefined)r['settings/'+k]=JSON.stringify(d.settings[k])});
+function toRecs(d){const r={};Object.keys(d.settings||{}).forEach(k=>{if(d.settings[k]!==undefined&&/^[A-Za-z_]\w*$/.test(k))r['settings/'+k]=JSON.stringify(d.settings[k])});
  COLS.forEach(c=>(d[c]||[]).forEach(x=>{const id=c==='invites'?x.code:x.id;if(id)r[c+'/'+id]=JSON.stringify(x)}));
  (d.meetings||[]).forEach(m=>{const o=Object.assign({},m);delete o.entries;r['meetings/'+m.id]=JSON.stringify(o);
   (m.entries||[]).forEach(e=>{r['mentries/'+e.id]=JSON.stringify(Object.assign({mid:m.id},e))})});
@@ -271,11 +271,11 @@ function toRecs(d){const r={};Object.keys(d.settings||{}).forEach(k=>{if(d.setti
  return r}
 function fromRecs(r){const d={settings:null,meetings:[],attend:{}};COLS.forEach(c=>d[c]=[]);const ents=[];let sMain=null;const sPer={};
  Object.keys(r).forEach(k=>{const c=k.slice(0,k.indexOf('/'));let v;try{v=JSON.parse(r[k])}catch(e){return}
-  if(c==='settings'){const sk=k.slice(9);if(sk==='main')sMain=v;else sPer[sk]=v}else if(c==='meetings'){v.entries=[];d.meetings.push(v)}else if(c==='mentries')ents.push(v);
+  if(c==='settings'){const sk=k.slice(9);if(sk==='main'){if(v&&typeof v==='object'&&!Array.isArray(v))sMain=v}else if(/^[A-Za-z_]\w*$/.test(sk))sPer[sk]=v}else if(c==='meetings'){v.entries=[];d.meetings.push(v)}else if(c==='mentries')ents.push(v);
   else if(c==='attend')(d.attend[v.d]=d.attend[v.d]||{})[v.k]=v.lid;else if(d[c])d[c].push(v)});
  ents.sort((a,b)=>(a.ts||0)-(b.ts||0)).forEach(e=>{const m=d.meetings.find(x=>x.id===e.mid);if(m){const o=Object.assign({},e);delete o.mid;m.entries.push(o)}});
  d.log.sort((a,b)=>(b.t||0)-(a.t||0));d.log=d.log.slice(0,300);
- if(sMain||Object.keys(sPer).length)d.settings=Object.assign({},sMain||{},sPer);
+ if(sMain||Object.keys(sPer).length)d.settings=Object.assign({},demo().settings,sMain||{},sPer);  // 缺少的設定用預設值補上
  if(!d.settings)d.settings=demo().settings;
  return DB.fix(d)}
 function cloudDirty(){const L=toRecs(D),B=Cloud.base,out=[];

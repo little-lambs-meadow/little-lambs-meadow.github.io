@@ -221,7 +221,6 @@ if(!Array.prototype.flatMap){Array.prototype.flatMap=function(f,t){return Array.
 if(!String.prototype.padStart){String.prototype.padStart=function(n,c){var s=String(this);c=c||' ';while(s.length<n)s=c+s;return s.slice(-Math.max(n,String(this).length))}}
 if(!Object.entries){Object.entries=function(o){return Object.keys(o).map(function(k){return[k,o[k]]})}}
 if(window.NodeList&&!NodeList.prototype.forEach){NodeList.prototype.forEach=Array.prototype.forEach}
-function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(r) { for (var t = 1; t < arguments.length; t++) { var o = null != arguments[t] ? arguments[t] : {}; t % 2 ? ownKeys(Object(o), !0).forEach(function (t) { _defineProperty(r, t, o[t]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(r, Object.getOwnPropertyDescriptors(o)) : ownKeys(Object(o)).forEach(function (e) { Object.defineProperty(r, e, Object.getOwnPropertyDescriptor(o, e)); }); } return r; }
 function _defineProperty(r, t, o) { return (t = _toPropertyKey(t)) in r ? Object.defineProperty(r, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : r[t] = o, r; }
@@ -235,6 +234,7 @@ function _nonIterableRest() { throw new TypeError("Invalid attempt to destructur
 function _unsupportedIterableToArray(t, e) { if (t) { if ("string" == typeof t) return _arrayLikeToArray(t, e); var o = {}.toString.call(t).slice(8, -1); return "Object" === o && t.constructor && (o = t.constructor.name), "Map" === o || "Set" === o ? Array.from(t) : "Arguments" === o || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(o) ? _arrayLikeToArray(t, e) : void 0; } }
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function _iterableToArrayLimit(r, t) { var e = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (Array.isArray(r) && (null == e || e === ("undefined" != typeof Symbol && [][Symbol.iterator]) || e === []["@@iterator"])) return r; if (null != e) { var l, n, i, a, u = [], o = !0, f = !1; try { if (i = (e = e.call(r)).next, 0 === t) { if (Object(e) !== e) return; o = !1; } else for (; !(o = (l = i.call(e)).done) && (u.push(l.value), u.length !== t); o = !0); } catch (r) { f = !0, n = r; } finally { try { if (!o && null != e.return && (a = e.return(), Object(a) !== a)) return; } finally { if (f) throw n; } } return u; } }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 /* ============ 資料層（之後換成 Google 試算表 / Firebase 只需改這裡） ============ */
 var DEFAULT_RULES = ['我會準時上課', '我會聽從老師的指令', '我會先舉手再發言'];
 var DEFAULT_REASONS = ['愛神，把神放在 No.1', '學習神的話', '帶人認識神', '做對的事'];
@@ -289,6 +289,10 @@ var DB = {
         if (!d.settings.rules) d.settings.rules = DEFAULT_RULES.slice();
         if (!d.settings.reasons) d.settings.reasons = DEFAULT_REASONS.slice();
         if (d.settings.dailyCap === undefined) d.settings.dailyCap = 10;
+        Object.keys(d.settings).forEach(k => {
+          if (!/^[A-Za-z_]\w*$/.test(k)) delete d.settings[k];
+        });
+        if (!d.settings.church) d.settings.church = '小羊樂園';
         if (!d.settings.prayer) d.settings.prayer = DEFAULT_PRAYER;
         if (!d.settings.cutoff) {
           d.settings.cutoff = '10:30';
@@ -497,7 +501,7 @@ var COLS = ['teachers', 'invites', 'lessons', 'songs', 'shows', 'kids', 'ledger'
 function toRecs(d) {
   var r = {};
   Object.keys(d.settings || {}).forEach(k => {
-    if (d.settings[k] !== undefined) r['settings/' + k] = JSON.stringify(d.settings[k]);
+    if (d.settings[k] !== undefined && /^[A-Za-z_]\w*$/.test(k)) r['settings/' + k] = JSON.stringify(d.settings[k]);
   });
   COLS.forEach(c => (d[c] || []).forEach(x => {
     var id = c === 'invites' ? x.code : x.id;
@@ -542,7 +546,9 @@ function fromRecs(r) {
     }
     if (c === 'settings') {
       var sk = k.slice(9);
-      if (sk === 'main') sMain = v;else sPer[sk] = v;
+      if (sk === 'main') {
+        if (v && _typeof(v) === 'object' && !Array.isArray(v)) sMain = v;
+      } else if (/^[A-Za-z_]\w*$/.test(sk)) sPer[sk] = v;
     } else if (c === 'meetings') {
       v.entries = [];
       d.meetings.push(v);
@@ -558,7 +564,7 @@ function fromRecs(r) {
   });
   d.log.sort((a, b) => (b.t || 0) - (a.t || 0));
   d.log = d.log.slice(0, 300);
-  if (sMain || Object.keys(sPer).length) d.settings = Object.assign({}, sMain || {}, sPer);
+  if (sMain || Object.keys(sPer).length) d.settings = Object.assign({}, demo().settings, sMain || {}, sPer); // 缺少的設定用預設值補上
   if (!d.settings) d.settings = demo().settings;
   return DB.fix(d);
 }
