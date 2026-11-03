@@ -18,8 +18,12 @@
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{margin:0;font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-tap-highlight-color:transparent}
 header{color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px #0002}
-header.teach{background:linear-gradient(135deg,#e2572a,#f2a128)}
-header.staff{background:linear-gradient(135deg,#2a5bd6,#3f8fe0)}
+header.teach{background:linear-gradient(135deg,#e2572a,#f2a128);background:linear-gradient(90deg,rgba(226,87,42,.88),rgba(234,120,40,.62) 45%,rgba(242,161,40,.25)),url(assets/banner-l.jpg) left bottom/auto 100% no-repeat,url(assets/banner-r.jpg) right bottom/auto 100% no-repeat,url(assets/banner-mid.jpg) center/100% 100% no-repeat}
+header.staff{background:linear-gradient(135deg,#2a5bd6,#3f8fe0);background:linear-gradient(90deg,rgba(42,91,214,.9),rgba(52,110,220,.65) 45%,rgba(63,143,224,.3)),url(assets/banner-l.jpg) left bottom/auto 100% no-repeat,url(assets/banner-r.jpg) right bottom/auto 100% no-repeat,url(assets/banner-mid.jpg) center/100% 100% no-repeat}
+nav button .ni{width:26px;height:26px;vertical-align:middle;margin:-5px 5px -3px -3px}
+/* 課程背景：羊老師帶小羊上課（所有頁面共用，蓋一層淡淡的米色讓字清楚） */
+body{background-color:#f7f3ec;background-image:linear-gradient(rgba(247,243,236,.5),rgba(247,243,236,.5)),url(assets/bg.jpg);background-position:center bottom;background-size:cover;background-attachment:fixed}
+@media (orientation:portrait) and (max-width:820px){body{background-image:linear-gradient(rgba(247,243,236,.5),rgba(247,243,236,.5)),url(assets/bg-m.jpg)}header.teach{background:linear-gradient(135deg,rgba(226,87,42,.8),rgba(242,161,40,.5)),url(assets/banner-m.jpg) center 70%/cover}header.staff{background:linear-gradient(135deg,rgba(42,91,214,.85),rgba(63,143,224,.6)),url(assets/banner-m.jpg) center 70%/cover}}
 .hrow{display:flex;gap:8px;align-items:center;justify-content:space-between;max-width:1400px;margin:auto;padding:10px 16px 4px}
 .hlogo{width:30px;height:30px;border-radius:8px;vertical-align:middle;margin:-3px 8px 0 0;box-shadow:0 1px 3px #0003}
 header h1{margin:0;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -448,7 +452,7 @@ function pairs(lines,numeric){return lines.map(s=>{const p=s.split('|').map(x=>x
 
 /* ============ 外框 ============ */
 const STEPS=[['rules','規則'],['worship','敬拜'],['ice','破冰'],['intro','前言'],['video','妙妙書'],['qa','問答'],['verse','金句'],['pray','禱告']];
-const TEACH_TABS=STEPS.map(([k,n],i)=>[k,`<span class="n">${i+1}</span>${n}`]).concat([['points','⭐ 點名'],['rank','🏆 排行']]);
+const TEACH_TABS=STEPS.map(([k,n],i)=>[k,`<img class="ni" src="assets/ic-s${i+1}.png" alt="">${n}`]).concat([['points','<img class="ni" src="assets/ic-points.png" alt="">點名'],['rank','<img class="ni" src="assets/ic-rank.png" alt="">排行']]);
 const STAFF_TABS=[['lessons','備課'],['songs','詩歌'],['shows','成發'],['kids','孩子點數'],['sessions','上課紀錄'],['meetings','會議'],['settings','設定']];
 function render(){applyZy();
  if(authOn()&&user&&!(me()&&me().active!==false)){setUser(null);mode='teach';tab='rules'}
