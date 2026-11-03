@@ -15,6 +15,7 @@
 <style>
 :root{--bg:#f7f3ec;--card:#fff;--ink:#2b2622;--muted:#7a7068;--pri:#e2572a;--soft:#fde8df;--blue:#2a6fd6;--bsoft:#e3eefc;--ok:#2e9b5a;--warn:#c9711c;--wsoft:#fff1df;--line:#e6ddd0}
 *{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{margin:0;font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-tap-highlight-color:transparent}
 header{color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px #0002}
 header.teach{background:linear-gradient(135deg,#e2572a,#f2a128)}
@@ -150,6 +151,17 @@ a{color:var(--blue)}
 /* ===== 手機版 ===== */
 .show-m{display:none}
 nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+/* 手機橫放（畫面很矮）：上方精簡，把空間留給內容 */
+@media (orientation:landscape) and (max-height:500px){
+ header .hrow{padding:4px 10px 0;gap:6px}header h1{font-size:15px;max-width:22vw}.uname{display:none}
+ header .who button,header .who .badge,header .who span{font-size:12px!important;padding:4px 8px!important}
+ .hsel{padding:3px 6px;font-size:13px}
+ nav{padding:3px 10px 5px;gap:3px}nav button{padding:4px 9px;font-size:13px}nav button .n{width:16px;height:16px;line-height:16px;font-size:10px}
+ main.teach{padding:6px 10px 4px}
+ .tbar{margin-bottom:4px}.tbar button,.tbar a,.tbar select{padding:5px 10px!important;font-size:14px!important}
+ .tbar .pri[onclick^="sbPlayFull"]{padding:6px 10px!important;font-size:16px!important}
+ .bigcard,.proj{padding:12px 16px!important}.qcard{padding:12px!important}
+}
 .items::-webkit-scrollbar,.tbar::-webkit-scrollbar{display:none}
 @media (max-width:600px){
  input,select,textarea{font-size:16px!important}
@@ -553,13 +565,21 @@ function layout(){
  const m=document.getElementById('app');
  if(mode!=='teach'){m.className='';m.style.height='';document.body.style.overflow='';return}
  m.className='teach';document.body.style.overflow='hidden';
- m.style.height=Math.max(300,window.innerHeight-document.getElementById('hdr').offsetHeight)+'px';
+ const vh=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;m.style.height=Math.max(160,Math.min(vh,window.innerHeight)-document.getElementById('hdr').offsetHeight)+'px';
  document.querySelectorAll('.vwrap').forEach(w=>{const v=w.querySelector('.video');if(!v)return;const W=w.clientWidth,H=w.clientHeight;const vw=Math.max(160,Math.min(W,H*16/9));v.style.width=vw+'px';v.style.height=(vw*9/16)+'px';v.style.paddingTop='0'});
  document.querySelectorAll('.fit').forEach(fitText);
 }
 function fitText(e){if(window.innerWidth<=600&&e.classList.contains('kidsfit')){e.style.fontSize='';return}let f=Number(e.getAttribute('data-max'))||40;e.style.fontSize=f+'px';
  while(f>12&&(e.scrollHeight>e.clientHeight+1||e.scrollWidth>e.clientWidth+1)){f-=2;e.style.fontSize=f+'px'}}
-window.addEventListener('resize',()=>{if(mode==='teach')layout()});
+/* 翻轉手機／平板時，瀏覽器的新尺寸要過一下子才會到位：分幾次重新排版，等尺寸穩定 */
+let _rlT=[];function relayout(){_rlT.forEach(clearTimeout);if(document.fullscreenElement||document.webkitFullscreenElement)return;
+ const go=()=>{if(mode==='teach')layout();const n=document.querySelector('header nav .on');if(n){const p=n.parentNode;p.scrollLeft=n.offsetLeft-(p.clientWidth-n.offsetWidth)/2}};
+ go();_rlT=[80,250,500,900].map(t=>setTimeout(go,t))}
+window.addEventListener('resize',relayout);
+window.addEventListener('orientationchange',relayout);
+if(window.visualViewport)window.visualViewport.addEventListener('resize',relayout);
+if(window.matchMedia){const mq=window.matchMedia('(orientation: portrait)');if(mq.addEventListener)mq.addEventListener('change',relayout);else if(mq.addListener)mq.addListener(relayout)}
+document.addEventListener('fullscreenchange',()=>setTimeout(relayout,300));document.addEventListener('webkitfullscreenchange',()=>setTimeout(relayout,300));
 function tRules(){const r=D.settings.rules||[],w=D.settings.reasons||[];
  return stepPage(`<div class="bigcard fit zy" data-max="44"><div class="rules2"><div class="rcol"><div class="rhd">📏 主日學規則</div><ol>${r.map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>
   ${w.length?`<div class="rsep"></div><div class="rcol"><div class="rhd">❤️ 參加主日學的原因</div><ol>${w.map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>`:''}</div></div>`,false)}
