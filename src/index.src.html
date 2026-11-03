@@ -458,7 +458,7 @@ function pairs(lines,numeric){return lines.map(s=>{const p=s.split('|').map(x=>x
 
 /* ============ 外框 ============ */
 const STEPS=[['rules','規則'],['worship','敬拜'],['ice','破冰'],['intro','前言'],['video','妙妙書'],['qa','問答'],['verse','金句'],['pray','禱告']];
-const TEACH_TABS=STEPS.map(([k,n],i)=>[k,`<img class="ni" src="assets/ic-s${i+1}.png" alt="">${n}`]).concat([['points','<img class="ni" src="assets/ic-points.png" alt="">點名'],['rank','<img class="ni" src="assets/ic-rank.png" alt="">點數']]);
+const TEACH_TABS=STEPS.map(([k,n],i)=>[k,`<img class="ni" src="assets/ic-s${i+1}.png" alt="">${n}`]).concat([['points','<img class="ni" src="assets/ic-points.png" alt="">點名'],['rank','<img class="ni" src="assets/ic-rank.png?v=2" alt="">點數']]);
 const STAFF_TABS=[['lessons','備課'],['songs','詩歌'],['shows','成發'],['kids','孩子點數'],['sessions','上課紀錄'],['meetings','會議'],['settings','設定']];
 function render(){applyZy();
  if(authOn()&&user&&!(me()&&me().active!==false)){setUser(null);mode='teach';tab='rules'}
