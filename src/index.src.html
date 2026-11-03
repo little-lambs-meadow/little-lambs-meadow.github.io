@@ -379,8 +379,11 @@ function cloudStart(){if(!Cloud.url)return;
 
 /* ============ 狀態 ============ */
 let user=null;try{user=localStorage.getItem('llm_user')||sessionStorage.getItem('ss_user')}catch(e){}
-let mode=user?'staff':'teach', tab=user?'lessons':'rules';
-let curLesson=null, curSong=null, curMeeting=null, verseLang='both', hidTok=new Set(), fontSize=26, pickItem=null, undoStack=[];
+/* 開 app 一律從上課畫面開始；按「重新整理」時回到原本的畫面（老師區仍需登入） */
+let mode='teach', tab='rules', VIEW0=null;
+try{const v=VIEW0=JSON.parse(sessionStorage.getItem('llm_view')||'null');sessionStorage.removeItem('llm_view');
+ if(v&&(v.mode==='teach'||(v.mode==='staff'&&user))){mode=v.mode;tab=v.tab||(v.mode==='staff'?'lessons':'rules')}}catch(e){}
+let curLesson=(VIEW0&&VIEW0.lesson)||null, curSong=null, curMeeting=null, verseLang='both', hidTok=new Set(), fontSize=26, pickItem=null, undoStack=[];
 
 /* ============ 工具 ============ */
 function h(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -1155,7 +1158,7 @@ render();
 cloudStart();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 /* 重新整理：安裝成 App 後沒有瀏覽器的重新整理鍵，所以在上方放一顆；會先更新程式、清掉舊快取，再載入最新版 */
-async function hardReload(){toast('🔄 正在載入最新版…');
+async function hardReload(){toast('🔄 正在載入最新版…');try{sessionStorage.setItem('llm_view',JSON.stringify({mode,tab,lesson:curLesson}))}catch(e){}
  try{if(Cloud&&Cloud.pw&&cloudDirty().length){cloudTick();await new Promise(r=>setTimeout(r,2000))}}catch(e){}  // 還沒上傳的修改先送出
  try{if(navigator.serviceWorker){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.update().catch(()=>{})))}}catch(e){}
  try{if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}}catch(e){}

@@ -918,9 +918,19 @@ var user = null;
 try {
   user = localStorage.getItem('llm_user') || sessionStorage.getItem('ss_user');
 } catch (e) {}
-var mode = user ? 'staff' : 'teach',
-  tab = user ? 'lessons' : 'rules';
-var curLesson = null,
+/* 開 app 一律從上課畫面開始；按「重新整理」時回到原本的畫面（老師區仍需登入） */
+var mode = 'teach',
+  tab = 'rules',
+  VIEW0 = null;
+try {
+  var v = VIEW0 = JSON.parse(sessionStorage.getItem('llm_view') || 'null');
+  sessionStorage.removeItem('llm_view');
+  if (v && (v.mode === 'teach' || v.mode === 'staff' && user)) {
+    mode = v.mode;
+    tab = v.tab || (v.mode === 'staff' ? 'lessons' : 'rules');
+  }
+} catch (e) {}
+var curLesson = VIEW0 && VIEW0.lesson || null,
   curSong = null,
   curMeeting = null,
   verseLang = 'both',
@@ -3762,6 +3772,13 @@ function hardReload() {
 function _hardReload() {
   _hardReload = _asyncToGenerator(function* () {
     toast('🔄 正在載入最新版…');
+    try {
+      sessionStorage.setItem('llm_view', JSON.stringify({
+        mode,
+        tab,
+        lesson: curLesson
+      }));
+    } catch (e) {}
     try {
       if (Cloud && Cloud.pw && cloudDirty().length) {
         cloudTick();
