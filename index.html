@@ -151,6 +151,7 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 .kidsfit .kids{grid-template-columns:repeat(auto-fill,minmax(6.5em,1fr))}
 .kidsfit .kid{padding:.5em .3em}.kidsfit .kid .n{font-size:1em}.kidsfit .kid .p{font-size:.7em}
 .rank.fit li{font-size:1em}
+.kid.ptc{cursor:default}.kid.ptc .pt{font-size:1.1em;font-weight:700;color:#e2572a}.kidsfit .kid.ptc .pt{font-size:1em}
 .empty{text-align:center;color:#7a7068;padding:30px 10px}
 .notice{background:#fff1df;border-radius:10px;padding:10px 12px;font-size:14px}
 a{color:#2a6fd6}
@@ -1151,7 +1152,7 @@ var TEACH_TABS = STEPS.map((_ref5, i) => {
     k = _ref6[0],
     n = _ref6[1];
   return [k, `<img class="ni" src="assets/ic-s${i + 1}.png" alt="">${n}`];
-}).concat([['points', '<img class="ni" src="assets/ic-points.png" alt="">點名'], ['rank', '<img class="ni" src="assets/ic-rank.png" alt="">排行']]);
+}).concat([['points', '<img class="ni" src="assets/ic-points.png" alt="">點名'], ['rank', '<img class="ni" src="assets/ic-rank.png" alt="">點數']]);
 var STAFF_TABS = [['lessons', '備課'], ['songs', '詩歌'], ['shows', '成發'], ['kids', '孩子點數'], ['sessions', '上課紀錄'], ['meetings', '會議'], ['settings', '設定']];
 function render() {
   applyZy();
@@ -2871,15 +2872,12 @@ function quickKid() {
   toast('歡迎 ' + n + '！已報到');
 }
 function tRank() {
-  var ks = D.kids.filter(k => k.active).map(k => ({
-    k,
-    b: bal(k.id)
-  })).sort((a, b) => b.b - a.b).slice(0, 10);
   var at = D.attend[today()] || {};
-  var m = ['🥇', '🥈', '🥉'];
-  return `<div class="stage"><div class="stephead"><h2>🏆 點數排行</h2><span class="sp"></span><span class="muted">今天出席 ${Object.keys(at).length} 位</span></div>
-  <div class="fill"><div class="card fit" data-max="40" style="margin:0"><ol class="rank">${ks.map((x, i) => `<li><span><span class="medal">${m[i] || i + 1 + '.'}</span>${h(x.k.name)}</span><b>⭐ ${x.b}</b></li>`).join('') || '<div class="empty">還沒有點數</div>'}</ol></div></div></div>`;
+  var ks = D.kids.filter(k => k.active).sort((a, b) => (at[b.id] ? 1 : 0) - (at[a.id] ? 1 : 0) || a.name.localeCompare(b.name, 'zh-Hant'));
+  return `<div class="stage"><div class="stephead"><h2>⭐ 我們的點數</h2><span class="sp"></span><span class="muted">今天出席 ${Object.keys(at).length} 位</span></div>
+  <div class="fill"><div class="card fit kidsfit" data-max="40" style="margin:0">${ks.length ? `<div class="kids">${ks.map(k => `<div class="kid ptc${at[k.id] ? ' here' : ''}"><div class="n">${h(k.name)}</div><div class="pt">⭐ ${bal(k.id)}</div></div>`).join('')}</div>` : '<div class="empty">還沒有小朋友</div>'}</div></div></div>`;
 }
+
 /* ============ 老師區：備課 ============ */
 var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'], ['story', '故事重點', 'textarea'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['songIds', '本課詩歌', 'checks', D.songs.map(s => s.title)], ['prayer', '⑧ 結束禱告（空白就用設定裡的預設禱告）', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
 function pLessons() {
