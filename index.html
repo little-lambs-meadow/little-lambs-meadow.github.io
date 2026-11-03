@@ -601,13 +601,13 @@ function cloudDirty() {
     });
   });
   Object.keys(B).forEach(k => {
-    if (!(k in L)) out.push({
+    if (!(k in L) && k.indexOf('settings/') !== 0) out.push({
       k,
       j: null
     });
   });
   return out;
-}
+} // 設定項目永遠不刪除
 function cloudPost(body) {
   var ctl = window.AbortController ? new AbortController() : null;
   var tm = setTimeout(() => ctl && ctl.abort(), 20000);
@@ -691,6 +691,7 @@ function cloudTick() {
   cloudBadgeUpdate();
   cloudPost({
     op: 'sync',
+    cv: 2,
     pw: Cloud.pw,
     since: Cloud.ver,
     recs: recs,

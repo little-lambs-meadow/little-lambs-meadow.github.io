@@ -295,7 +295,7 @@ function baseWithDefaults(snap){const b=Object.assign({},snap),df=DEF_SET||(DEF_
  Object.keys(df).forEach(k=>{const key='settings/'+k;if(!(key in b)&&df[k]!==undefined&&D.settings&&JSON.stringify(D.settings[k])===JSON.stringify(df[k]))b[key]=JSON.stringify(df[k])});return b}
 function cloudDirty(){const L=toRecs(D),B=baseWithDefaults(Cloud.base),out=[];
  Object.keys(L).forEach(k=>{if(L[k]!==B[k])out.push({k,j:L[k]})});
- Object.keys(B).forEach(k=>{if(!(k in L))out.push({k,j:null})});return out}
+ Object.keys(B).forEach(k=>{if(!(k in L)&&k.indexOf('settings/')!==0)out.push({k,j:null})});return out}  // 設定項目永遠不刪除
 function cloudPost(body){
  const ctl=window.AbortController?new AbortController():null;const tm=setTimeout(()=>ctl&&ctl.abort(),20000);
  return fetch(Cloud.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),redirect:'follow',signal:ctl?ctl.signal:undefined})
@@ -321,7 +321,7 @@ function cloudTick(){
  const recs=first?[]:cloudDirty();
  if(document.hidden&&!recs.length)return;
  Cloud.busy=true;if(recs.length)Cloud.state='saving';cloudBadgeUpdate();
- cloudPost({op:'sync',pw:Cloud.pw,since:Cloud.ver,recs:recs,by:who()}).then(res=>{
+ cloudPost({op:'sync',cv:2,pw:Cloud.pw,since:Cloud.ver,recs:recs,by:who()}).then(res=>{
   Cloud.busy=false;
   if(!res.ok){if(res.err==='pw'){Cloud.pw='';Cloud.state='pw';cloudPersist();cloudBadgeUpdate();cloudPwDlg(false)}else if(res.err==='noinit'){Cloud.state='pw';cloudPwDlg(true)}else{Cloud.state='err';cloudBadgeUpdate()}return}
   Cloud.state='ok';Cloud.lastOk=Date.now();

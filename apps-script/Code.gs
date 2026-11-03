@@ -55,7 +55,10 @@ function sync(p) {
       for (var i = 0; i < keys.length; i++) row[keys[i][0]] = i + 2;
       var now = new Date(), appendRows = [];
       for (var j = 0; j < recs.length; j++) {
-        var r = recs[j], vals = [r.k, r.j === null ? '' : r.j, ver, p.by || '', now];
+        var r = recs[j];
+        // 設定（settings/…）只接受新版 app 修改，而且不能刪除：避免沒更新的舊裝置把設定蓋掉
+        if (String(r.k).indexOf('settings/') === 0 && (Number(p.cv || 0) < 2 || r.j === null)) continue;
+        var vals = [r.k, r.j === null ? '' : r.j, ver, p.by || '', now];
         if (row[r.k]) s.getRange(row[r.k], 1, 1, 5).setValues([vals]);
         else { appendRows.push(vals); row[r.k] = -1; }
       }
