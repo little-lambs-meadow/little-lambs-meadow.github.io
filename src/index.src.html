@@ -362,9 +362,8 @@ function cloudDlg(){
  openModal(`<h2>☁️ 雲端同步</h2>
  <p>狀態：<b>${{ok:'已同步',saving:'儲存中',off:'離線（資料先存在這台裝置，恢復網路後自動上傳）',err:'同步錯誤',pw:'需要密碼'}[Cloud.state]||''}</b><br><span class="muted">上次同步：${ago}・每 3 秒自動檢查更新</span></p>
  <div class="actions"><button class="blue" onclick="closeModal();cloudTick()">🔄 立即同步</button>
- <button class="ghost" onclick="cloudChangePw()">更改教會密碼</button>
  <button class="ghost" onclick="if(confirm('這台裝置登出雲端？（資料不會刪除，下次需要重新輸入密碼）')){Cloud.pw='';Cloud.state='pw';cloudPersist();closeModal();render()}">這台裝置登出</button></div>`)}
-function cloudChangePw(){const n=prompt('新的教會密碼（至少 4 碼）。改了之後，其他裝置都要重新輸入新密碼。');if(n===null)return;if(n.length<4){toast('密碼至少 4 碼');return}
+function cloudChangePw(){if(mode!=='staff'||!isAdmin()){toast('只有主控或設計師可以在「老師區 → 設定」更改教會密碼');return}const n=prompt('新的教會密碼（至少 4 碼）。改了之後，其他裝置都要重新輸入新密碼。');if(n===null)return;if(n.length<4){toast('密碼至少 4 碼');return}
  cloudPost({op:'setpw',pw:Cloud.pw,newpw:n}).then(r=>{if(r.ok){Cloud.pw=n;cloudPersist();toast('教會密碼已更改');closeModal()}else toast('更改失敗')},()=>toast('連線失敗'))}
 function cloudStart(){if(!Cloud.url)return;
  setInterval(cloudTick,3000);
@@ -1096,7 +1095,8 @@ function pSettings(){const S=D.settings;
  const authCard=authOn()?`<div class="card"><div class="row"><h3 class="sp">🔐 老師帳號登入：已啟用</h3><button class="sm danger" onclick="if(confirm('關閉帳號登入？帳號資料會保留')){D.settings.auth=false;setUser(null);save('關閉老師帳號登入');render()}">關閉</button></div></div>`
   :`<div class="card" style="border-color:var(--blue)"><h3>🔐 老師帳號（尚未啟用）</h3><p class="muted">啟用後：老師用自己的帳號登入才能進老師區；新老師需要主控或設計師發的驗證碼才能註冊；刪除孩子、課程和修改設定只有主控和設計師能做。教學模式（上課畫面）不需要登入。</p>
    <button class="blue" onclick="enableAuth()">啟用老師帳號</button></div>`;
- return `<h2>設定${authOn()?'（'+roleName(me())+'）':''}</h2>${authCard}${authOn()?`
+ const cloudCard=Cloud.pw?`<div class="card"><div class="row"><h3 class="sp">☁️ 教會密碼（雲端同步）</h3><button class="sm ghost" onclick="cloudChangePw()">更改教會密碼</button></div><p class="muted">每台裝置第一次打開 app 時要輸入的密碼。改了之後，所有裝置都要重新輸入新密碼。</p></div>`:'';
+ return `<h2>設定${authOn()?'（'+roleName(me())+'）':''}</h2>${authCard}${cloudCard}${authOn()?`
  <div class="card"><h3>🔑 發驗證碼給新老師</h3><p class="muted">每組驗證碼限用一次、7 天內有效。用 LINE 傳給老師，老師在登入畫面點「用驗證碼註冊」。</p>
  <div class="row"><input id="iv_note" class="sp" placeholder="給誰（例如：陳姊妹）"><button class="blue" onclick="genInvite()">產生驗證碼</button></div>
  ${open.map(i=>`<div class="row card" style="margin:8px 0"><b style="font-size:22px;letter-spacing:3px;font-family:monospace">${i.code}</b><span class="sp muted">${h(i.note)} · ${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效</span><button class="sm ghost" onclick="copyInvite('${i.code}')">複製訊息</button><button class="sm danger" onclick="revokeInvite('${i.code}')">作廢</button></div>`).join('')}
