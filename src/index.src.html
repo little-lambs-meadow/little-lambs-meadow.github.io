@@ -154,6 +154,11 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 .empty{text-align:center;color:var(--muted);padding:30px 10px}
 .notice{background:var(--wsoft);border-radius:10px;padding:10px 12px;font-size:14px}
 a{color:var(--blue)}
+/* 毛玻璃：上課畫面的面板半透明，透出背景圖 */
+main.teach .bigcard,main.teach .proj,main.teach .lyrics{background:rgba(31,27,46,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);box-shadow:0 6px 24px rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.18);text-shadow:0 2px 6px rgba(0,0,0,.6)}
+main.teach .qcard{background:rgba(255,255,255,.68);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+main.teach .kid{background:rgba(255,255,255,.8)}main.teach .kid.here{background:rgba(239,250,243,.88)}main.teach .kid.here.late{background:rgba(255,244,214,.88)}
+main.teach .card{background:rgba(255,255,255,.75);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 /* ===== 手機版 ===== */
 .show-m{display:none}
 nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
