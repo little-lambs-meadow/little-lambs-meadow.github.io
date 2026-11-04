@@ -1308,7 +1308,8 @@ function render() {
   }
   var hd = document.getElementById('hdr');
   hd.className = mode;
-  var tabs = mode === 'teach' ? TEACH_TABS : STAFF_TABS;
+  if (mode === 'staff' && isHelper() && HELPER_TABS.indexOf(tab) < 0) tab = 'kids';
+  var tabs = mode === 'teach' ? TEACH_TABS : isHelper() ? STAFF_TABS.filter(x => HELPER_TABS.includes(x[0])) : STAFF_TABS;
   hd.innerHTML = `${mode === 'teach' ? '' : `<div class="hrow"><h1><img class="hlogo" src="icon-192.png" alt=""><span class="hname">${h(D.settings.church)}</span><span class="hdot"> · </span><span class="hsub">${h(user || '老師區')}</span></h1>
 </div>`}
   <div class="nrow"><nav>${tabs.map(_ref7 => {
@@ -1452,7 +1453,7 @@ function enterStaff() {
 }
 function setMode(m) {
   mode = m;
-  tab = m === 'teach' ? 'rules' : 'lessons';
+  tab = m === 'teach' ? 'rules' : isHelper() ? 'kids' : 'lessons';
   render();
 }
 var val = id => document.getElementById(id).value.trim();
@@ -1462,12 +1463,15 @@ var authOn = () => !!D.settings.auth;
 var ROLES = {
   admin: '主控',
   designer: '設計師',
-  teacher: '老師'
+  teacher: '老師',
+  helper: '小助教'
 };
+var HELPER_TABS = ['kids', 'settings']; // 小助教：只幫忙登記點數（上課點名加點＋老師區的孩子點數）
+var isHelper = () => authOn() && (me() || {}).role === 'helper';
 var isAdminRole = r => r === 'admin' || r === 'designer';
 var isAdmin = () => !authOn() || isAdminRole((me() || {}).role);
 var roleName = t => ROLES[(t || {}).role] || '老師';
-var teacherNames = () => authOn() ? activeT().map(t => t.name) : D.settings.teacherNames || [];
+var teacherNames = () => authOn() ? activeT().filter(t => t.role !== 'helper').map(t => t.name) : D.settings.teacherNames || [];
 function hashPw(_x) {
   return _hashPw.apply(this, arguments);
 }
@@ -1637,6 +1641,7 @@ function applyDlg() {
  <label class="f">帳號（登入用，也是其他老師看到的名字，例如：陳老師）<input id="ap_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
  <label class="f">設定密碼（至少 6 碼）<input id="ap_p" type="password"></label>
  <label class="f">再輸入一次<input id="ap_p2" type="password"></label>
+ <label class="f">申請的身分<select id="ap_r"><option value="teacher">老師（備課、上課、點名、紀錄）</option><option value="helper">小助教（幫忙登記點數）</option></select></label>
  <label class="f">給核准的人看的話（可不填，例如：我是幼兒班的助教）<input id="ap_m"></label>
  <div class="actions"><button class="blue" onclick="doApply()">送出申請</button><button class="ghost" onclick="loginDlg()">返回登入</button></div>`);
 }
@@ -1669,7 +1674,7 @@ function _doApply() {
       id: uid(),
       account: acc,
       name: n,
-      role: 'teacher',
+      role: val('ap_r') === 'helper' ? 'helper' : 'teacher',
       active: false,
       pending: true,
       applyNote: val('ap_m'),
@@ -1707,7 +1712,7 @@ function rejectT(id) {
 function pendingCard() {
   var ps = pendingT();
   if (!ps.length) return '';
-  return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t => `<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="muted">${accOf(t) !== t.name ? '帳號：' + h(accOf(t)) + ' · ' : ''}${h(t.applied || '')} 申請</span>${t.applyNote ? `<div class="muted">「${h(t.applyNote)}」</div>` : ''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher">身分：老師</option><option value="admin">身分：主控（院長／負責同工）</option>${amDesigner() ? '<option value="designer">身分：設計師</option>' : ''}</select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`;
+  return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t => `<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="tag">申請：${ROLES[t.role] || '老師'}</span> <span class="muted">${accOf(t) !== t.name ? '帳號：' + h(accOf(t)) + ' · ' : ''}${h(t.applied || '')} 申請</span>${t.applyNote ? `<div class="muted">「${h(t.applyNote)}」</div>` : ''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher" ${t.role === 'teacher' ? 'selected' : ''}>身分：老師</option><option value="helper" ${t.role === 'helper' ? 'selected' : ''}>身分：小助教（登記點數）</option><option value="admin">身分：主控（院長／負責同工）</option>${amDesigner() ? '<option value="designer">身分：設計師</option>' : ''}</select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`;
 }
 var _penSeen = -1;
 function pendingNotify() {
@@ -4138,7 +4143,7 @@ function pSettings() {
   return `<h2>設定${authOn() ? '（' + roleName(me()) + '）' : ''}</h2>${authCard}${cloudCard}${authOn() ? `
  ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t => !t.pending).map(t => `<tr style="${t.active === false ? 'opacity:.5' : ''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role) ? 't' : 'o'}">${roleName(t)}</span> ${accOf(t) !== t.name ? `<span class="muted">帳號：${h(accOf(t))}</span>` : ''}${t.active === false ? ' <span class="tag">已停用</span>' : ''}<div class="muted">${h(t.created || '')} 加入</div></td>
  <td style="text-align:right">${t.name === user ? '<span class="muted">（你）</span>' : !canManage(t) ? '<span class="muted">🔒 只有設計師能修改</span>' : `<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).filter(r => r !== 'designer' || amDesigner()).map(r => `<option value="${r}" ${(t.role || 'teacher') === r ? 'selected' : ''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active === false ? 'ghost' : 'danger'}" onclick="toggleT('${t.id}')">${t.active === false ? '啟用' : '停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
- <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議。</p></div>
+ <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議；小助教＝只能幫忙登記點數（上課的點名加點、老師區的孩子點數）。</p></div>
 ` : ''}
  <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
  <label class="f">① 主日學規則（一行一條，上課時大家一起念）<textarea id="st_rules">${h((S.rules || []).join('\n'))}</textarea></label>
