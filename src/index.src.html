@@ -541,7 +541,7 @@ function render(){applyZy();applyStaffFs();setTimeout(pendingNotify,0);
  const f={rules:tRules,worship:tWorship,ice:tIce,intro:tIntro,video:tVideo,qa:tQA,pray:tPray,lesson:tLesson,verse:tVerse,song:tSong,points:tPoints,rank:tRank,lessons:pLessons,songs:pSongs,shows:pShows,kids:pKids,sessions:pSessions,meetings:pMeetings,meeting:pMeeting,settings:pSettings}[tab];
  document.getElementById('app').innerHTML=f?f():'';
  layout();
- if(mode==='staff'&&isHelper()&&['sessions','meetings','meeting'].indexOf(tab)>=0)helperRO();
+ if(mode==='staff'&&isHelper()&&['shows','sessions','meetings','meeting'].indexOf(tab)>=0)helperRO();  // 詩歌可以編輯；成發、上課紀錄、會議只能看
 }
 /* 下拉選單的寬度剛好放得下目前選的那一課（不留一大段空白） */
 function fitSel(el,pad){if(!el||el.selectedIndex<0)return;const sp=document.createElement('span');const cs=getComputedStyle(el);
@@ -570,8 +570,9 @@ function menuHtml(){const it=(ic,t,fn,cls)=>`<button class="${cls||''}" onclick=
  return o}
 /* 小助教看上課紀錄／會議：拿掉新增、編輯、輸入的按鈕和欄位，只留觀看用的（進入會議、返回、整合會議記錄、孩子紀錄） */
 function helperRO(){const app=document.getElementById('app');
- app.querySelectorAll('button').forEach(b=>{const o=b.getAttribute('onclick')||'';if(!/go\('meeting|curMeeting=|^render\(\)$|kidHist\(|compileDlg/.test(o))b.remove()});
- app.querySelectorAll('input,select,textarea').forEach(e=>e.remove());
+ app.querySelectorAll('button').forEach(b=>{const o=b.getAttribute('onclick')||'';if(!/go\('meeting|curMeeting=|^render\(\)$|kidHist\(|compileDlg|printShow\(/.test(o))b.remove()});
+ app.querySelectorAll('input[type=checkbox]').forEach(e=>{e.disabled=true;e.removeAttribute('onchange')});
+ app.querySelectorAll('input:not([type=checkbox]),select,textarea').forEach(e=>e.remove());
  if(!app.querySelector('.ro-note'))app.insertAdjacentHTML('afterbegin','<div class="notice ro-note" style="margin-bottom:10px">👀 小助教只能觀看，不能新增或修改</div>')}
 function go(t){if(t==='rules'&&tab!=='rules')rulePg=0;Cloud.needRender=false;tab=t;render();scrollTo(0,0)}
 /* 進老師區：必須先連上雲端（拿到最新的登入設定），啟用登入時一定要登入 */
@@ -587,7 +588,7 @@ const activeT=()=>D.teachers.filter(t=>t.active!==false);
 const me=()=>D.teachers.find(t=>t.name===user);
 const authOn=()=>!!D.settings.auth;
 const ROLES={admin:'主控',designer:'設計師',teacher:'老師',helper:'小助教'};
-const HELPER_TABS=['kids','sessions','meetings','meeting','settings'];  // 上課紀錄、會議：小助教只能看  // 小助教：只幫忙登記點數（上課點名加點＋老師區的孩子點數）
+const HELPER_TABS=['songs','shows','kids','sessions','meetings','meeting','settings'];  // 上課紀錄、會議：小助教只能看  // 小助教：只幫忙登記點數（上課點名加點＋老師區的孩子點數）
 const isHelper=()=>authOn()&&(me()||{}).role==='helper';
 const isAdminRole=r=>r==='admin'||r==='designer';
 const isAdmin=()=>!authOn()||isAdminRole((me()||{}).role);
@@ -1132,7 +1133,7 @@ function pShows(){
  <div class="sec"><h4>準備事項</h4>${s.tasks.map((t,i)=>`<label style="display:block"><input type="checkbox" ${t.done?'checked':''} onchange="D.shows.find(x=>x.id==='${s.id}').tasks[${i}].done=this.checked;save();render()"> ${h(t.t)} <span class="muted">${h(t.o)}</span></label>`).join('')||'<span class="muted">無</span>'}</div>
  ${s.notes?`<div class="sec"><h4>備註</h4><div class="pre">${h(s.notes)}</div></div>`:''}</div>`}).join('')||'<div class="empty">還沒有成發計畫</div>'}`;
 }
-function editShow(id){const s=id?D.shows.find(x=>x.id===id):{items:[],tasks:[]};
+function editShow(id){if(isHelper()){toast('小助教只能觀看，不能編輯');return}const s=id?D.shows.find(x=>x.id===id):{items:[],tasks:[]};
  const o={...s,items:s.items.map(x=>x.slice()),tasks:s.tasks.map(t=>[t.t,t.o||''])};
  form(id?'編輯成發':'新增成發',[['title','名稱'],['season','季'],['date','日期','date'],
   ['items','節目','rows',[{label:'節目',ph:'例如：開場詩歌',w:3},{label:'負責',ph:'例如：全體小朋友',w:2},{label:'分鐘',ph:'分鐘',w:1,type:'number'}]],
@@ -1305,7 +1306,7 @@ function pSettings(){const S=D.settings;
  return `<h2>設定${authOn()?'（'+roleName(me())+'）':''}</h2>${authCard}${cloudCard}${authOn()?`
  ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t=>!t.pending).map(t=>`<tr style="${t.active===false?'opacity:.5':''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role)?'t':'o'}">${roleName(t)}</span> ${accOf(t)!==t.name?`<span class="muted">帳號：${h(accOf(t))}</span>`:''}${t.active===false?' <span class="tag">已停用</span>':''}<div class="muted">${h(t.created||'')} 加入</div></td>
  <td style="text-align:right">${t.name===user?'<span class="muted">（你）</span>':!canManage(t)?'<span class="muted">🔒 只有設計師能修改</span>':`<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).filter(r=>r!=='designer'||amDesigner()).map(r=>`<option value="${r}" ${(t.role||'teacher')===r?'selected':''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active===false?'ghost':'danger'}" onclick="toggleT('${t.id}')">${t.active===false?'啟用':'停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
- <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議；小助教＝只能幫忙登記點數（上課的點名加點、老師區的孩子點數）。</p></div>
+ <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議；小助教＝登記點數、編輯詩歌；成發、上課紀錄、會議只能觀看。</p></div>
 `:''}
  <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
  <label class="f">① 主日學規則（一行一條，上課時大家一起念）<textarea id="st_rules">${h((S.rules||[]).join('\n'))}</textarea></label>
