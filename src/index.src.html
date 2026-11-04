@@ -948,7 +948,7 @@ function tPoints(){
   <div class="fit kidsfit" data-max="28"><div class="kids">${kids.map(k=>{const t=todayOf(k.id);const tp=earnedOn(k.id,d),cap=capOf(),full=cap&&tp>=cap;const ci=t.find(x=>x.id===at[k.id]);
    const done=typeof pickItem==='number'&&S.items[pickItem]&&t.some(x=>x.reason===S.items[pickItem].name);
    return `<div class="kid ${ci?(ci.reason===ciLabel(true)?'here':'here late'):''} ${done?'got':''}" id="k_${k.id}" onclick="${manageKids?'kidManage':'tapKid'}('${k.id}')"><div class="n">${manageKids?'✏️ ':''}${h(k.name)}${done?' <span style="color:var(--pri)">✓</span>':''}</div><div class="p" ${full?'style="color:#c33;font-weight:700"':''}>今日 +${tp}${cap?'/'+cap:''}${full?' 滿':''}</div><div class="p">⭐ ${bal(k.id)}</div></div>`}).join('')}</div></div></div>
-  <div class="row" style="margin-top:8px;flex-shrink:0;flex-wrap:nowrap"><input id="newKid" class="sp" style="font-size:16px;min-width:0" placeholder="新朋友的名字" onkeydown="if(event.key==='Enter')quickKid()"><button class="pri" style="white-space:nowrap" onclick="quickKid()">＋<span class="hide-m">加入並報到</span><span class="show-m">新朋友</span></button>
+  <div class="row" style="margin-top:8px;flex-shrink:0;flex-wrap:nowrap"><input id="newKid" class="sp" style="font-size:16px;min-width:0" placeholder="新朋友的名字" onkeydown="if(event.key==='Enter')quickKid()"><button class="pri" style="white-space:nowrap" onclick="quickKid()">＋ 加入</button>
    <button class="ghost" style="white-space:nowrap" onclick="undo()" ${undoStack.length?'':'disabled'}>↶<span class="hide-m"> 復原</span></button></div></div>`;
 }
 let manageKids=false;
@@ -998,7 +998,7 @@ function undo(){const u=undoStack.pop();if(!u)return;D.ledger=D.ledger.filter(x=
 function quickKid(){const e=document.getElementById('newKid');const n=e.value.trim();if(!n)return;
  if(D.kids.some(k=>k.name===n&&k.active)&&!confirm('已經有叫「'+n+'」的孩子，還要再新增一位嗎？'))return;
  const k={id:uid(),name:n,group:'',active:true,flag:false,flagNote:'',created:today()};D.kids.push(k);save('新增孩子 '+n);
- const p=pickItem;pickItem=p==='late'?'late':'on';tapKid(k.id);pickItem=p;render();toast('歡迎 '+n+'！已報到')}
+ e.value='';render();toast('已加入 '+n+'（還沒報到，請再點名字報到）')}
 function tRank(){
  const at=D.attend[today()]||{};
  const ks=D.kids.filter(k=>k.active).sort((a,b)=>a.name.localeCompare(b.name,'zh-TW-u-co-stroke'));
