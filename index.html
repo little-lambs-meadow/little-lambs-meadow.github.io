@@ -153,6 +153,8 @@ body.sz-l #app,body.sz-l .modal .panel,body.sz-l #hdr .nrow nav{zoom:1.2}body.sz
 body.sbig #app,body.sbig .modal .panel,body.sbig #app input,body.sbig #app textarea,body.sbig #app select,body.sbig .panel input,body.sbig .panel textarea,body.sbig .panel select,body.sbig #hdr nav button{font-weight:600}
 body.sbig .muted,body.sbig label.f,body.sbig .panel label.f{color:#4a423b}
 .hmenu .mfs{display:flex;flex-wrap:wrap;row-gap:6px;align-items:center;padding:6px 12px;font-size:16px}.hmenu .mfs button{display:inline-block;width:auto;padding:5px 10px;margin-left:6px;border:1px solid #ddd;border-radius:8px;font-size:15px}.hmenu .mfs button.on{background:#e2572a;color:#fff;border-color:#e2572a}
+.lchk{width:20px;height:20px;cursor:pointer;vertical-align:middle}tr.lskip td{opacity:.45}tr.lskip td:first-child{opacity:1}
+.ybar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}.tag.ok{background:#e3f5e8;color:#2d7a45}
 .hmenu{position:fixed;z-index:35;background:#fff;color:#2b2622;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:8px;min-width:230px;max-width:90vw}
 .hmenu button{display:flex;align-items:center;width:100%;background:none;border:0;border-radius:9px;padding:10px 12px;font-size:16px;text-align:left;color:inherit;cursor:pointer;min-height:0}
 .hmenu button:hover{background:#f6efe6}.hmenu .mi{display:inline-block;min-width:34px;font-weight:700;color:#e2572a}
@@ -1147,7 +1149,7 @@ function lessonOpts(sel, short) {
   return sortedLessons().map(l => {
     k++;
     var lab = bib ? `${k}. 〔${bibleBook(l)}〕${l.title}（${l.season}第${l.no}課）` : `${l.season} 第${l.no}課 ${l.title}`;
-    return `<option value="${l.id}" ${l.id === sel ? 'selected' : ''}>${h(lab)}${l.date && !short ? ' (' + h(l.date) + ')' : ''}</option>`;
+    return `<option value="${l.id}" ${l.id === sel ? 'selected' : ''}>${h(lab)}${l.date && !short ? ' (' + h(l.date) + ')' : ''}${l.skip ? '〔今年不上〕' : ''}</option>`;
   }).join('');
 }
 
@@ -3204,6 +3206,25 @@ var LESSON_EDIT_FIELDS = () => {
   return [d].concat(f.filter(x => x !== d));
 };
 var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['songIds', '本課詩歌', 'checks', D.songs.map(s => s.title)], ['prayer', '⑧ 結束禱告（空白就用設定裡的預設禱告）', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
+/* 今年要上／不上的標記：一年約 52 週，67 課上不完，把今年不上的課取消勾選；今年寫過上課紀錄的課自動標「今年已上」 */
+function taughtOn(id) {
+  var y = today().slice(0, 4);
+  var d = D.sessions.filter(s => s.lessonId === id && (s.date || '').slice(0, 4) === y).map(s => s.date).sort();
+  return d[d.length - 1] || '';
+}
+function yearBar() {
+  var all = D.lessons.length,
+    skip = D.lessons.filter(l => l.skip).length,
+    done = D.lessons.filter(l => !l.skip && taughtOn(l.id)).length;
+  return all ? `<div class="card ybar"><b>📅 今年課程（${today().slice(0, 4)}）</b><span>要上 <b>${all - skip}</b> 課</span><span>已上 <b>${done}</b> 課</span><span>還沒上 <b>${all - skip - done}</b> 課</span><span>今年不上 <b>${skip}</b> 課</span>${skip ? `<button class="sm ghost" onclick="if(confirm('把 ${skip} 課「今年不上」全部改回「要上」？（例如新的一年重新規劃）')){D.lessons.forEach(l=>delete l.skip);save('今年課程全部改回要上');render()}">全部改回要上</button>` : ''}<div class="muted" style="flex-basis:100%">每一課前面的勾選框：勾選＝今年要上，取消勾選＝今年不上（會變淡）。</div></div>` : '';
+}
+function toggleSkip(id, on) {
+  var l = lessonById(id);
+  if (!l) return;
+  if (on) delete l.skip;else l.skip = true;
+  save((on ? '標記今年要上 ' : '標記今年不上 ') + l.title);
+  render();
+}
 function pLessons() {
   var bib = lessonOrder() !== 'season';
   var grp = [];
@@ -3214,7 +3235,7 @@ function pLessons() {
     if (last && last[0] === g) last[1].push([++k, l]);else grp.push([g, [[++k, l]]]);
   });
   return `<div class="row" style="margin-bottom:10px;flex-wrap:wrap"><h2 class="sp">備課</h2>${orderToggle()}${isAdmin() ? '<button class="ghost" onclick="sbImportBtn()">📥 匯入妙妙書 67 集</button>' : ''}<button class="ghost" onclick="importDlg()">匯入</button><button class="blue" onclick="editLesson()">＋新增課程</button></div>
- ${bib ? `<div class="muted" style="margin:-4px 0 10px">${lessonOrder() === 'time' ? '⏳ 依聖經時間軸排列：照事件發生的先後，從創世到新天新地' : '📖 依聖經書卷排列：照 66 卷書的目錄從創世記到啟示錄，同一卷依章節先後'}；教學模式的課程選單也會照這個順序。</div>` : ''}${grp.map(_ref11 => {
+ ${yearBar()}${bib ? `<div class="muted" style="margin:-4px 0 10px">${lessonOrder() === 'time' ? '⏳ 依聖經時間軸排列：照事件發生的先後，從創世到新天新地' : '📖 依聖經書卷排列：照 66 卷書的目錄從創世記到啟示錄，同一卷依章節先後'}；教學模式的課程選單也會照這個順序。</div>` : ''}${grp.map(_ref11 => {
     var _ref12 = _slicedToArray(_ref11, 2),
       s = _ref12[0],
       ls = _ref12[1];
@@ -3222,7 +3243,7 @@ function pLessons() {
       var _ref14 = _slicedToArray(_ref13, 2),
         n = _ref14[0],
         l = _ref14[1];
-      return `<tr><td style="width:${bib ? 96 : 60}px">${bib ? `${n}.<div class="muted" style="font-size:12px">${h(l.season)}第${h(l.no)}課</div>` : `第${h(l.no)}課`}</td><td><b>${h(l.title)}</b><div class="muted">${h(l.date)} ${h(l.verseRef)}${l.notes ? ' · 📝有備註' : ''}</div></td>
+      return `<tr class="${l.skip ? 'lskip' : ''}"><td style="width:34px"><input type="checkbox" class="lchk" ${l.skip ? '' : 'checked'} title="勾選＝今年要上；取消勾選＝今年不上" onchange="toggleSkip('${l.id}',this.checked)"></td><td style="width:${bib ? 96 : 60}px">${bib ? `${n}.<div class="muted" style="font-size:12px">${h(l.season)}第${h(l.no)}課</div>` : `第${h(l.no)}課`}</td><td><b>${h(l.title)}</b>${l.skip ? ' <span class="tag">今年不上</span>' : ''}${taughtOn(l.id) ? ` <span class="tag ok">✅ 今年已上 ${h(taughtOn(l.id).slice(5))}</span>` : ''}<div class="muted">${h(l.date)} ${h(l.verseRef)}${l.notes ? ' · 📝有備註' : ''}</div></td>
   <td style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="viewLesson('${l.id}')">看</button> <button class="sm ghost" onclick="editLesson('${l.id}')">編輯</button></td></tr>`;
     }).join('')}</table></div>`;
   }).join('') || '<div class="empty">還沒有課程</div>'}`;
