@@ -1678,7 +1678,7 @@ function approveT(id) {
   var t = D.teachers.find(x => x.id === id);
   if (!t) return;
   var r = document.getElementById('apr_' + id);
-  if (r && ROLES[r.value]) t.role = r.value;
+  if (r && ROLES[r.value] && (r.value !== 'designer' || amDesigner())) t.role = r.value;
   t.active = true;
   delete t.pending;
   t.approvedBy = who();
@@ -1697,7 +1697,7 @@ function rejectT(id) {
 function pendingCard() {
   var ps = pendingT();
   if (!ps.length) return '';
-  return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t => `<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="muted">${accOf(t) !== t.name ? '帳號：' + h(accOf(t)) + ' · ' : ''}${h(t.applied || '')} 申請</span>${t.applyNote ? `<div class="muted">「${h(t.applyNote)}」</div>` : ''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher">身分：老師</option><option value="admin">身分：主控（院長／負責同工）</option><option value="designer">身分：設計師</option></select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`;
+  return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t => `<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="muted">${accOf(t) !== t.name ? '帳號：' + h(accOf(t)) + ' · ' : ''}${h(t.applied || '')} 申請</span>${t.applyNote ? `<div class="muted">「${h(t.applyNote)}」</div>` : ''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher">身分：老師</option><option value="admin">身分：主控（院長／負責同工）</option>${amDesigner() ? '<option value="designer">身分：設計師</option>' : ''}</select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`;
 }
 var _penSeen = -1;
 function pendingNotify() {
@@ -4078,7 +4078,7 @@ function pSettings() {
  ${open.map(i => `<div class="row card" style="margin:8px 0"><b style="font-size:22px;letter-spacing:3px;font-family:monospace">${i.code}</b><span class="sp muted">${h(i.note)} · ${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效</span><button class="sm ghost" onclick="copyInvite('${i.code}')">複製訊息</button><button class="sm danger" onclick="revokeInvite('${i.code}')">作廢</button></div>`).join('')}
  ${used.length ? `<div class="muted" style="margin-top:6px">最近使用：${used.map(i => `${i.code} → ${h(i.usedBy)}（${h(i.usedAt)}）`).join('、')}</div>` : ''}</div>
  ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t => !t.pending).map(t => `<tr style="${t.active === false ? 'opacity:.5' : ''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role) ? 't' : 'o'}">${roleName(t)}</span> ${accOf(t) !== t.name ? `<span class="muted">帳號：${h(accOf(t))}</span>` : ''}${t.active === false ? ' <span class="tag">已停用</span>' : ''}<div class="muted">${h(t.created || '')} 加入</div></td>
- <td style="text-align:right">${t.name === user ? '<span class="muted">（你）</span>' : `<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).map(r => `<option value="${r}" ${(t.role || 'teacher') === r ? 'selected' : ''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active === false ? 'ghost' : 'danger'}" onclick="toggleT('${t.id}')">${t.active === false ? '啟用' : '停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
+ <td style="text-align:right">${t.name === user ? '<span class="muted">（你）</span>' : !canManage(t) ? '<span class="muted">🔒 只有設計師能修改</span>' : `<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).filter(r => r !== 'designer' || amDesigner()).map(r => `<option value="${r}" ${(t.role || 'teacher') === r ? 'selected' : ''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active === false ? 'ghost' : 'danger'}" onclick="toggleT('${t.id}')">${t.active === false ? '啟用' : '停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
  <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議。</p></div>
 ` : ''}
  <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
@@ -4137,9 +4137,22 @@ function lastAdmin(t) {
   return isAdminRole(t.role) && t.active !== false && D.teachers.filter(x => isAdminRole(x.role) && x.active !== false).length <= 1;
 }
 /* 刪除帳號（例如測試帳號）：過去紀錄上的名字會保留；不能刪自己，也要保留至少一位主控或設計師 */
+/* 設計師身分保護：只有設計師能修改設計師（主控不能改設計師的身分、停用、刪除或重設密碼，也不能把人設成設計師） */
+var amDesigner = () => !authOn() || (me() || {}).role === 'designer';
+function canManage(t) {
+  return amDesigner() || t.role !== 'designer';
+}
+function guardT(t) {
+  if (t && !canManage(t)) {
+    toast('設計師的帳號只有設計師能修改');
+    render();
+    return false;
+  }
+  return !!t;
+}
 function delT(id) {
   var t = D.teachers.find(x => x.id === id);
-  if (!t) return;
+  if (!guardT(t)) return;
   if (t.name === user) {
     toast('不能刪除自己的帳號');
     return;
@@ -4156,6 +4169,7 @@ function delT(id) {
 }
 function toggleT(id) {
   var t = D.teachers.find(x => x.id === id);
+  if (!guardT(t)) return;
   if (t.active !== false && lastAdmin(t)) {
     toast('至少要保留一位主控或設計師');
     return;
@@ -4166,6 +4180,12 @@ function toggleT(id) {
 }
 function setRole(id, r) {
   var t = D.teachers.find(x => x.id === id);
+  if (!guardT(t)) return;
+  if (r === 'designer' && !amDesigner()) {
+    toast('只有設計師能把人設成設計師');
+    render();
+    return;
+  }
   if (!isAdminRole(r) && lastAdmin(t)) {
     toast('至少要保留一位主控或設計師');
     render();
@@ -4182,6 +4202,7 @@ function resetPw(_x2) {
 function _resetPw() {
   _resetPw = _asyncToGenerator(function* (id) {
     var t = D.teachers.find(x => x.id === id);
+    if (!guardT(t)) return;
     var p = prompt(`替「${t.name}」設定臨時密碼（至少 6 碼），請對方登入後自己修改`);
     if (p === null) return;
     if (p.length < 6) {

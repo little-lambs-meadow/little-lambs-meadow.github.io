@@ -635,10 +635,10 @@ async function doApply(){const acc=val('ap_a'),n=acc,p=document.getElementById('
  save('申請老師帳號 '+n);cloudSoon();
  openModal(`<h2>✅ 申請已送出</h2><p>已通知主控和設計師。核准後，用帳號「<b>${h(acc)}</b>」和你設定的密碼就能登入。</p><p class="muted">可以請負責的同工打開 app 核准。</p><div class="actions"><button class="blue" onclick="closeModal()">好</button></div>`)}
 const pendingT=()=>D.teachers.filter(t=>t.pending&&!t.active);
-function approveT(id){const t=D.teachers.find(x=>x.id===id);if(!t)return;const r=document.getElementById('apr_'+id);if(r&&ROLES[r.value])t.role=r.value;t.active=true;delete t.pending;t.approvedBy=who();t.approved=today();save('核准 '+t.name+'（'+ROLES[t.role]+'）');render();toast('已核准 '+t.name+'（'+ROLES[t.role]+'），現在可以登入了')}
+function approveT(id){const t=D.teachers.find(x=>x.id===id);if(!t)return;const r=document.getElementById('apr_'+id);if(r&&ROLES[r.value]&&(r.value!=='designer'||amDesigner()))t.role=r.value;t.active=true;delete t.pending;t.approvedBy=who();t.approved=today();save('核准 '+t.name+'（'+ROLES[t.role]+'）');render();toast('已核准 '+t.name+'（'+ROLES[t.role]+'），現在可以登入了')}
 function rejectT(id){const t=D.teachers.find(x=>x.id===id);if(!t||!confirm('不核准「'+t.name+'」的申請？（申請資料會刪除）'))return;D.teachers=D.teachers.filter(x=>x.id!==id);save('不核准申請 '+t.name);render()}
 function pendingCard(){const ps=pendingT();if(!ps.length)return '';
- return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t=>`<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="muted">${accOf(t)!==t.name?'帳號：'+h(accOf(t))+' · ':''}${h(t.applied||'')} 申請</span>${t.applyNote?`<div class="muted">「${h(t.applyNote)}」</div>`:''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher">身分：老師</option><option value="admin">身分：主控（院長／負責同工）</option><option value="designer">身分：設計師</option></select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`}
+ return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t=>`<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="muted">${accOf(t)!==t.name?'帳號：'+h(accOf(t))+' · ':''}${h(t.applied||'')} 申請</span>${t.applyNote?`<div class="muted">「${h(t.applyNote)}」</div>`:''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher">身分：老師</option><option value="admin">身分：主控（院長／負責同工）</option>${amDesigner()?'<option value="designer">身分：設計師</option>':''}</select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`}
 let _penSeen=-1;function pendingNotify(){if(!authOn()||!user||!isAdminRole((me()||{}).role))return;const n=pendingT().length;if(n>_penSeen&&n>0)toast('🙋 有 '+n+' 位老師申請帳號，請到「☰ → 老師申請」核准');_penSeen=n}
 function registerDlg(){if(Cloud.needRebuild)cloudRebuild();if(needCloud())return;openModal(`<h2>🐑 老師註冊</h2>
  <p class="muted">請輸入主控同工給你的驗證碼（6 碼，限用一次）。</p>
@@ -1281,7 +1281,7 @@ function pSettings(){const S=D.settings;
  ${open.map(i=>`<div class="row card" style="margin:8px 0"><b style="font-size:22px;letter-spacing:3px;font-family:monospace">${i.code}</b><span class="sp muted">${h(i.note)} · ${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效</span><button class="sm ghost" onclick="copyInvite('${i.code}')">複製訊息</button><button class="sm danger" onclick="revokeInvite('${i.code}')">作廢</button></div>`).join('')}
  ${used.length?`<div class="muted" style="margin-top:6px">最近使用：${used.map(i=>`${i.code} → ${h(i.usedBy)}（${h(i.usedAt)}）`).join('、')}</div>`:''}</div>
  ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t=>!t.pending).map(t=>`<tr style="${t.active===false?'opacity:.5':''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role)?'t':'o'}">${roleName(t)}</span> ${accOf(t)!==t.name?`<span class="muted">帳號：${h(accOf(t))}</span>`:''}${t.active===false?' <span class="tag">已停用</span>':''}<div class="muted">${h(t.created||'')} 加入</div></td>
- <td style="text-align:right">${t.name===user?'<span class="muted">（你）</span>':`<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).map(r=>`<option value="${r}" ${(t.role||'teacher')===r?'selected':''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active===false?'ghost':'danger'}" onclick="toggleT('${t.id}')">${t.active===false?'啟用':'停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
+ <td style="text-align:right">${t.name===user?'<span class="muted">（你）</span>':!canManage(t)?'<span class="muted">🔒 只有設計師能修改</span>':`<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).filter(r=>r!=='designer'||amDesigner()).map(r=>`<option value="${r}" ${(t.role||'teacher')===r?'selected':''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active===false?'ghost':'danger'}" onclick="toggleT('${t.id}')">${t.active===false?'啟用':'停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
  <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議。</p></div>
 `:''}
  <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
@@ -1305,14 +1305,18 @@ function copyInvite(c){const i=D.invites.find(x=>x.code===c);copy(`🐑 小羊�
 function revokeInvite(c){if(!confirm('作廢驗證碼 '+c+'？'))return;D.invites.find(x=>x.code===c).revoked=true;save('作廢驗證碼 '+c);render()}
 function lastAdmin(t){return isAdminRole(t.role)&&t.active!==false&&D.teachers.filter(x=>isAdminRole(x.role)&&x.active!==false).length<=1}
 /* 刪除帳號（例如測試帳號）：過去紀錄上的名字會保留；不能刪自己，也要保留至少一位主控或設計師 */
-function delT(id){const t=D.teachers.find(x=>x.id===id);if(!t)return;
+/* 設計師身分保護：只有設計師能修改設計師（主控不能改設計師的身分、停用、刪除或重設密碼，也不能把人設成設計師） */
+const amDesigner=()=>!authOn()||(me()||{}).role==='designer';
+function canManage(t){return amDesigner()||t.role!=='designer'}
+function guardT(t){if(t&&!canManage(t)){toast('設計師的帳號只有設計師能修改');render();return false}return !!t}
+function delT(id){const t=D.teachers.find(x=>x.id===id);if(!guardT(t))return;
  if(t.name===user){toast('不能刪除自己的帳號');return}
  if(t.active!==false&&lastAdmin(t)){toast('至少要保留一位主控或設計師');return}
  if(!confirm('永久刪除「'+t.name+'」（帳號：'+accOf(t)+'）？\n刪除後不能再用這個帳號登入；過去紀錄上的名字會保留。\n只是暫時不讓他登入的話，請用「停用」。'))return;
  D.teachers=D.teachers.filter(x=>x.id!==id);save('刪除老師帳號 '+t.name);render();toast('已刪除 '+t.name)}
-function toggleT(id){const t=D.teachers.find(x=>x.id===id);if(t.active!==false&&lastAdmin(t)){toast('至少要保留一位主控或設計師');return}t.active=t.active===false;save((t.active?'啟用':'停用')+'老師 '+t.name);render()}
-function setRole(id,r){const t=D.teachers.find(x=>x.id===id);if(!isAdminRole(r)&&lastAdmin(t)){toast('至少要保留一位主控或設計師');render();return}t.role=r;save(t.name+' 改為'+ROLES[r]);render();toast(t.name+' 改為'+ROLES[r])}
-async function resetPw(id){const t=D.teachers.find(x=>x.id===id);const p=prompt(`替「${t.name}」設定臨時密碼（至少 6 碼），請對方登入後自己修改`);if(p===null)return;
+function toggleT(id){const t=D.teachers.find(x=>x.id===id);if(!guardT(t))return;if(t.active!==false&&lastAdmin(t)){toast('至少要保留一位主控或設計師');return}t.active=t.active===false;save((t.active?'啟用':'停用')+'老師 '+t.name);render()}
+function setRole(id,r){const t=D.teachers.find(x=>x.id===id);if(!guardT(t))return;if(r==='designer'&&!amDesigner()){toast('只有設計師能把人設成設計師');render();return}if(!isAdminRole(r)&&lastAdmin(t)){toast('至少要保留一位主控或設計師');render();return}t.role=r;save(t.name+' 改為'+ROLES[r]);render();toast(t.name+' 改為'+ROLES[r])}
+async function resetPw(id){const t=D.teachers.find(x=>x.id===id);if(!guardT(t))return;const p=prompt(`替「${t.name}」設定臨時密碼（至少 6 碼），請對方登入後自己修改`);if(p===null)return;
  if(p.length<6){toast('密碼至少 6 碼');return}t.pwHash=await hashPw(p);save('重設 '+t.name+' 的密碼');toast('已重設')}
 function saveSettings(){const v=k=>document.getElementById(k).value;const S=D.settings;
  S.church=v('st_c').trim()||'小羊樂園';S.rules=v('st_rules').split('\n').map(x=>x.trim()).filter(Boolean);S.reasons=v('st_reasons').split('\n').map(x=>x.trim()).filter(Boolean);const r=document.getElementById('st_r');if(r)S.requireLogin=r.checked;const tn=document.getElementById('st_tn');if(tn)S.teacherNames=tn.value.split('\n').map(x=>x.trim()).filter(Boolean);S.cutoff=v('st_cut')||'10:30';S.onPts=Number(v('st_on'))||2;S.latePts=Number(v('st_late'))||1;
