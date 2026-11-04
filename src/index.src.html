@@ -56,6 +56,8 @@ body.bpmf .zy .zh,body.bpmf .zy .en,body.bpmf .zy b{font-weight:400}
 body.bpmf .zy .en,body.bpmf .zy .ref{font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
 .zybtn.on{background:#fff;color:#e2572a}
 .proj .en{line-height:1.45}.tok.tap{cursor:pointer}.tok.tap:hover{text-decoration:underline dotted}
+.rules1{text-align:center;justify-content:center}.rules1 .rhd{color:#f2c46b;white-space:nowrap;margin-bottom:.15em}
+.rules1 ol{margin:0;padding:0;list-style:none;counter-reset:rn}.rules1 li{counter-increment:rn;white-space:nowrap;line-height:1.55}.rules1 li::before{content:counter(rn) ". "}
 .rules2{display:flex;flex-direction:column;align-items:center;text-align:center}.rules2 .rcol{width:100%}.rules2 .rhd{color:#f2c46b;margin-bottom:.15em}
 .rules2 .rsep{width:40%;border-top:2px dashed #ffffff40;margin:.45em auto}.rules2 ol{margin:0;padding:0;list-style:none;counter-reset:rn}.rules2 li{counter-increment:rn}.rules2 li::before{content:counter(rn) ". "}
 .tok.say{background:#f2c46b;color:#1f1b2e;border-radius:4px}
@@ -563,7 +565,7 @@ function menuHtml(){const it=(ic,t,fn,cls)=>`<button class="${cls||''}" onclick=
  if(mode==='teach'){o+=it('🐑',user||!authOn()?'老師區':'老師登入','enterStaff()','mmain');if(authOn()&&user)o+=it('🚪','登出','logout()')}
  else{o+=`<div class="mfs"><span class="mi">🔠</span>字體${[['n','標準'],['l','大'],['xl','特大']].map(([k,t])=>`<button class="${staffFs===k?'on':''}" onclick="event.stopPropagation();setStaffFs('${k}')">${t}</button>`).join('')}</div><hr>`;o+=it('📺','回到教學模式','setMode(\'teach\')','mmain');if(authOn()&&user)o+=it('🚪','登出','logout()')}
  return o}
-function go(t){Cloud.needRender=false;tab=t;render();scrollTo(0,0)}
+function go(t){if(t==='rules'&&tab!=='rules')rulePg=0;Cloud.needRender=false;tab=t;render();scrollTo(0,0)}
 /* 進老師區：必須先連上雲端（拿到最新的登入設定），啟用登入時一定要登入 */
 function enterStaff(){
  if(Cloud.url){if(!Cloud.pw){needCloud();return}
@@ -687,8 +689,9 @@ let qIdx=0, qAll=false, showLyrics=false;
 function stepIdx(){return STEPS.findIndex(x=>x[0]===tab)}
 /* 像 PPT 換頁：左右鍵（或簡報筆的上下頁鍵）照上方順序換頁：規則→…→禱告→點名→點數；問答頁先一題一題換 */
 function stepGo(d){const order=TEACH_TABS.map(x=>x[0]);const i=order.indexOf(tab);if(i<0)return;
+ if(tab==='rules'&&(D.settings.reasons||[]).length){if(d>0&&!rulePg){rulePg=1;render();return}if(d<0&&rulePg){rulePg=0;render();return}}
  if(tab==='qa'&&!qAll){const q=(cur().questions||[]).length;if(d>0&&qIdx<q-1){qIdx++;render();return}if(d<0&&qIdx>0){qIdx--;render();return}}
- const n=i+d;if(n>=0&&n<order.length){const nt=order[n];qIdx=(nt==='qa'&&d<0)?Math.max(0,(cur().questions||[]).length-1):0;hidTok.clear();showLyrics=false;go(nt)}}
+ const n=i+d;if(n>=0&&n<order.length){const nt=order[n];qIdx=(nt==='qa'&&d<0)?Math.max(0,(cur().questions||[]).length-1):0;hidTok.clear();showLyrics=false;go(nt);if(nt==='rules'&&d<0&&(D.settings.reasons||[]).length){rulePg=1;render()}}}
 let userPick=null;  // 老師自己從選單選的課（就算已上過也照選的顯示）
 function cur(){let l=lessonById(curLesson);if(!l||(curLesson!==userPick&&hiddenNow(l)))l=thisWeek();curLesson=l&&l.id;return l||{}}  // 已上過／今年不上的課自動換成下一課
 function lsel(){return D.lessons.length?`<select class="lsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(curLesson)}</select>`:''}
@@ -733,9 +736,12 @@ try{matchMedia('(orientation: portrait)').addListener(relayout)}catch(e){}
 try{screen.orientation&&screen.orientation.addEventListener('change',relayout)}catch(e){}
 if(window.matchMedia){const mq=window.matchMedia('(orientation: portrait)');if(mq.addEventListener)mq.addEventListener('change',relayout);else if(mq.addListener)mq.addListener(relayout)}
 document.addEventListener('fullscreenchange',()=>setTimeout(relayout,300));document.addEventListener('webkitfullscreenchange',()=>setTimeout(relayout,300));
-function tRules(){const r=D.settings.rules||[],w=D.settings.reasons||[];
- return stepPage(`<div class="bigcard fit zy" data-max="44"><div class="rules2"><div class="rcol"><div class="rhd">📏 主日學規則</div><ol>${r.map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>
-  ${w.length?`<div class="rsep"></div><div class="rcol"><div class="rhd">❤️ 參加主日學的原因</div><ol>${w.map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>`:''}</div></div>`,false)}
+/* 規則頁分兩頁（規則／參加原因），每句不換行，字放大到滿版；左右鍵或上方按鈕換頁 */
+let rulePg=0;
+function tRules(){const r=D.settings.rules||[],w=D.settings.reasons||[];if(!w.length)rulePg=0;
+ const pg=rulePg?['❤️ 參加主日學的原因',w]:['📏 主日學規則',r];
+ const sw=w.length?`<div class="tbar" style="justify-content:center"><button class="${rulePg?'ghost':'blue'}" onclick="rulePg=0;render()">📏 主日學規則</button><button class="${rulePg?'blue':'ghost'}" onclick="rulePg=1;render()">❤️ 參加的原因</button></div>`:'';
+ return stepPage(`${sw}<div class="bigcard fit zy rules1" data-max="110"><div class="rhd">${pg[0]}</div><ol>${pg[1].map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>`,false)}
 function worshipList(l){const ids=[];
  D.songs.filter(x=>x.theme&&(!l.season||x.season===l.season)).forEach(x=>ids.push(x.id));
  (l.songIds||[]).forEach(i=>{if(!ids.includes(i))ids.push(i)});
