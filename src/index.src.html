@@ -1284,7 +1284,7 @@ function pSettings(){const S=D.settings;
  ${open.map(i=>`<div class="row card" style="margin:8px 0"><b style="font-size:22px;letter-spacing:3px;font-family:monospace">${i.code}</b><span class="sp muted">${h(i.note)} · ${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效</span><button class="sm ghost" onclick="copyInvite('${i.code}')">複製訊息</button><button class="sm danger" onclick="revokeInvite('${i.code}')">作廢</button></div>`).join('')}
  ${used.length?`<div class="muted" style="margin-top:6px">最近使用：${used.map(i=>`${i.code} → ${h(i.usedBy)}（${h(i.usedAt)}）`).join('、')}</div>`:''}</div>
  ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t=>!t.pending).map(t=>`<tr style="${t.active===false?'opacity:.5':''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role)?'t':'o'}">${roleName(t)}</span> <span class="muted">帳號：${h(accOf(t))}</span>${t.active===false?' <span class="tag">已停用</span>':''}<div class="muted">${h(t.created||'')} 加入</div></td>
- <td style="text-align:right">${t.name===user?'<span class="muted">（你）</span>':`<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).map(r=>`<option value="${r}" ${(t.role||'teacher')===r?'selected':''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active===false?'ghost':'danger'}" onclick="toggleT('${t.id}')">${t.active===false?'啟用':'停用'}</button>`}</td></tr>`).join('')}</table>
+ <td style="text-align:right">${t.name===user?'<span class="muted">（你）</span>':`<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).map(r=>`<option value="${r}" ${(t.role||'teacher')===r?'selected':''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active===false?'ghost':'danger'}" onclick="toggleT('${t.id}')">${t.active===false?'啟用':'停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
  <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議。</p></div>
 `:''}
  <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
@@ -1308,6 +1308,12 @@ function genInvite(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c;do{c=[...A
 function copyInvite(c){const i=D.invites.find(x=>x.code===c);copy(`🐑 小羊樂園 老師註冊驗證碼：${c}\n打開小羊樂園 app → 老師登入 → 用驗證碼註冊。\n驗證碼限用一次，${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效。`)}
 function revokeInvite(c){if(!confirm('作廢驗證碼 '+c+'？'))return;D.invites.find(x=>x.code===c).revoked=true;save('作廢驗證碼 '+c);render()}
 function lastAdmin(t){return isAdminRole(t.role)&&t.active!==false&&D.teachers.filter(x=>isAdminRole(x.role)&&x.active!==false).length<=1}
+/* 刪除帳號（例如測試帳號）：過去紀錄上的名字會保留；不能刪自己，也要保留至少一位主控或設計師 */
+function delT(id){const t=D.teachers.find(x=>x.id===id);if(!t)return;
+ if(t.name===user){toast('不能刪除自己的帳號');return}
+ if(t.active!==false&&lastAdmin(t)){toast('至少要保留一位主控或設計師');return}
+ if(!confirm('永久刪除「'+t.name+'」（帳號：'+accOf(t)+'）？\n刪除後不能再用這個帳號登入；過去紀錄上的名字會保留。\n只是暫時不讓他登入的話，請用「停用」。'))return;
+ D.teachers=D.teachers.filter(x=>x.id!==id);save('刪除老師帳號 '+t.name);render();toast('已刪除 '+t.name)}
 function toggleT(id){const t=D.teachers.find(x=>x.id===id);if(t.active!==false&&lastAdmin(t)){toast('至少要保留一位主控或設計師');return}t.active=t.active===false;save((t.active?'啟用':'停用')+'老師 '+t.name);render()}
 function setRole(id,r){const t=D.teachers.find(x=>x.id===id);if(!isAdminRole(r)&&lastAdmin(t)){toast('至少要保留一位主控或設計師');render();return}t.role=r;save(t.name+' 改為'+ROLES[r]);render();toast(t.name+' 改為'+ROLES[r])}
 async function resetPw(id){const t=D.teachers.find(x=>x.id===id);const p=prompt(`替「${t.name}」設定臨時密碼（至少 6 碼），請對方登入後自己修改`);if(p===null)return;
