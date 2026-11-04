@@ -893,7 +893,7 @@ function cloudDlg() {
 }
 function cloudChangePw() {
   if (mode !== 'staff' || !isAdmin()) {
-    toast('只有主控或設計師可以在「老師區 → 設定」更改教會密碼');
+    toast('只有園長可以在「老師區 → 設定」更改教會密碼');
     return;
   }
   openModal(`<h2>☁️ 更改教會密碼</h2><p class="muted">改了之後，所有裝置都要重新輸入新的教會密碼。</p>
@@ -1530,11 +1530,11 @@ var activeT = () => D.teachers.filter(t => t.active !== false);
 var me = () => D.teachers.find(t => t.name === user);
 var authOn = () => !!D.settings.auth;
 var ROLES = {
-  admin: '主控',
-  designer: '設計師',
+  admin: '園長',
+  designer: '園工',
   teacher: '老師',
   helper: '小助教'
-};
+}; // 園工＝負責 app 的人（只有園工自己看得到這個身分）
 var HELPER_TABS = ['songs', 'shows', 'kids', 'sessions', 'meetings', 'meeting', 'settings']; // 上課紀錄、會議：小助教只能看  // 小助教：只幫忙登記點數（上課點名加點＋老師區的孩子點數）
 var isHelper = () => authOn() && (me() || {}).role === 'helper';
 var isAdminRole = r => r === 'admin' || r === 'designer';
@@ -1623,7 +1623,7 @@ function loginDlg() {
  <label class="f">帳號<input id="lg_a" autocomplete="username" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('lg_p').focus()"></label>
  <label class="f">密碼<input id="lg_p" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></label>
  <div class="actions"><button class="blue" onclick="doLogin()">登入</button></div>
- <div class="notice" style="margin-top:14px">第一次使用？<button class="blue" style="margin:6px 0" onclick="applyDlg()">🙋 申請老師帳號</button><br>送出後由主控或設計師核准，核准後就能登入。<br><span class="muted">忘記密碼請找主控或設計師重設。</span></div>
+ <div class="notice" style="margin-top:14px">第一次使用？<button class="blue" style="margin:6px 0" onclick="applyDlg()">🙋 申請老師帳號</button><br>送出後由園長核准，核准後就能登入。<br><span class="muted">忘記密碼請找園長重設。</span></div>
  <p class="muted">登入後會記住在這台裝置，不用每次輸入；換人使用請按「登出」。</p>`);
   setTimeout(() => {
     var e = document.getElementById('lg_a');
@@ -1645,7 +1645,7 @@ function _doLogin() {
     }
     var t = findAcc(a);
     if (t && t.pending && !t.active) {
-      toast('帳號還在等待核准，請主控或設計師按「核准」');
+      toast('帳號還在等待核准，請園長按「核准」');
       return;
     }
     if (!t || t.active === false || t.pwHash !== (yield hashPw(document.getElementById('lg_p').value))) {
@@ -1661,9 +1661,9 @@ function _doLogin() {
 }
 function setupDlg() {
   openModal(`<h2>🐑 小羊樂園 初次設定</h2>
- <p class="muted">建立第一個管理帳號。主控和設計師都可以發驗證碼讓老師註冊、管理老師帳號和系統設定。</p>
+ <p class="muted">建立第一個管理帳號。園長都可以發驗證碼讓老師註冊、管理老師帳號和系統設定。</p>
  <label class="f">帳號（登入用，也是其他老師看到的名字）<input id="su_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
- <label class="f">身分<select id="su_r"><option value="admin">主控（負責同工、院長）</option><option value="designer">設計師（負責 app 程式）</option></select></label>
+ <label class="f">身分<select id="su_r"><option value="admin">園長（負責同工）</option><option value="designer">園工（負責 app 程式）</option></select></label>
  <label class="f">設定密碼（至少 6 碼）<input id="su_p" type="password"></label>
  <label class="f">再輸入一次<input id="su_p2" type="password"></label>
  <div class="actions"><button class="blue" onclick="doSetup()">建立帳號</button></div>`);
@@ -1671,7 +1671,7 @@ function setupDlg() {
 function doSetup() {
   return _doSetup.apply(this, arguments);
 }
-/* ===== 申請老師帳號 → 主控／設計師核准（不用驗證碼） ===== */
+/* ===== 申請老師帳號 → 園長核准（不用驗證碼） ===== */
 function _doSetup() {
   _doSetup = _asyncToGenerator(function* () {
     var a = val('su_a'),
@@ -1706,7 +1706,7 @@ function applyDlg() {
   if (Cloud.needRebuild) cloudRebuild();
   if (needCloud()) return;
   openModal(`<h2>🙋 申請老師帳號</h2>
- <p class="muted">填好後送出，主控或設計師的 app 會收到通知，按「核准」後你就能用這組帳號密碼登入。</p>
+ <p class="muted">填好後送出，園長的 app 會收到通知，按「核准」後你就能用這組帳號密碼登入。</p>
  <label class="f">帳號（登入用，也是其他老師看到的名字，例如：陳老師）<input id="ap_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
  <label class="f">設定密碼（至少 6 碼）<input id="ap_p" type="password"></label>
  <label class="f">再輸入一次<input id="ap_p2" type="password"></label>
@@ -1753,7 +1753,7 @@ function _doApply() {
     });
     save('申請老師帳號 ' + n);
     cloudSoon();
-    openModal(`<h2>✅ 申請已送出</h2><p>已通知主控和設計師。核准後，用帳號「<b>${h(acc)}</b>」和你設定的密碼就能登入。</p><p class="muted">可以請負責的同工打開 app 核准。</p><div class="actions"><button class="blue" onclick="closeModal()">好</button></div>`);
+    openModal(`<h2>✅ 申請已送出</h2><p>已通知園長。核准後，用帳號「<b>${h(acc)}</b>」和你設定的密碼就能登入。</p><p class="muted">可以請負責的同工打開 app 核准。</p><div class="actions"><button class="blue" onclick="closeModal()">好</button></div>`);
   });
   return _doApply.apply(this, arguments);
 }
@@ -1762,7 +1762,7 @@ function approveT(id) {
   var t = D.teachers.find(x => x.id === id);
   if (!t) return;
   var r = document.getElementById('apr_' + id);
-  if (r && ROLES[r.value] && (r.value !== 'designer' || amDesigner())) t.role = r.value;
+  if (r && ROLES[r.value] && (r.value !== 'designer' || amDesigner()) && (r.value !== 'admin' || !hasPrincipal(id))) t.role = r.value;
   t.active = true;
   delete t.pending;
   t.approvedBy = who();
@@ -1781,7 +1781,7 @@ function rejectT(id) {
 function pendingCard() {
   var ps = pendingT();
   if (!ps.length) return '';
-  return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t => `<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="tag">申請：${ROLES[t.role] || '老師'}</span> <span class="muted">${accOf(t) !== t.name ? '帳號：' + h(accOf(t)) + ' · ' : ''}${h(t.applied || '')} 申請</span>${t.applyNote ? `<div class="muted">「${h(t.applyNote)}」</div>` : ''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher" ${t.role === 'teacher' ? 'selected' : ''}>身分：老師</option><option value="helper" ${t.role === 'helper' ? 'selected' : ''}>身分：小助教（登記點數）</option><option value="admin">身分：主控（院長／負責同工）</option>${amDesigner() ? '<option value="designer">身分：設計師</option>' : ''}</select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`;
+  return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t => `<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="tag">申請：${ROLES[t.role] || '老師'}</span> <span class="muted">${accOf(t) !== t.name ? '帳號：' + h(accOf(t)) + ' · ' : ''}${h(t.applied || '')} 申請</span>${t.applyNote ? `<div class="muted">「${h(t.applyNote)}」</div>` : ''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher" ${t.role === 'teacher' ? 'selected' : ''}>身分：老師</option><option value="helper" ${t.role === 'helper' ? 'selected' : ''}>身分：小助教（登記點數）</option>${hasPrincipal() ? '' : '<option value="admin">身分：園長（只能一位）</option>'}${amDesigner() ? '<option value="designer">身分：園工</option>' : ''}</select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`;
 }
 var _penSeen = -1;
 function pendingNotify() {
@@ -1794,7 +1794,7 @@ function registerDlg() {
   if (Cloud.needRebuild) cloudRebuild();
   if (needCloud()) return;
   openModal(`<h2>🐑 老師註冊</h2>
- <p class="muted">請輸入主控同工給你的驗證碼（6 碼，限用一次）。</p>
+ <p class="muted">請輸入園長給你的驗證碼（6 碼，限用一次）。</p>
  <label class="f">驗證碼<input id="rg_c" style="text-transform:uppercase;letter-spacing:4px;font-size:20px" maxlength="8"></label>
  <label class="f">帳號（登入用，也是其他老師看到的名字，例如：陳老師）<input id="rg_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
  <label class="f">設定密碼（至少 6 碼）<input id="rg_p" type="password"></label>
@@ -1825,7 +1825,7 @@ function _doRegister() {
       return;
     }
     if (Date.now() > inv.expires) {
-      toast('驗證碼已過期，請向主控重新索取');
+      toast('驗證碼已過期，請向園長重新索取');
       return;
     }
     if (!acc) {
@@ -3265,7 +3265,7 @@ function kidManage(id) {
  <label class="f">改名<input id="km_n" value="${h(k.name)}"></label>
  <div class="actions"><button class="blue" onclick="renameKid('${id}')">儲存名字</button></div>
  <div class="card" style="margin-top:12px"><b>🙈 隱藏</b><p class="muted">不再出現在點名畫面，點數和紀錄都保留，之後可以恢復。適合暫時不來的孩子。</p><button onclick="hideKid('${id}')">隱藏這位孩子</button></div>
- ${isAdmin() ? '' : '<p class="muted">永久刪除只有主控或設計師可以做。</p>'}${!isAdmin() ? '' : `<div class="card" style="border-color:#f0c4c4"><b style="color:#c33">🗑 刪除</b><p class="muted">連同所有點數和紀錄一起永久刪除，無法復原。適合輸入錯誤的名字。</p><button class="danger" onclick="deleteKid('${id}')">永久刪除</button></div>`}`);
+ ${isAdmin() ? '' : '<p class="muted">永久刪除只有園長可以做。</p>'}${!isAdmin() ? '' : `<div class="card" style="border-color:#f0c4c4"><b style="color:#c33">🗑 刪除</b><p class="muted">連同所有點數和紀錄一起永久刪除，無法復原。適合輸入錯誤的名字。</p><button class="danger" onclick="deleteKid('${id}')">永久刪除</button></div>`}`);
 }
 function renameKid(id) {
   var n = document.getElementById('km_n').value.trim();
@@ -3288,7 +3288,7 @@ function hideKid(id) {
 }
 function deleteKid(id) {
   if (!isAdmin()) {
-    toast('只有主控或設計師可以刪除');
+    toast('只有園長可以刪除');
     return;
   }
   var k = kid(id);
@@ -4269,7 +4269,7 @@ function renameT(id, nn) {
     return;
   }
   if (t.name !== user && !canManage(t)) {
-    toast('設計師的帳號只有設計師能修改');
+    toast('這個帳號不能修改');
     return;
   }
   if (D.teachers.some(x => x.id !== id && (x.name === nn || normAcc(accOf(x)) === normAcc(nn)))) {
@@ -4327,18 +4327,18 @@ function _changeMyPw() {
 }
 function pSettings() {
   var S = D.settings;
-  if (authOn() && !isAdmin()) return `<h2>設定</h2>${myAccount()}<div class="card"><h3>資料備份</h3><button onclick="exportAll()">⬇ 匯出備份</button></div><p class="muted">系統設定與老師帳號由主控管理。</p>`;
+  if (authOn() && !isAdmin()) return `<h2>設定</h2>${myAccount()}<div class="card"><h3>資料備份</h3><button onclick="exportAll()">⬇ 匯出備份</button></div><p class="muted">系統設定與老師帳號由園長管理。</p>`;
   var now = Date.now();
   var open = D.invites.filter(i => !i.usedBy && !i.revoked && i.expires > now);
   var used = D.invites.filter(i => i.usedBy).slice(-5).reverse();
   var admins = D.teachers.filter(t => isAdminRole(t.role) && t.active !== false).length;
-  var authCard = authOn() ? '' : `<div class="card" style="border-color:#2a6fd6"><h3>🔐 老師帳號（尚未啟用）</h3><p class="muted">啟用後：老師用自己的帳號登入才能進老師區；新老師需要主控或設計師發的驗證碼才能註冊；刪除孩子、課程和修改設定只有主控和設計師能做。教學模式（上課畫面）不需要登入。</p>
+  var authCard = authOn() ? '' : `<div class="card" style="border-color:#2a6fd6"><h3>🔐 老師帳號（尚未啟用）</h3><p class="muted">啟用後：老師用自己的帳號登入才能進老師區；新老師需要園長發的驗證碼才能註冊；刪除孩子、課程和修改設定只有園長能做。教學模式（上課畫面）不需要登入。</p>
    <button class="blue" onclick="enableAuth()">啟用老師帳號</button></div>`;
   var cloudCard = Cloud.pw ? `<div class="card"><div class="row"><h3 class="sp">☁️ 教會密碼（雲端同步）</h3><button class="sm ghost" onclick="cloudChangePw()">更改教會密碼</button></div><p class="muted">每台裝置第一次打開 app 時要輸入的密碼。改了之後，所有裝置都要重新輸入新密碼。</p></div>` : '';
   return `<h2>設定${authOn() ? '（' + roleName(me()) + '）' : ''}</h2>${authCard}${cloudCard}${authOn() ? `
- ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t => !t.pending).map(t => `<tr style="${t.active === false ? 'opacity:.5' : ''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role) ? 't' : 'o'}">${roleName(t)}</span> ${accOf(t) !== t.name ? `<span class="muted">帳號：${h(accOf(t))}</span>` : ''}${t.active === false ? ' <span class="tag">已停用</span>' : ''}<div class="muted">${h(t.created || '')} 加入</div></td>
- <td style="text-align:right">${t.name === user ? '<span class="muted">（你）</span>' : !canManage(t) ? '<span class="muted">🔒 只有設計師能修改</span>' : `<button class="sm ghost" onclick="const n=prompt('「${h(t.name)}」的新顯示名稱（登入帳號不變）','${h(t.name)}');if(n!==null)renameT('${t.id}',n)">✏️ 改名</button> <button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).filter(r => r !== 'designer' || amDesigner()).map(r => `<option value="${r}" ${(t.role || 'teacher') === r ? 'selected' : ''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active === false ? 'ghost' : 'danger'}" onclick="toggleT('${t.id}')">${t.active === false ? '啟用' : '停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
- <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議；小助教＝登記點數、編輯詩歌；成發、上課紀錄、會議只能觀看。</p></div>
+ ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t => !t.pending && (amDesigner() || t.role !== 'designer')).map(t => `<tr style="${t.active === false ? 'opacity:.5' : ''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role) ? 't' : 'o'}">${roleName(t)}</span> ${accOf(t) !== t.name ? `<span class="muted">帳號：${h(accOf(t))}</span>` : ''}${t.active === false ? ' <span class="tag">已停用</span>' : ''}<div class="muted">${h(t.created || '')} 加入</div></td>
+ <td style="text-align:right">${t.name === user ? '<span class="muted">（你）</span>' : !canManage(t) ? '<span class="muted">🔒 不能修改</span>' : `<button class="sm ghost" onclick="const n=prompt('「${h(t.name)}」的新顯示名稱（登入帳號不變）','${h(t.name)}');if(n!==null)renameT('${t.id}',n)">✏️ 改名</button> <button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).filter(r => (r !== 'designer' || amDesigner()) && (r !== 'admin' || t.role === 'admin' || !hasPrincipal(t.id))).map(r => `<option value="${r}" ${(t.role || 'teacher') === r ? 'selected' : ''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active === false ? 'ghost' : 'danger'}" onclick="toggleT('${t.id}')">${t.active === false ? '啟用' : '停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
+ <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。<br>身分說明：${amDesigner() ? '園工＝負責 app（只有你看得到）；' : ''}園長＝負責同工（只能一位），可核准申請、管理帳號與設定。老師＝備課、上課、點名、紀錄、會議；小助教＝登記點數、編輯詩歌；成發、上課紀錄、會議只能觀看。</p></div>
 ` : ''}
  <div class="card"><h3>⭐ 點數與教學設定</h3>
  <label class="f">① 主日學規則（一行一條，上課時大家一起念）<textarea id="st_rules">${h((S.rules || []).join('\n'))}</textarea></label>
@@ -4394,15 +4394,16 @@ function revokeInvite(c) {
 function lastAdmin(t) {
   return isAdminRole(t.role) && t.active !== false && D.teachers.filter(x => isAdminRole(x.role) && x.active !== false).length <= 1;
 }
-/* 刪除帳號（例如測試帳號）：過去紀錄上的名字會保留；不能刪自己，也要保留至少一位主控或設計師 */
-/* 設計師身分保護：只有設計師能修改設計師（主控不能改設計師的身分、停用、刪除或重設密碼，也不能把人設成設計師） */
+/* 刪除帳號（例如測試帳號）：過去紀錄上的名字會保留；不能刪自己，也要保留至少一位園長 */
+/* 設計師身分保護：只有設計師能修改設計師（園長不能改設計師的身分、停用、刪除或重設密碼，也不能把人設成設計師） */
+var hasPrincipal = ex => D.teachers.some(t => t.role === 'admin' && t.active !== false && !t.pending && t.id !== ex); // 園長只能一位
 var amDesigner = () => !authOn() || (me() || {}).role === 'designer';
 function canManage(t) {
   return amDesigner() || t.role !== 'designer';
 }
 function guardT(t) {
   if (t && !canManage(t)) {
-    toast('設計師的帳號只有設計師能修改');
+    toast('這個帳號不能修改');
     render();
     return false;
   }
@@ -4416,7 +4417,7 @@ function delT(id) {
     return;
   }
   if (t.active !== false && lastAdmin(t)) {
-    toast('至少要保留一位主控或設計師');
+    toast('至少要保留一位園長');
     return;
   }
   if (!confirm('永久刪除「' + t.name + '」（帳號：' + accOf(t) + '）？\n刪除後不能再用這個帳號登入；過去紀錄上的名字會保留。\n只是暫時不讓他登入的話，請用「停用」。')) return;
@@ -4429,7 +4430,7 @@ function toggleT(id) {
   var t = D.teachers.find(x => x.id === id);
   if (!guardT(t)) return;
   if (t.active !== false && lastAdmin(t)) {
-    toast('至少要保留一位主控或設計師');
+    toast('至少要保留一位園長');
     return;
   }
   t.active = t.active === false;
@@ -4439,13 +4440,18 @@ function toggleT(id) {
 function setRole(id, r) {
   var t = D.teachers.find(x => x.id === id);
   if (!guardT(t)) return;
+  if (r === 'admin' && hasPrincipal(id)) {
+    toast('園長只能有一位，請先把原本的園長改成老師');
+    render();
+    return;
+  }
   if (r === 'designer' && !amDesigner()) {
-    toast('只有設計師能把人設成設計師');
+    toast('不能設定這個身分');
     render();
     return;
   }
   if (!isAdminRole(r) && lastAdmin(t)) {
-    toast('至少要保留一位主控或設計師');
+    toast('至少要保留一位園長');
     render();
     return;
   }
