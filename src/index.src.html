@@ -149,6 +149,11 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 @media (orientation:portrait){#intro video{object-fit:contain}}
 #intro button{position:absolute;bottom:22px;border:0;border-radius:22px;padding:9px 18px;font-size:16px;background:rgba(255,255,255,.88);color:#5a4630;box-shadow:0 3px 12px rgba(0,0,0,.18);cursor:pointer}
 #introSkip{right:22px}#introSnd{left:22px}
+body.sz-l #app,body.sz-l .modal .panel,body.sz-l #hdr .nrow nav{zoom:1.2}body.sz-xl #app,body.sz-xl .modal .panel,body.sz-xl #hdr .nrow nav{zoom:1.4}
+@media (max-width:600px){body.sz-l #app,body.sz-l .modal .panel,body.sz-l #hdr .nrow nav{zoom:1.12}body.sz-xl #app,body.sz-xl .modal .panel,body.sz-xl #hdr .nrow nav{zoom:1.25}}
+body.sbig #app,body.sbig .modal .panel,body.sbig #app input,body.sbig #app textarea,body.sbig #app select,body.sbig .panel input,body.sbig .panel textarea,body.sbig .panel select,body.sbig #hdr nav button{font-weight:600}
+body.sbig .muted,body.sbig label.f,body.sbig .panel label.f{color:#4a423b}
+.hmenu .mfs{display:flex;align-items:center;padding:6px 12px;font-size:16px}.hmenu .mfs button{display:inline-block;width:auto;padding:5px 10px;margin-left:6px;border:1px solid #ddd;border-radius:8px;font-size:15px}.hmenu .mfs button.on{background:#e2572a;color:#fff;border-color:#e2572a}
 .hmenu{position:fixed;z-index:35;background:#fff;color:#2b2622;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:8px;min-width:230px;max-width:90vw}
 .hmenu button{display:flex;align-items:center;width:100%;background:none;border:0;border-radius:9px;padding:10px 12px;font-size:16px;text-align:left;color:inherit;cursor:pointer;min-height:0}
 .hmenu button:hover{background:#f6efe6}.hmenu .mi{display:inline-block;min-width:34px;font-weight:700;color:#e2572a}
@@ -498,7 +503,12 @@ function pairs(lines,numeric){return lines.map(s=>{const p=s.split('|').map(x=>x
 const STEPS=[['rules','規則'],['worship','敬拜'],['ice','破冰'],['intro','前言'],['video','妙妙書'],['qa','問答'],['verse','金句'],['pray','禱告']];
 const TEACH_TABS=STEPS.map(([k,n],i)=>[k,`<img class="ni" src="assets/ic-s${i+1}.png" alt="">${n}`]).concat([['points','<img class="ni" src="assets/ic-points.png" alt="">點名'],['rank','<img class="ni" src="assets/ic-rank.png?v=2" alt="">點數']]);
 const STAFF_TABS=[['lessons','備課'],['songs','詩歌'],['shows','成發'],['kids','孩子點數'],['sessions','上課紀錄'],['meetings','會議'],['settings','設定']];
-function render(){applyZy();
+/* 後台字體大小（方便年長老師閱讀）：標準 1、大 1.2（預設）、特大 1.4；手機螢幕窄，放大幅度小一點 */
+let staffFs='l';try{staffFs=localStorage.getItem('llm_sfs')||'l'}catch(e){}
+function applyStaffFs(){const b=document.body.classList,on=mode==='staff'&&staffFs!=='n';
+ b.toggle('sbig',on);b.toggle('sz-l',on&&staffFs!=='xl');b.toggle('sz-xl',on&&staffFs==='xl')}
+function setStaffFs(v){staffFs=v;try{localStorage.setItem('llm_sfs',v)}catch(e){}applyStaffFs();render();toast('後台字體：'+{n:'標準',l:'大',xl:'特大'}[v])}
+function render(){applyZy();applyStaffFs();
  if(authOn()&&user&&!(me()&&me().active!==false)){setUser(null);mode='teach';tab='rules'}
  const hd=document.getElementById('hdr');hd.className=mode;
  const tabs=mode==='teach'?TEACH_TABS:STAFF_TABS;
@@ -535,7 +545,7 @@ function menuHtml(){const it=(ic,t,fn,cls)=>`<button class="${cls||''}" onclick=
  if(cs)o+=it(cs[0],cs[1],'cloudDlg()');
  o+='<hr>';
  if(mode==='teach'){o+=it('🐑',user||!authOn()?'老師區':'老師登入','enterStaff()','mmain');if(authOn()&&user)o+=it('🚪','登出','logout()')}
- else{o+=it('📺','回到教學模式','setMode(\'teach\')','mmain');if(authOn()&&user)o+=it('🚪','登出','logout()')}
+ else{o+=`<div class="mfs"><span class="mi">🔠</span>字體${[['n','標準'],['l','大'],['xl','特大']].map(([k,t])=>`<button class="${staffFs===k?'on':''}" onclick="event.stopPropagation();setStaffFs('${k}')">${t}</button>`).join('')}</div><hr>`;o+=it('📺','回到教學模式','setMode(\'teach\')','mmain');if(authOn()&&user)o+=it('🚪','登出','logout()')}
  return o}
 function go(t){Cloud.needRender=false;tab=t;render();scrollTo(0,0)}
 /* 進老師區：必須先連上雲端（拿到最新的登入設定），啟用登入時一定要登入 */

@@ -149,6 +149,11 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 @media (orientation:portrait){#intro video{object-fit:contain}}
 #intro button{position:absolute;bottom:22px;border:0;border-radius:22px;padding:9px 18px;font-size:16px;background:rgba(255,255,255,.88);color:#5a4630;box-shadow:0 3px 12px rgba(0,0,0,.18);cursor:pointer}
 #introSkip{right:22px}#introSnd{left:22px}
+body.sz-l #app,body.sz-l .modal .panel,body.sz-l #hdr .nrow nav{zoom:1.2}body.sz-xl #app,body.sz-xl .modal .panel,body.sz-xl #hdr .nrow nav{zoom:1.4}
+@media (max-width:600px){body.sz-l #app,body.sz-l .modal .panel,body.sz-l #hdr .nrow nav{zoom:1.12}body.sz-xl #app,body.sz-xl .modal .panel,body.sz-xl #hdr .nrow nav{zoom:1.25}}
+body.sbig #app,body.sbig .modal .panel,body.sbig #app input,body.sbig #app textarea,body.sbig #app select,body.sbig .panel input,body.sbig .panel textarea,body.sbig .panel select,body.sbig #hdr nav button{font-weight:600}
+body.sbig .muted,body.sbig label.f,body.sbig .panel label.f{color:#4a423b}
+.hmenu .mfs{display:flex;align-items:center;padding:6px 12px;font-size:16px}.hmenu .mfs button{display:inline-block;width:auto;padding:5px 10px;margin-left:6px;border:1px solid #ddd;border-radius:8px;font-size:15px}.hmenu .mfs button.on{background:#e2572a;color:#fff;border-color:#e2572a}
 .hmenu{position:fixed;z-index:35;background:#fff;color:#2b2622;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:8px;min-width:230px;max-width:90vw}
 .hmenu button{display:flex;align-items:center;width:100%;background:none;border:0;border-radius:9px;padding:10px 12px;font-size:16px;text-align:left;color:inherit;cursor:pointer;min-height:0}
 .hmenu button:hover{background:#f6efe6}.hmenu .mi{display:inline-block;min-width:34px;font-weight:700;color:#e2572a}
@@ -1243,8 +1248,34 @@ var TEACH_TABS = STEPS.map((_ref5, i) => {
   return [k, `<img class="ni" src="assets/ic-s${i + 1}.png" alt="">${n}`];
 }).concat([['points', '<img class="ni" src="assets/ic-points.png" alt="">點名'], ['rank', '<img class="ni" src="assets/ic-rank.png?v=2" alt="">點數']]);
 var STAFF_TABS = [['lessons', '備課'], ['songs', '詩歌'], ['shows', '成發'], ['kids', '孩子點數'], ['sessions', '上課紀錄'], ['meetings', '會議'], ['settings', '設定']];
+/* 後台字體大小（方便年長老師閱讀）：標準 1、大 1.2（預設）、特大 1.4；手機螢幕窄，放大幅度小一點 */
+var staffFs = 'l';
+try {
+  staffFs = localStorage.getItem('llm_sfs') || 'l';
+} catch (e) {}
+function applyStaffFs() {
+  var b = document.body.classList,
+    on = mode === 'staff' && staffFs !== 'n';
+  b.toggle('sbig', on);
+  b.toggle('sz-l', on && staffFs !== 'xl');
+  b.toggle('sz-xl', on && staffFs === 'xl');
+}
+function setStaffFs(v) {
+  staffFs = v;
+  try {
+    localStorage.setItem('llm_sfs', v);
+  } catch (e) {}
+  applyStaffFs();
+  render();
+  toast('後台字體：' + {
+    n: '標準',
+    l: '大',
+    xl: '特大'
+  }[v]);
+}
 function render() {
   applyZy();
+  applyStaffFs();
   if (authOn() && user && !(me() && me().active !== false)) {
     setUser(null);
     mode = 'teach';
@@ -1356,6 +1387,12 @@ function menuHtml() {
     o += it('🐑', user || !authOn() ? '老師區' : '老師登入', 'enterStaff()', 'mmain');
     if (authOn() && user) o += it('🚪', '登出', 'logout()');
   } else {
+    o += `<div class="mfs"><span class="mi">🔠</span>字體${[['n', '標準'], ['l', '大'], ['xl', '特大']].map(_ref9 => {
+      var _ref0 = _slicedToArray(_ref9, 2),
+        k = _ref0[0],
+        t = _ref0[1];
+      return `<button class="${staffFs === k ? 'on' : ''}" onclick="event.stopPropagation();setStaffFs('${k}')">${t}</button>`;
+    }).join('')}</div><hr>`;
     o += it('📺', '回到教學模式', 'setMode(\'teach\')', 'mmain');
     if (authOn() && user) o += it('🚪', '登出', 'logout()');
   }
@@ -2768,10 +2805,10 @@ function verseHtml(s, lang) {
 function tVerse() {
   var l = cur();
   if (!l.id) return stepPage('');
-  return stepPage(`<div class="tbar scroll">${[['both', '中英'], ['zh', '中文'], ['en', 'English']].map(_ref9 => {
-    var _ref0 = _slicedToArray(_ref9, 2),
-      k = _ref0[0],
-      n = _ref0[1];
+  return stepPage(`<div class="tbar scroll">${[['both', '中英'], ['zh', '中文'], ['en', 'English']].map(_ref1 => {
+    var _ref10 = _slicedToArray(_ref1, 2),
+      k = _ref10[0],
+      n = _ref10[1];
     return `<button class="${verseLang === k ? 'pri' : 'ghost'}" onclick="verseLang='${k}';hidTok.clear();render()">${n}</button>`;
   }).join('')}
   ${verseLang !== 'zh' && l.verseEn ? `<button class="blue" onclick="sayEn(0.8)">🔊 英文朗讀</button><button class="ghost" onclick="sayEn(0.5)">🐢 慢慢唸</button>` : ''}<span class="sp"></span><button class="ghost" onclick="hideMore()">🙈 遮一些</button><button class="ghost" onclick="hidTok.clear();render()">全部顯示</button><button class="ghost" onclick="fsEl('#proj')">⛶ 全螢幕</button></div>
@@ -3131,14 +3168,14 @@ function pLessons() {
     if (last && last[0] === g) last[1].push([++k, l]);else grp.push([g, [[++k, l]]]);
   });
   return `<div class="row" style="margin-bottom:10px;flex-wrap:wrap"><h2 class="sp">備課</h2>${orderToggle()}${isAdmin() ? '<button class="ghost" onclick="sbImportBtn()">📥 匯入妙妙書 67 集</button>' : ''}<button class="ghost" onclick="importDlg()">匯入</button><button class="blue" onclick="editLesson()">＋新增課程</button></div>
- ${bib ? `<div class="muted" style="margin:-4px 0 10px">${lessonOrder() === 'time' ? '⏳ 依聖經時間軸排列：照事件發生的先後，從創世到新天新地' : '📖 依聖經書卷排列：照 66 卷書的目錄從創世記到啟示錄，同一卷依章節先後'}；教學模式的課程選單也會照這個順序。</div>` : ''}${grp.map(_ref1 => {
-    var _ref10 = _slicedToArray(_ref1, 2),
-      s = _ref10[0],
-      ls = _ref10[1];
-    return `<div class="card"><h3>${bib ? lessonOrder() === 'time' ? '⏳ ' : '📖 ' : ''}${h(s)}（${ls.length} 課）</h3><table>${ls.map(_ref11 => {
-      var _ref12 = _slicedToArray(_ref11, 2),
-        n = _ref12[0],
-        l = _ref12[1];
+ ${bib ? `<div class="muted" style="margin:-4px 0 10px">${lessonOrder() === 'time' ? '⏳ 依聖經時間軸排列：照事件發生的先後，從創世到新天新地' : '📖 依聖經書卷排列：照 66 卷書的目錄從創世記到啟示錄，同一卷依章節先後'}；教學模式的課程選單也會照這個順序。</div>` : ''}${grp.map(_ref11 => {
+    var _ref12 = _slicedToArray(_ref11, 2),
+      s = _ref12[0],
+      ls = _ref12[1];
+    return `<div class="card"><h3>${bib ? lessonOrder() === 'time' ? '⏳ ' : '📖 ' : ''}${h(s)}（${ls.length} 課）</h3><table>${ls.map(_ref13 => {
+      var _ref14 = _slicedToArray(_ref13, 2),
+        n = _ref14[0],
+        l = _ref14[1];
       return `<tr><td style="width:${bib ? 96 : 60}px">${bib ? `${n}.<div class="muted" style="font-size:12px">${h(l.season)}第${h(l.no)}課</div>` : `第${h(l.no)}課`}</td><td><b>${h(l.title)}</b><div class="muted">${h(l.date)} ${h(l.verseRef)}${l.notes ? ' · 📝有備註' : ''}</div></td>
   <td style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="viewLesson('${l.id}')">看</button> <button class="sm ghost" onclick="editLesson('${l.id}')">編輯</button></td></tr>`;
     }).join('')}</table></div>`;
