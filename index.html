@@ -161,6 +161,7 @@ body.sbig .muted,body.sbig label.f,body.sbig .panel label.f{color:#4a423b}
 .lchk{width:20px;height:20px;cursor:pointer;vertical-align:middle}tr.lskip td{opacity:.45}tr.lskip td:first-child{opacity:1}
 .ysel{margin-left:10px;padding:6px 10px;font-size:16px;font-weight:700;border-radius:8px}
 .ybar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}.tag.ok{background:#e3f5e8;color:#2d7a45}
+.stabs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}.stabs button{border:2px solid #e6ddd0;background:#fff;border-radius:22px;padding:8px 16px;font-size:16px;cursor:pointer}.stabs button.on{border-color:#2a6fd6;background:#2a6fd6;color:#fff;font-weight:700}
 .hmenu{position:fixed;z-index:35;background:#fff;color:#2b2622;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:8px;min-width:230px;max-width:90vw}
 .hmenu button{display:flex;align-items:center;width:100%;background:none;border:0;border-radius:9px;padding:10px 12px;font-size:16px;text-align:left;color:inherit;cursor:pointer;min-height:0}
 .hmenu button:hover{background:#f6efe6}.hmenu .mi{display:inline-block;min-width:34px;font-weight:700;color:#e2572a}
@@ -1358,6 +1359,7 @@ function render() {
     settings: pSettings
   }[tab];
   document.getElementById('app').innerHTML = f ? f() : '';
+  if (mode === 'staff' && tab === 'settings') settingsTabs();
   layout();
   if (mode === 'staff' && isHelper() && ['shows', 'sessions', 'meetings', 'meeting'].indexOf(tab) >= 0) helperRO(); // 詩歌可以編輯；成發、上課紀錄、會議只能看
 }
@@ -1442,6 +1444,36 @@ function helperRO() {
   });
   app.querySelectorAll('input:not([type=checkbox]),select,textarea').forEach(e => e.remove());
   if (!app.querySelector('.ro-note')) app.insertAdjacentHTML('afterbegin', '<div class="notice ro-note" style="margin-bottom:10px">👀 小助教只能觀看，不能新增或修改</div>');
+}
+/* 設定頁：每一區變成一個項目按鈕，點哪一個才顯示哪一個（不會一長串） */
+var setTab = '';
+function settingsTabs() {
+  var app = document.getElementById('app');
+  var cards = [...app.children].filter(e => e.classList.contains('card') && e.querySelector('h3'));
+  if (cards.length < 2) return;
+  var key = c => c.querySelector('h3').innerText.replace(/[（(].*$/, '').replace(/[:：].*$/, '').trim();
+  var keys = cards.map(key);
+  if (keys.indexOf(setTab) < 0) setTab = keys.find(k => k.indexOf('待核准') >= 0) || keys[0];
+  var bar = document.createElement('div');
+  bar.className = 'stabs';
+  bar.innerHTML = cards.map((c, i) => {
+    var t = c.querySelector('h3').innerText.replace(/[:：].*$/, '');
+    t = {
+      '我的帳號': '👤 我的帳號',
+      '資料備份': '💾 資料備份',
+      '最近異動': '📝 最近異動'
+    }[t] || t;
+    return `<button class="${keys[i] === setTab ? 'on' : ''}" data-k="${h(keys[i])}">${h(t)}</button>`;
+  }).join('');
+  bar.onclick = e => {
+    var b = e.target.closest('button');
+    if (!b) return;
+    setTab = b.dataset.k;
+    cards.forEach((c, i) => c.style.display = keys[i] === setTab ? '' : 'none');
+    bar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  };
+  cards[0].parentNode.insertBefore(bar, cards[0]);
+  cards.forEach((c, i) => c.style.display = keys[i] === setTab ? '' : 'none');
 }
 function go(t) {
   if (t === 'rules' && tab !== 'rules') rulePg = 0;
