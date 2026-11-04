@@ -306,7 +306,7 @@ function cloudRebuild(){
  dirty.forEach(x=>{if(x.j===null)delete m[x.k];else m[x.k]=x.j});
  D=fromRecs(m);DB.save(D);Cloud.base=baseWithDefaults(Cloud.snap);Cloud.bver=Cloud.ver;Cloud.needRebuild=false;cloudPersist();cloudRender()}
 function cloudRender(){
- const busyUI=document.querySelector('#app iframe')||document.fullscreenElement||document.webkitFullscreenElement;
+ const busyUI=document.querySelector('#app iframe')||elFs();
  if(busyUI){Cloud.needRender=true;cloudBadgeUpdate();return}
  Cloud.needRender=false;
  const keep={};document.querySelectorAll('#app input[id],#app textarea[id],#app select[id]').forEach(e=>{keep[e.id]=e.type==='checkbox'?e.checked:e.value});
@@ -476,7 +476,7 @@ function render(){applyZy();
  const hd=document.getElementById('hdr');hd.className=mode;
  const tabs=mode==='teach'?TEACH_TABS:STAFF_TABS;
  hd.innerHTML=`<div class="hrow"><h1><img class="hlogo" src="icon-192.png" alt=""><span class="hname">${h(D.settings.church)}</span><span class="hdot"> · </span><span class="hsub">${mode==='teach'?'兒童主日學':h(user||'老師區')}</span></h1>
-  <div class="who"><button class="sm rld" onclick="hardReload()" title="重新整理（載入最新版）">⟳<span class="hide-m"> 重新整理</span></button>${mode==='teach'?`<button class="sm zybtn ${zyOn?'on':''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>`:''}${cloudBadge()}${user?`<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>`:''}
+  <div class="who"><button class="sm rld" onclick="hardReload()" title="重新整理（載入最新版）">⟳<span class="hide-m"> 重新整理</span></button>${fsOk&&matchMedia('(pointer: fine)').matches?`<button class="sm" id="fsBtn" onclick="appFs()" title="全螢幕（Esc 離開）">${curFs()===document.documentElement?'⤢<span class="hide-m"> 離開全螢幕</span>':'⛶<span class="hide-m"> 全螢幕</span>'}</button>`:''}${mode==='teach'?`<button class="sm zybtn ${zyOn?'on':''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>`:''}${cloudBadge()}${user?`<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>`:''}
    ${mode==='teach'?`<button class="sm" onclick="enterStaff()">${user||!authOn()?'老師區':'老師登入'}</button>`:`<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn()&&user?`<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>`:''}`}</div></div>
   <div class="nrow"><nav>${tabs.map(([k,n])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${n}</button>`).join('')}</nav>
   ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id)}</select>`:''}</div>`;
@@ -605,9 +605,24 @@ function layout(){
 function fitText(e){if(window.innerWidth<=600&&e.classList.contains('kidsfit')){e.style.fontSize='';return}let f=Number(e.getAttribute('data-max'))||40;e.style.fontSize=f+'px';
  while(f>12&&(e.scrollHeight>e.clientHeight+1||e.scrollWidth>e.clientWidth+1)){f-=2;e.style.fontSize=f+'px'}}
 /* 翻轉手機／平板時，瀏覽器的新尺寸要過一下子才會到位：分幾次重新排版，等尺寸穩定 */
-let _rlT=[];function relayout(){_rlT.forEach(clearTimeout);if(document.fullscreenElement||document.webkitFullscreenElement)return;
+let _rlT=[];function relayout(){_rlT.forEach(clearTimeout);if(elFs())return;
  const go=()=>{if(mode==='teach')layout();const n=document.querySelector('header nav .on');if(n){const p=n.parentNode;p.scrollLeft=n.offsetLeft-(p.clientWidth-n.offsetWidth)/2}};
  go();_rlT=[80,250,500,900].map(t=>setTimeout(go,t))}
+/* ===== 整個 app 全螢幕（電腦版） ===== */
+function curFs(){return document.fullscreenElement||document.webkitFullscreenElement||null}
+function elFs(){const e=curFs();return e&&e!==document.documentElement?e:null}  // 影片或投影等「單一元件」的全螢幕
+const fsOk=!!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen);
+function appFs(){const d=document.documentElement;
+ if(curFs()){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}
+ else{const r=(d.requestFullscreen||d.webkitRequestFullscreen).call(d);if(r&&r.catch)r.catch(()=>{})}}
+/* 安裝到電腦桌面的 app：打開後第一次點畫面，自動進入全螢幕（瀏覽器規定一定要先點一下才能全螢幕） */
+(function(){try{
+ const inst=matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: minimal-ui)').matches;
+ const desk=matchMedia('(pointer: fine)').matches&&screen.width>=1024;
+ if(!inst||!desk||!fsOk||localStorage.getItem('llm_autofs')==='0')return;
+ const f=()=>{document.removeEventListener('pointerdown',f,true);if(!curFs())appFs()};
+ document.addEventListener('pointerdown',f,true)}catch(e){}})();
+document.addEventListener('fullscreenchange',()=>{const b=document.getElementById('fsBtn');if(b)b.innerHTML=curFs()===document.documentElement?'⤢<span class="hide-m"> 離開全螢幕</span>':'⛶<span class="hide-m"> 全螢幕</span>';relayout()});
 window.addEventListener('resize',relayout);
 window.addEventListener('orientationchange',relayout);
 if(window.visualViewport)window.visualViewport.addEventListener('resize',relayout);

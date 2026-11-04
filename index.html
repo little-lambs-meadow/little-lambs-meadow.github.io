@@ -645,7 +645,7 @@ function cloudRebuild() {
   cloudRender();
 }
 function cloudRender() {
-  var busyUI = document.querySelector('#app iframe') || document.fullscreenElement || document.webkitFullscreenElement;
+  var busyUI = document.querySelector('#app iframe') || elFs();
   if (busyUI) {
     Cloud.needRender = true;
     cloudBadgeUpdate();
@@ -1208,7 +1208,7 @@ function render() {
   hd.className = mode;
   var tabs = mode === 'teach' ? TEACH_TABS : STAFF_TABS;
   hd.innerHTML = `<div class="hrow"><h1><img class="hlogo" src="icon-192.png" alt=""><span class="hname">${h(D.settings.church)}</span><span class="hdot"> · </span><span class="hsub">${mode === 'teach' ? '兒童主日學' : h(user || '老師區')}</span></h1>
-  <div class="who"><button class="sm rld" onclick="hardReload()" title="重新整理（載入最新版）">⟳<span class="hide-m"> 重新整理</span></button>${mode === 'teach' ? `<button class="sm zybtn ${zyOn ? 'on' : ''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>` : ''}${cloudBadge()}${user ? `<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>` : ''}
+  <div class="who"><button class="sm rld" onclick="hardReload()" title="重新整理（載入最新版）">⟳<span class="hide-m"> 重新整理</span></button>${fsOk && matchMedia('(pointer: fine)').matches ? `<button class="sm" id="fsBtn" onclick="appFs()" title="全螢幕（Esc 離開）">${curFs() === document.documentElement ? '⤢<span class="hide-m"> 離開全螢幕</span>' : '⛶<span class="hide-m"> 全螢幕</span>'}</button>` : ''}${mode === 'teach' ? `<button class="sm zybtn ${zyOn ? 'on' : ''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>` : ''}${cloudBadge()}${user ? `<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>` : ''}
    ${mode === 'teach' ? `<button class="sm" onclick="enterStaff()">${user || !authOn() ? '老師區' : '老師登入'}</button>` : `<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn() && user ? `<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>` : ''}`}</div></div>
   <div class="nrow"><nav>${tabs.map(_ref7 => {
     var _ref8 = _slicedToArray(_ref7, 2),
@@ -1622,7 +1622,7 @@ function fitText(e) {
 var _rlT = [];
 function relayout() {
   _rlT.forEach(clearTimeout);
-  if (document.fullscreenElement || document.webkitFullscreenElement) return;
+  if (elFs()) return;
   var go = () => {
     if (mode === 'teach') layout();
     var n = document.querySelector('header nav .on');
@@ -1634,6 +1634,42 @@ function relayout() {
   go();
   _rlT = [80, 250, 500, 900].map(t => setTimeout(go, t));
 }
+/* ===== 整個 app 全螢幕（電腦版） ===== */
+function curFs() {
+  return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+function elFs() {
+  var e = curFs();
+  return e && e !== document.documentElement ? e : null;
+} // 影片或投影等「單一元件」的全螢幕
+var fsOk = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+function appFs() {
+  var d = document.documentElement;
+  if (curFs()) {
+    (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  } else {
+    var r = (d.requestFullscreen || d.webkitRequestFullscreen).call(d);
+    if (r && r.catch) r.catch(() => {});
+  }
+}
+/* 安裝到電腦桌面的 app：打開後第一次點畫面，自動進入全螢幕（瀏覽器規定一定要先點一下才能全螢幕） */
+(function () {
+  try {
+    var inst = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: minimal-ui)').matches;
+    var desk = matchMedia('(pointer: fine)').matches && screen.width >= 1024;
+    if (!inst || !desk || !fsOk || localStorage.getItem('llm_autofs') === '0') return;
+    var f = () => {
+      document.removeEventListener('pointerdown', f, true);
+      if (!curFs()) appFs();
+    };
+    document.addEventListener('pointerdown', f, true);
+  } catch (e) {}
+})();
+document.addEventListener('fullscreenchange', () => {
+  var b = document.getElementById('fsBtn');
+  if (b) b.innerHTML = curFs() === document.documentElement ? '⤢<span class="hide-m"> 離開全螢幕</span>' : '⛶<span class="hide-m"> 全螢幕</span>';
+  relayout();
+});
 window.addEventListener('resize', relayout);
 window.addEventListener('orientationchange', relayout);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', relayout);
