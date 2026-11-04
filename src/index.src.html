@@ -154,6 +154,7 @@ body.sbig #app,body.sbig .modal .panel,body.sbig #app input,body.sbig #app texta
 body.sbig .muted,body.sbig label.f,body.sbig .panel label.f{color:#4a423b}
 .hmenu .mfs{display:flex;flex-wrap:wrap;row-gap:6px;align-items:center;padding:6px 12px;font-size:16px}.hmenu .mfs button{display:inline-block;width:auto;padding:5px 10px;margin-left:6px;border:1px solid #ddd;border-radius:8px;font-size:15px}.hmenu .mfs button.on{background:#e2572a;color:#fff;border-color:#e2572a}
 .lchk{width:20px;height:20px;cursor:pointer;vertical-align:middle}tr.lskip td{opacity:.45}tr.lskip td:first-child{opacity:1}
+.ysel{margin-left:10px;padding:6px 10px;font-size:16px;font-weight:700;border-radius:8px}
 .ybar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}.tag.ok{background:#e3f5e8;color:#2d7a45}
 .hmenu{position:fixed;z-index:35;background:#fff;color:#2b2622;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:8px;min-width:230px;max-width:90vw}
 .hmenu button{display:flex;align-items:center;width:100%;background:none;border:0;border-radius:9px;padding:10px 12px;font-size:16px;text-align:left;color:inherit;cursor:pointer;min-height:0}
@@ -457,11 +458,17 @@ function sortedLessons(){const a=seasonSorted();if(lessonOrder()==='season')retu
 const ORD_NAME={season:'依季度',bible:'依聖經書卷',time:'依聖經時間軸'};
 function setLessonOrder(v){D.settings.lessonOrder=v;save('教學進度改成'+ORD_NAME[v]);render();toast('已改成：'+ORD_NAME[v])}
 function orderToggle(){const o=lessonOrder();return `<span class="row" style="gap:6px;flex-wrap:wrap"><span class="muted" style="white-space:nowrap">教學進度：</span>${['season','bible','time'].map((k,i)=>`<button class="sm ${o===k?'blue':'ghost'}" onclick="setLessonOrder('${k}')">${i+1}. ${ORD_NAME[k]}</button>`).join('')}</span>`}
-function thisWeek(){const t=today();const ls=[...D.lessons].filter(l=>l.date).sort((a,b)=>a.date.localeCompare(b.date));return ls.find(l=>l.date>=t)||ls[ls.length-1]||D.lessons[0]}
+/* 打開 app 時要上的那一課：今年要上、還沒上過；有排日期的取最近的，沒有就照課程順序的第一課 */
+function thisWeek(){const t=today(),y=curYear();const left=sortedLessons().filter(l=>!hiddenNow(l));
+ const dated=left.filter(l=>dateIn(l,y)>=t).sort((a,b)=>dateIn(a,y).localeCompare(dateIn(b,y)));
+ return dated[0]||left[0]||sortedLessons()[0]||D.lessons[0]}
 function copy(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('已複製')).catch(()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();toast('已複製')})}
 function openModal(html){document.getElementById('panel').innerHTML=`<button class="close ghost" onclick="closeModal()">✕</button>`+html;document.getElementById('modal').classList.add('on')}
 function closeModal(){document.getElementById('modal').classList.remove('on');if(Cloud.needRebuild)setTimeout(cloudRebuild,0)}
-function lessonOpts(sel,short){const bib=lessonOrder()!=='season';let k=0;return sortedLessons().map(l=>{k++;const lab=bib?`${k}. 〔${bibleBook(l)}〕${l.title}（${l.season}第${l.no}課）`:`${l.season} 第${l.no}課 ${l.title}`;return `<option value="${l.id}" ${l.id===sel?'selected':''}>${h(lab)}${l.date&&!short?' ('+h(l.date)+')':''}${l.skip?'〔今年不上〕':''}</option>`}).join('')}
+let showAllL=false;
+function lessonOpts(sel,short,teach){const bib=lessonOrder()!=='season';let k=0;const all=sortedLessons();let hid=0;
+ const o=all.map(l=>{k++;if(teach&&!showAllL&&l.id!==sel&&hiddenNow(l)){hid++;return ''}const lab=bib?`${k}. 〔${bibleBook(l)}〕${l.title}（${l.season}第${l.no}課）`:`${l.season} 第${l.no}課 ${l.title}`;return `<option value="${l.id}" ${l.id===sel?'selected':''}>${h(lab)}${l.date&&!short?' ('+h(l.date)+')':''}${isSkip(l,curYear())?'〔今年不上〕':taughtDate(l,curYear())&&taughtDate(l,curYear())<today()?'〔已上〕':''}</option>`}).join('');
+ return o+(teach&&(hid||showAllL)?`<option value="__all">${showAllL?'📂 只顯示還沒上的課':'📂 顯示全部課程（含已上過、不上的 '+hid+' 課）'}</option>`:'')}
 
 /* ============ 通用表單 ============ */
 let FORM=null;
@@ -518,7 +525,7 @@ function render(){applyZy();applyStaffFs();
   <div class="nrow"><nav>${tabs.map(([k,n])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${n}</button>`).join('')}</nav>
   <button class="ricon" onclick="hardReload()" title="重新整理（載入最新版）">⟳</button><span class="nsp"></span>
   ${mode==='teach'&&tab==='video'&&D.lessons.length?videoCtl():''}
-  ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id,true)}</select>`:''}${menuBtn()}</div>`;
+  ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="if(this.value==='__all'){showAllL=!showAllL;render();return}curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id,true,true)}</select>`:''}${menuBtn()}</div>`;
  {const m=document.getElementById('hmenu');if(m)m.innerHTML=menuHtml()}
  fitSel(hd.querySelector('.hsel'));fitSel(hd.querySelector('.vctl .lsel'),58);
  {const on=hd.querySelector('nav .on');if(on){const n=on.parentNode;n.scrollLeft=on.offsetLeft-(n.clientWidth-on.offsetWidth)/2}}
@@ -967,27 +974,42 @@ const LESSON_EDIT_FIELDS=()=>{const f=LESSON_FIELDS().filter(x=>!LESSON_FIXED.in
 const LESSON_FIELDS=()=>[['season','季'],['no','第幾課','number'],['date','上課日期','date'],['title','課名'],['scripture','經文段落'],['video','影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'],['intro','④ 妙妙書前言（老師講解這一課要看什麼）','textarea'],
  ['iceName','③ 破冰遊戲名稱'],['expSteps','③ 破冰體驗遊戲流程（一行一步）','lines'],['props','道具清單（一行一項）','lines'],['safety','安全提醒','textarea'],['questions','⑥ 影片看後問答（一行一題）','lines'],
  ['verseRef','金句出處'],['verseZh','中文金句','textarea'],['verseEn','英文金句','textarea'],['songIds','本課詩歌','checks',D.songs.map(s=>s.title)],['prayer','⑧ 結束禱告（空白就用設定裡的預設禱告）','textarea'],['notes','備課備註（只有老師看得到）','textarea']];
-/* 今年要上／不上的標記：一年約 52 週，67 課上不完，把今年不上的課取消勾選；今年寫過上課紀錄的課自動標「今年已上」 */
-function taughtOn(id){const y=today().slice(0,4);const d=D.sessions.filter(s=>s.lessonId===id&&(s.date||'').slice(0,4)===y).map(s=>s.date).sort();return d[d.length-1]||''}
-function yearBar(){const all=D.lessons.length,skip=D.lessons.filter(l=>l.skip).length,done=D.lessons.filter(l=>!l.skip&&taughtOn(l.id)).length;
- return all?`<div class="card ybar"><b>📅 今年課程（${today().slice(0,4)}）</b><span>要上 <b>${all-skip}</b> 課</span><span>已上 <b>${done}</b> 課</span><span>還沒上 <b>${all-skip-done}</b> 課</span><span>今年不上 <b>${skip}</b> 課</span>${skip?`<button class="sm ghost" onclick="if(confirm('把 ${skip} 課「今年不上」全部改回「要上」？（例如新的一年重新規劃）')){D.lessons.forEach(l=>delete l.skip);save('今年課程全部改回要上');render()}">全部改回要上</button>`:''}<div class="muted" style="flex-basis:100%">每一課前面的勾選框：勾選＝今年要上，取消勾選＝今年不上（會變淡）。</div></div>`:''}
-function toggleSkip(id,on){const l=lessonById(id);if(!l)return;if(on)delete l.skip;else l.skip=true;save((on?'標記今年要上 ':'標記今年不上 ')+l.title);render()}
+/* 年度規劃：每個年度都是同樣的課，各自標記「要上／不上」、各自的上課日期
+   isSkip(l,y)：y 年不上；dateIn(l,y)：y 年排的上課日期；taughtDate(l,y)：y 年已上（日期已過或有上課紀錄） */
+const curYear=()=>today().slice(0,4);
+let planYear=curYear();
+function isSkip(l,y){return (l.skipY||[]).indexOf(y)>=0||(!!l.skip&&y==='2026')}
+function dateIn(l,y){return (l.dates||{})[y]||(l.date&&l.date.slice(0,4)===y?l.date:'')}
+function taughtDate(l,y){const t=today();const ds=D.sessions.filter(s=>s.lessonId===l.id&&(s.date||'').slice(0,4)===y).map(s=>s.date);
+ const d=dateIn(l,y);if(d&&d<t)ds.push(d);ds.sort();return ds[ds.length-1]||''}
+/* 上課畫面要隱藏的課：今年不上，或今年已經上過（上課日期過了／有紀錄且不是今天） */
+function hiddenNow(l){const y=curYear();if(isSkip(l,y))return true;const d=taughtDate(l,y);return !!d&&d<today()}
+function planYears(){const ys=new Set([curYear(),String(+curYear()+1),planYear]);
+ D.lessons.forEach(l=>{Object.keys(l.dates||{}).forEach(y=>ys.add(y));(l.skipY||[]).forEach(y=>ys.add(y));if(l.date)ys.add(l.date.slice(0,4))});
+ D.sessions.forEach(s=>s.date&&ys.add(s.date.slice(0,4)));return [...ys].filter(y=>/^\d{4}$/.test(y)).sort()}
+function yearBar(){const y=planYear,all=D.lessons.length,skip=D.lessons.filter(l=>isSkip(l,y)).length,done=D.lessons.filter(l=>!isSkip(l,y)&&taughtDate(l,y)).length;
+ return all?`<div class="card ybar"><b>📅 ${y} 年課程</b><span>要上 <b>${all-skip}</b> 課</span><span>已上 <b>${done}</b> 課</span><span>還沒上 <b>${all-skip-done}</b> 課</span><span>不上 <b>${skip}</b> 課</span>${skip?`<button class="sm ghost" onclick="if(confirm('把 ${y} 年「不上」的 ${skip} 課全部改回「要上」？')){D.lessons.forEach(l=>setSkip(l,'${y}',false));save('${y} 年課程全部改回要上');render()}">全部改回要上</button>`:''}<div class="muted" style="flex-basis:100%">每一課前面的勾選框：勾選＝${y} 年要上，取消勾選＝${y} 年不上（會變淡，上課畫面也不會出現）。上課日期過了或寫過上課紀錄，就算「已上」。</div></div>`:''}
+function setSkip(l,y,off){let a=(l.skipY||[]).slice();if(l.skip){if(a.indexOf('2026')<0)a.push('2026');delete l.skip}
+ a=a.filter(x=>x!==y);if(off)a.push(y);a.sort();if(a.length)l.skipY=a;else delete l.skipY}
+function toggleSkip(id,on){const l=lessonById(id);if(!l)return;setSkip(l,planYear,!on);save(planYear+' 年'+(on?'要上 ':'不上 ')+l.title);render()}
 function pLessons(){
  const bib=lessonOrder()!=='season';const grp=[];let k=0;sortedLessons().forEach(l=>{const g=bib?bibleBook(l):(l.season||'未分季');const last=grp[grp.length-1];if(last&&last[0]===g)last[1].push([++k,l]);else grp.push([g,[[++k,l]]])});
- return `<div class="row" style="margin-bottom:10px;flex-wrap:wrap"><h2 class="sp">備課</h2>${orderToggle()}${isAdmin()?'<button class="ghost" onclick="sbImportBtn()">📥 匯入妙妙書 67 集</button>':''}<button class="ghost" onclick="importDlg()">匯入</button><button class="blue" onclick="editLesson()">＋新增課程</button></div>
- ${yearBar()}${bib?`<div class="muted" style="margin:-4px 0 10px">${lessonOrder()==='time'?'⏳ 依聖經時間軸排列：照事件發生的先後，從創世到新天新地':'📖 依聖經書卷排列：照 66 卷書的目錄從創世記到啟示錄，同一卷依章節先後'}；教學模式的課程選單也會照這個順序。</div>`:''}${grp.map(([s,ls])=>`<div class="card"><h3>${bib?(lessonOrder()==='time'?'⏳ ':'📖 '):''}${h(s)}（${ls.length} 課）</h3><table>${ls.map(([n,l])=>`<tr class="${l.skip?'lskip':''}"><td style="width:34px"><input type="checkbox" class="lchk" ${l.skip?'':'checked'} title="勾選＝今年要上；取消勾選＝今年不上" onchange="toggleSkip('${l.id}',this.checked)"></td><td style="width:${bib?96:60}px">${bib?`${n}.<div class="muted" style="font-size:12px">${h(l.season)}第${h(l.no)}課</div>`:`第${h(l.no)}課`}</td><td><b>${h(l.title)}</b>${l.skip?' <span class="tag">今年不上</span>':''}${taughtOn(l.id)?` <span class="tag ok">✅ 今年已上 ${h(taughtOn(l.id).slice(5))}</span>`:''}<div class="muted">${h(l.date)} ${h(l.verseRef)}${l.notes?' · 📝有備註':''}</div></td>
+ return `<div class="row" style="margin-bottom:10px;flex-wrap:wrap"><h2>備課</h2><select class="ysel" title="選擇年度" onchange="planYear=this.value;render()">${planYears().map(y=>`<option value="${y}" ${y===planYear?'selected':''}>${y} 年</option>`).join('')}</select><span class="sp"></span>${orderToggle()}${isAdmin()?'<button class="ghost" onclick="sbImportBtn()">📥 匯入妙妙書 67 集</button>':''}<button class="ghost" onclick="importDlg()">匯入</button><button class="blue" onclick="editLesson()">＋新增課程</button></div>
+ ${yearBar()}${bib?`<div class="muted" style="margin:-4px 0 10px">${lessonOrder()==='time'?'⏳ 依聖經時間軸排列：照事件發生的先後，從創世到新天新地':'📖 依聖經書卷排列：照 66 卷書的目錄從創世記到啟示錄，同一卷依章節先後'}；教學模式的課程選單也會照這個順序。</div>`:''}${grp.map(([s,ls])=>`<div class="card"><h3>${bib?(lessonOrder()==='time'?'⏳ ':'📖 '):''}${h(s)}（${ls.length} 課）</h3><table>${ls.map(([n,l])=>`<tr class="${isSkip(l,planYear)?'lskip':''}"><td style="width:34px"><input type="checkbox" class="lchk" ${isSkip(l,planYear)?'':'checked'} title="勾選＝這一年要上；取消勾選＝這一年不上" onchange="toggleSkip('${l.id}',this.checked)"></td><td style="width:${bib?96:60}px">${bib?`${n}.<div class="muted" style="font-size:12px">${h(l.season)}第${h(l.no)}課</div>`:`第${h(l.no)}課`}</td><td><b>${h(l.title)}</b>${isSkip(l,planYear)?' <span class="tag">不上</span>':''}${taughtDate(l,planYear)?` <span class="tag ok">✅ 已上 ${h(taughtDate(l,planYear).slice(5))}</span>`:''}<div class="muted">${h(dateIn(l,planYear))} ${h(l.verseRef)}${l.notes?' · 📝有備註':''}</div></td>
   <td style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="viewLesson('${l.id}')">看</button> <button class="sm ghost" onclick="editLesson('${l.id}')">編輯</button></td></tr>`).join('')}</table></div>`).join('')||'<div class="empty">還沒有課程</div>'}`;
 }
 function viewLesson(id){const l=lessonById(id);openModal(lessonBody(l)+(l.notes?`<div class="sec"><h4>備課備註</h4><div class="pre">${h(l.notes)}</div></div>`:'')+`<div class="actions"><button onclick="editLesson('${id}')">編輯</button><button onclick="window.print()">🖨 列印</button><button class="pri" onclick="curLesson='${id}';closeModal();setMode('teach')">在教學模式開啟</button></div>`)}
 function editLesson(id){
  const l=id?lessonById(id):{season:(seasonSorted().slice(-1)[0]||{}).season||'第一季',no:D.lessons.length+1,expSteps:[],props:[],questions:[],songIds:[]};
- const o={...l,songIds:(l.songIds||[]).map(i=>(D.songs.find(s=>s.id===i)||{}).title).filter(Boolean)};
+ const o={...l,date:id?(dateIn(l,planYear)||(mode==='staff'?'':l.date)):l.date,songIds:(l.songIds||[]).map(i=>(D.songs.find(s=>s.id===i)||{}).title).filter(Boolean)};
  const sbSel=`<label class="f">📺 從超級妙妙書官網選一集<select onchange="sbPick(this.value)"><option value="">（選擇後會自動填入影片，課名和故事重點空白時也會一起填入）</option>${sbOptions(sbCode(l.video))}</select></label>`;
  const head=id?`編輯課程<div class="muted" style="font-size:15px;font-weight:400;margin-top:4px">📖 ${h(l.season)} 第${h(l.no)}課〈${h(l.title)}〉${l.scripture?' · '+h(l.scripture):''}${sbCode(l.video)?' · 妙妙書影片已設定':''}</div>`:'新增課程';
  form(head,id?LESSON_EDIT_FIELDS():LESSON_FIELDS(),o,v=>{
   if(v.songIds)v.songIds=v.songIds.map(t=>(D.songs.find(s=>s.title===t)||{}).id).filter(Boolean);
   if(!id&&!v.title){toast('請填課名');return false}
   if(!id&&sbCode(v.video)){const e=sbEp(sbCode(v.video));if(e)v.story=e.d}  // 新增妙妙書課：內部保留官網劇情，前言空白時使用
+  if(id&&!v.date){const ds=Object.assign({},l.dates||{});if(l.date&&!ds[l.date.slice(0,4)])ds[l.date.slice(0,4)]=l.date;delete ds[planYear];v.dates=ds;v.date=Object.values(ds).sort().pop()||''}  // 清掉這一年的日期
+  if(v.date){const ds=Object.assign({},(id&&l.dates)||{});if(id&&l.date&&!ds[l.date.slice(0,4)])ds[l.date.slice(0,4)]=l.date;ds[v.date.slice(0,4)]=v.date;v.dates=ds}  // 每個年度的上課日期分開記
   if(id)Object.assign(l,v);else D.lessons.push({id:uid(),...v});save((id?'修改':'新增')+'課程 '+(v.title||l.title));
  },(id?'':sbSel)+(id&&isAdmin()&&(!sbCode(l.video)||D.lessons.filter(x=>x.video===l.video).length>1)?`<div class="actions"><button class="danger" onclick="if(confirm('刪除這一課？')){D.lessons=D.lessons.filter(x=>x.id!=='${id}');save('刪除課程');closeModal();render()}">刪除這一課</button></div>`:''));
 }
