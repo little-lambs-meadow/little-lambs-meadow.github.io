@@ -137,7 +137,9 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 .stephead .num{width:40px;height:40px;border-radius:50%;background:var(--pri);color:#fff;font-size:20px;font-weight:700;text-align:center;line-height:40px;flex-shrink:0;margin-right:10px}
 .stephead h2{margin:0;font-size:26px;white-space:nowrap}
 .lsel{max-width:50%;padding:6px;font-size:14px;margin-left:10px}
-.nrow{display:flex;align-items:center;gap:8px;max-width:1400px;margin:auto;padding-right:16px}.nrow nav{flex:0 1 auto;min-width:0;margin:0}.nsp{flex:1}
+.nrow{display:flex;align-items:center;gap:8px;max-width:1400px;margin:auto;padding-right:16px}.nrow nav{flex:0 1 auto;min-width:0;margin:0}.nsp{flex:1}.vctl>*:last-child{margin-right:0}
+/* 寬螢幕：步驟按鈕不要被擠掉，空間不夠時改縮短課程選單（文字會截斷） */
+@media (min-width:1000px){.nrow nav{flex-shrink:.01}.nrow .hsel{flex:0 60 auto;min-width:130px}}
 @media (max-width:1000px) and (min-width:601px){.vctl .pt{display:none}}
 .ricon,.mbtn{flex-shrink:0;margin:0 0 4px;border:0;border-radius:10px;background:rgba(255,255,255,.28);color:#fff;font-size:20px;line-height:1;width:40px;height:36px;padding:0;cursor:pointer;position:relative}
 .ricon:hover,.mbtn:hover{background:rgba(255,255,255,.45)}.mbtn{background:#fffffff0;color:#333;font-size:22px}
@@ -161,7 +163,7 @@ body.sbig .muted,body.sbig label.f,body.sbig .panel label.f{color:#4a423b}
 .hmenu button:hover{background:#f6efe6}.hmenu .mi{display:inline-block;min-width:34px;font-weight:700;color:#e2572a}
 .hmenu .mmain{font-weight:700}.hmenu hr{border:0;border-top:1px solid #eee;margin:6px 4px}
 .hmenu .mu{padding:8px 12px 10px;font-weight:700;border-bottom:1px solid #eee;margin-bottom:6px}.hmenu .mu span{font-weight:400;color:#888;font-size:13px;margin-left:8px}
-.vctl{display:flex;align-items:center;flex-shrink:0;margin:0 0 4px}.vctl .lsel{flex-shrink:0}.vctl>*{margin-right:4px}.vctl .pri{padding:6px 12px;font-size:15px;white-space:nowrap;border-radius:8px}.vctl .lsel{min-width:0!important;margin:0!important;padding:5px 6px!important;font-size:14px!important;border-radius:8px}
+.vctl{display:flex;align-items:center;flex-shrink:0;margin:0 0 4px}.vctl .lsel{flex-shrink:0}.vctl>*{margin-right:4px}.vctl .pri{padding:6px 12px;font-size:15px;white-space:nowrap;border-radius:8px}.vctl .lsel{max-width:none!important;min-width:0!important;margin:0!important;padding:5px 6px!important;font-size:14px!important;border-radius:8px}
 .hsel{flex:0 0 auto;min-width:0;max-width:40vw;margin:0 0 4px;padding:6px 8px;font-size:15px;border-radius:8px;border:1px solid #fff8;background:#fffffff0;color:#333}
 .fill{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .fill>.fit,.fill>.vwrap{flex:1;min-height:0;overflow:hidden}
@@ -527,7 +529,7 @@ function render(){applyZy();applyStaffFs();
   ${mode==='teach'&&tab==='video'&&D.lessons.length?videoCtl():''}
   ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="if(this.value==='__all'){showAllL=!showAllL;render();return}curLesson=userPick=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id,true,true)}</select>`:''}${menuBtn()}</div>`;
  {const m=document.getElementById('hmenu');if(m)m.innerHTML=menuHtml()}
- fitSel(hd.querySelector('.hsel'));fitSel(hd.querySelector('.vctl .lsel'),58);
+ fitSel(hd.querySelector('.hsel'));fitSel(hd.querySelector('.vctl .lsel'),44);
  {const on=hd.querySelector('nav .on');if(on){const n=on.parentNode;n.scrollLeft=on.offsetLeft-(n.clientWidth-on.offsetWidth)/2}}
  const f={rules:tRules,worship:tWorship,ice:tIce,intro:tIntro,video:tVideo,qa:tQA,pray:tPray,lesson:tLesson,verse:tVerse,song:tSong,points:tPoints,rank:tRank,lessons:pLessons,songs:pSongs,shows:pShows,kids:pKids,sessions:pSessions,meetings:pMeetings,meeting:pMeeting,settings:pSettings}[tab];
  document.getElementById('app').innerHTML=f?f():'';
@@ -800,7 +802,7 @@ function sbPlayFull(c){const e=sbEp(c),box=document.getElementById('sbbox');if(!
  if(fs){try{const r=fs.call(box);r&&r.catch&&r.catch(()=>{})}catch(x){}}else{window.open(sbOpenUrl(e,w),'_blank');return}
  if(w==='cf'||w==='yt')f.src=sbUrl(e,w,true)}
 function sbSrcBtn(e){const w=sbWhich(e),av=sbAvail(e);
- return `<select class="lsel" style="width:auto;min-width:150px;font-size:16px" title="切換影片來源" onchange="if(this.value==='open'){window.open('${sbOpenUrl(e,w)}','_blank');this.value='${w}'}else sbSetSrc(this.value)">${av.map((k,i)=>`<option value="${k}" ${k===w?'selected':''}>${i+1}. ${SB_SRC[k]}</option>`).join('')}<option value="open">↗ 在新分頁開啟</option></select>`}
+ return `<select class="lsel" style="font-size:16px" title="切換影片來源" onchange="if(this.value==='open'){window.open('${sbOpenUrl(e,w)}','_blank');this.value='${w}'}else sbSetSrc(this.value)">${av.map((k,i)=>`<option value="${k}" ${k===w?'selected':''}>${i+1}. ${SB_SRC[k]}</option>`).join('')}<option value="open">↗ 在新分頁開啟</option></select>`}
 function sbOptions(sel){return SB_SEASONS.map((sn,i)=>`<optgroup label="${sn}">${SB_EPS.filter(e=>e.c[1]==String(i+1)).map(e=>`<option value="${e.c}" ${e.c===sel?'selected':''}>${sbLabel(e)}｜${h(e.t)}</option>`).join('')}</optgroup>`).join('')}
 function sbPick(c){if(!c)return;const e=sbEp(c);const v=document.getElementById('f_video');if(v)v.value='sb:'+c;
  const t=document.getElementById('f_title');if(t&&!t.value.trim())t.value=e.t;const st=document.getElementById('f_story');if(st&&!st.value.trim())st.value=e.d;toast('已選 '+sbLabel(e)+' '+e.t)}
