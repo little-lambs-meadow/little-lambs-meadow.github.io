@@ -3444,128 +3444,70 @@ function kidHist(id) {
 }
 
 /* ============ 上課紀錄與交接 ============ */
-/* 欄位：日期、課程進度（依當天課程自動帶入，可修改）、進行概況（學習狀況／課程秩序／有何困難）、代禱事項、
-   參加的兒童（點名自動帶入）、新來的兒童（當天新增或第一次報到）、人數（自動計算）、主教老師（選單） */
-function lessonProgress(l) {
-  if (!l) return '';
-  return [(l.scripture ? l.scripture + '　' : '') + (sbCode(l.video) ? '妙妙書〈' + l.title + '〉' : l.title) + '（' + l.season + '第' + l.no + '課）', l.verseZh || l.verseEn ? '金句：' + [l.verseZh ? '「' + l.verseZh + '」' : '', l.verseEn ? '"' + l.verseEn + '"' : '', l.verseRef ? '（' + l.verseRef + '）' : ''].filter(Boolean).join(' ') : ''].filter(Boolean).join('\n');
-}
-function firstAttend(kidId) {
-  var ds = Object.keys(D.attend).filter(d => D.attend[d][kidId]).sort();
-  return ds[0] || '';
-}
-function newKidsOn(date) {
-  return D.kids.filter(k => k.created === date || firstAttend(k.id) === date).map(k => k.id);
-}
-var kname = id => (kid(id) || {}).name || '?';
-function sessMain(s) {
-  return s.mainTeacher || (s.teachers || [])[0] || '';
-}
 function pSessions() {
   var ss = [...D.sessions].sort((a, b) => b.date.localeCompare(a.date));
   var last = ss[0];
   var flagged = D.kids.filter(k => k.flag && k.active);
-  var sec = (t, v) => v ? `<div class="sec"><h4>${t}</h4><div class="pre">${h(v)}</div></div>` : '';
   return `<div class="row" style="margin-bottom:10px"><h2 class="sp">上課紀錄與交接</h2><button class="blue" onclick="sessionDlg()">＋今天的紀錄</button></div>
- ${last && last.handover ? `<div class="card" style="border-color:#2a6fd6"><h3>📌 上次交接（${h(last.date)}，${h(sessMain(last))}）</h3><div class="pre">${h(last.handover)}</div></div>` : ''}
+ ${last ? `<div class="card" style="border-color:#2a6fd6"><h3>📌 上次交接（${h(last.date)}，${h((last.teachers || []).join('、'))}）</h3><div class="pre">${h(last.handover) || '<span class="muted">（沒有寫交接）</span>'}</div></div>` : ''}
  ${flagged.length ? `<div class="card" style="border-color:#c9711c"><h3>⚠️ 需要留意的孩子</h3>${flagged.map(k => `<div><b>${h(k.name)}</b> <span class="muted">${h(k.flagNote)}</span> <button class="sm ghost" onclick="kidHist('${k.id}')">紀錄</button></div>`).join('')}</div>` : ''}
  ${ss.map(s => {
     var l = lessonById(s.lessonId);
-    var att = s.attendance || [];
-    var nk = s.newKids || [];
-    return `<div class="card"><div class="row"><div class="sp"><b style="font-size:18px">${h(s.date)}</b>　${l ? h(l.title) : ''}<div class="muted">主教老師：${h(sessMain(s)) || '—'} · 人數 ${att.length} 人 · 記錄者 ${h(s.by || '')}</div></div><button class="sm ghost" onclick="sessionDlg('${s.id}')">編輯</button></div>
-  ${sec('課程進度', s.progress || lessonProgress(l))}
-  ${s.learn || s.order || s.diff ? `<div class="sec"><h4>進行概況</h4>${s.learn ? `<div><b>1. 學習狀況</b><div class="pre">${h(s.learn)}</div></div>` : ''}${s.order ? `<div><b>2. 課程秩序</b><div class="pre">${h(s.order)}</div></div>` : ''}${s.diff ? `<div><b>3. 有何困難</b><div class="pre">${h(s.diff)}</div></div>` : ''}</div>` : ''}
-  ${sec('整體狀況', s.overall)}${sec('代禱事項', s.pray)}
-  ${sec('參加的兒童', att.map(kname).join('、'))}${sec('新來的兒童', nk.map(kname).join('、'))}
-  ${sec('交接給下一位老師', s.handover)}
-  ${(s.kidNotes || []).length ? `<div class="sec"><h4>個別孩子</h4>${s.kidNotes.map(n => `<div>${n.flag ? '⚠️ ' : ''}<b>${h(kname(n.kidId))}</b>：${h(n.note)}</div>`).join('')}</div>` : ''}</div>`;
+    return `<div class="card"><div class="row"><div class="sp"><b>${h(s.date)}</b> ${l ? h(l.title) : ''}<div class="muted">老師：${h((s.teachers || []).join('、'))} · 出席 ${(s.attendance || []).length} 人${(s.attendance || []).length ? '（' + h(s.attendance.map(i => (kid(i) || {}).name || '?').join('、')) + '）' : ''} · 記錄者 ${h(s.by)}</div></div><button class="sm ghost" onclick="sessionDlg('${s.id}')">編輯</button></div>
+ ${s.learn || s.order || s.diff || s.overall ? `<div class="sec"><h4>整體狀況</h4>${s.learn ? `<div><b>1. 學習狀況</b><div class="pre">${h(s.learn)}</div></div>` : ''}${s.order ? `<div><b>2. 課程秩序</b><div class="pre">${h(s.order)}</div></div>` : ''}${s.diff ? `<div><b>3. 有何困難</b><div class="pre">${h(s.diff)}</div></div>` : ''}${s.overall ? `<div class="pre">${h(s.overall)}</div>` : ''}</div>` : ''}
+ ${s.pray ? `<div class="sec"><h4>代禱事項</h4><div class="pre">${h(s.pray)}</div></div>` : ''}
+ ${s.handover ? `<div class="sec"><h4>交接</h4><div class="pre">${h(s.handover)}</div></div>` : ''}
+ ${(s.kidNotes || []).length ? `<div class="sec"><h4>個別孩子</h4>${s.kidNotes.map(n => `<div>${n.flag ? '⚠️ ' : ''}<b>${h((kid(n.kidId) || {}).name || '?')}</b>：${h(n.note)}</div>`).join('')}</div>` : ''}</div>`;
   }).join('') || '<div class="empty">還沒有上課紀錄</div>'}`;
 }
 var sessAll = false;
 function sessionDlg(id, preset) {
-  var orig = id ? D.sessions.find(x => x.id === id) : null;
-  var s = preset || orig || {
+  var s = preset || (id ? D.sessions.find(x => x.id === id) : {
     date: today(),
     lessonId: (thisWeek() || {}).id,
-    mainTeacher: teacherNames().includes(who()) ? who() : '',
+    teachers: [who()].filter(n => teacherNames().includes(n)),
+    learn: '',
+    order: '',
+    diff: '',
+    pray: '',
+    handover: '',
     kidNotes: []
-  };
+  });
   window._sess = {
     id,
-    s
+    s,
+    date: s.date
   };
-  // 參加的兒童：已存的紀錄用存下來的名單；新紀錄用當天點名
-  var att = s.attendance || (orig ? [] : Object.keys(D.attend[s.date] || {}));
-  var nk = s.newKids || newKidsOn(s.date);
-  var shown = D.kids.filter(k => k.active || att.includes(k.id) || nk.includes(k.id));
-  var tn = teacherNames(),
-    mt = sessMain(s);
-  var prog = s.progress || lessonProgress(lessonById(s.lessonId));
-  var ks = D.kids.filter(k => k.active && (sessAll || att.includes(k.id) || (s.kidNotes || []).some(n => n.kidId === k.id)));
+  var present = Object.keys(D.attend[s.date] || {}).length ? Object.keys(D.attend[s.date]) : s.attendance || []; // 沒有點名資料的舊紀錄（例如紙本匯入）用存下來的名單
+  var ks = D.kids.filter(k => k.active && (sessAll || present.includes(k.id) || (s.kidNotes || []).some(n => n.kidId === k.id)));
   var note = k => (s.kidNotes || []).find(n => n.kidId === k.id) || {};
   openModal(`<h2>${id ? '編輯' : '新增'}上課紀錄</h2>
- <div class="row"><label class="f sp">日期<input type="date" id="s_date" value="${h(s.date)}" onchange="sessDate()"></label>
- <label class="f sp">主教老師<select id="s_main"><option value="">（請選擇）</option>${tn.concat(mt && !tn.includes(mt) ? [mt] : []).map(n => `<option ${n === mt ? 'selected' : ''}>${h(n)}</option>`).join('')}</select></label></div>
- <label class="f">當天課程<select id="s_lesson" onchange="sessLesson()"><option value="">（未指定）</option>${lessonOpts(s.lessonId)}</select></label>
- <label class="f">課程進度 <span class="muted">（依課程自動帶入，可修改）</span><textarea id="s_prog" rows="3">${h(prog)}</textarea></label>
- <div class="sec"><h4>進行概況</h4>
+ <label class="f">日期<input type="date" id="s_date" value="${h(s.date)}"></label>
+ <label class="f">這堂課<select id="s_lesson"><option value="">（未指定）</option>${lessonOpts(s.lessonId)}</select></label>
+ <label class="f">上課老師<div class="checks" id="s_t">${teacherNames().concat((s.teachers || []).filter(n => !teacherNames().includes(n))).map(n => `<label><input type="checkbox" value="${h(n)}" ${(s.teachers || []).includes(n) ? 'checked' : ''}> ${h(n)}</label>`).join('')}</div></label>
+ <div class="muted" style="margin-top:8px">當天點名出席：${present.length} 人（從「點名加點」自動帶入）</div>
+ <div class="sec"><h4>整體狀況</h4>
  <label class="f">1. 學習狀況<textarea id="s_learn" rows="2">${h(s.learn || '')}</textarea></label>
  <label class="f">2. 課程秩序<textarea id="s_order" rows="2">${h(s.order || '')}</textarea></label>
- <label class="f">3. 有何困難<textarea id="s_diff" rows="2">${h(s.diff || '')}</textarea></label></div>
+ <label class="f">3. 有何困難<textarea id="s_diff" rows="2">${h(s.diff || '')}</textarea></label>
+ ${s.overall ? `<label class="f">其他（舊紀錄的整體狀況）<textarea id="s_o">${h(s.overall)}</textarea></label>` : ''}</div>
  <label class="f">代禱事項<textarea id="s_pray" rows="2">${h(s.pray || '')}</textarea></label>
- <div class="sec"><h4>參加的兒童 <span class="muted" id="s_cnt">（人數 ${att.length} 人）</span></h4><div class="muted">從當天點名自動勾選，也可以自己調整</div>
- <div class="checks" id="s_att">${shown.map(k => `<label><input type="checkbox" value="${k.id}" ${att.includes(k.id) ? 'checked' : ''} onchange="sessCnt()"> ${h(k.name)}</label>`).join('')}</div></div>
- <div class="sec"><h4>新來的兒童</h4><div class="muted">當天新增或第一次報到的孩子會自動勾選</div>
- <div class="checks" id="s_new">${shown.map(k => `<label><input type="checkbox" value="${k.id}" ${nk.includes(k.id) ? 'checked' : ''}> ${h(k.name)}</label>`).join('')}</div></div>
- <details style="margin-top:10px"${s.handover || (s.kidNotes || []).length || s.overall ? ' open' : ''}><summary class="muted">其他（交接、個別孩子備註，可不填）</summary>
- ${s.overall ? `<label class="f">整體狀況（舊欄位）<textarea id="s_o">${h(s.overall)}</textarea></label>` : ''}
- <label class="f">交接給下一位老師<textarea id="s_h">${h(s.handover || '')}</textarea></label>
- <div class="sec"><h4>個別孩子備註</h4><label class="muted"><input type="checkbox" ${sessAll ? 'checked' : ''} onchange="sessAll=this.checked;keepSess()"> 顯示所有孩子（預設只顯示參加的孩子）</label>
- ${ks.map(k => `<div class="row" style="margin-top:6px"><b style="width:70px">${h(k.name)}</b><input class="sp kn" data-k="${k.id}" value="${h(note(k).note)}" placeholder="狀況備註（可空白）"><label class="muted"><input type="checkbox" class="kf" data-k="${k.id}" ${note(k).flag ? 'checked' : ''}> 需留意</label></div>`).join('')}</div></details>
+ <label class="f">交接給下一位老師<textarea id="s_h">${h(s.handover)}</textarea></label>
+ <div class="sec"><h4>個別孩子備註</h4><label class="muted"><input type="checkbox" ${sessAll ? 'checked' : ''} onchange="sessAll=this.checked;keepSess()"> 顯示所有孩子（預設只顯示當天出席）</label>
+ ${ks.map(k => `<div class="row" style="margin-top:6px"><b style="width:70px">${h(k.name)}</b><input class="sp kn" data-k="${k.id}" value="${h(note(k).note)}" placeholder="狀況備註（可空白）"><label class="muted"><input type="checkbox" class="kf" data-k="${k.id}" ${note(k).flag ? 'checked' : ''}> 需留意</label></div>`).join('') || '<div class="muted">當天還沒有人簽到</div>'}</div>
  <div class="actions"><button class="blue" onclick="saveSession()">儲存</button>${id && (isAdmin() || s.by === user) ? `<button class="danger" onclick="if(confirm('刪除這筆紀錄？')){D.sessions=D.sessions.filter(x=>x.id!=='${id}');save('刪除上課紀錄');closeModal();render()}">刪除</button>` : ''}</div>`);
 }
-function sessCnt() {
-  var n = document.querySelectorAll('#s_att input:checked').length;
-  document.getElementById('s_cnt').textContent = '（人數 ' + n + ' 人）';
-}
-function sessLesson() {
-  var e = document.getElementById('s_prog');
-  var old = lessonProgress(lessonById(window._sess.s.lessonId));
-  if (!e.value.trim() || e.value === old) e.value = lessonProgress(lessonById(document.getElementById('s_lesson').value));
-  window._sess.s.lessonId = document.getElementById('s_lesson').value;
-}
-function sessDate() {
-  var d = document.getElementById('s_date').value;
-  if (window._sess.id) return; // 新紀錄換日期：重新帶入當天點名
-  var v = readSess();
-  delete v.attendance;
-  delete v.newKids;
-  sessionDlg(null, _objectSpread(_objectSpread(_objectSpread({}, window._sess.s), v), {}, {
-    date: d
-  }));
-}
 function readSess() {
-  var g = id => {
-    var e = document.getElementById(id);
-    return e ? e.value.trim() : '';
-  };
-  var ch = id => [...document.querySelectorAll('#' + id + ' input:checked')].map(x => x.value);
+  var s = window._sess.s;
   var v = {
-    date: g('s_date') || today(),
-    lessonId: g('s_lesson'),
-    mainTeacher: g('s_main'),
-    progress: g('s_prog'),
-    learn: g('s_learn'),
-    order: g('s_order'),
-    diff: g('s_diff'),
-    pray: g('s_pray'),
-    attendance: ch('s_att'),
-    newKids: ch('s_new'),
-    handover: g('s_h')
+    date: document.getElementById('s_date').value || today(),
+    lessonId: document.getElementById('s_lesson').value,
+    teachers: [...document.querySelectorAll('#s_t input:checked')].map(x => x.value),
+    handover: document.getElementById('s_h').value.trim()
   };
-  if (document.getElementById('s_o')) v.overall = g('s_o');
-  v.teachers = v.mainTeacher ? [v.mainTeacher] : [];
+  ['learn', 'order', 'diff', 'pray'].forEach(k => v[k] = document.getElementById('s_' + k).value.trim());
+  var so = document.getElementById('s_o');
+  if (so) v.overall = so.value.trim();
   var flags = {};
   document.querySelectorAll('.kf').forEach(e => flags[e.dataset.k] = e.checked);
   v.kidNotes = [...document.querySelectorAll('.kn')].map(e => ({
@@ -3582,8 +3524,10 @@ function keepSess() {
 function saveSession() {
   var v = readSess();
   var id = window._sess.id;
-  if (v.progress === lessonProgress(lessonById(v.lessonId))) v.progress = ''; // 沒改過就不存，課程內容更新時會跟著變
-  v.by = who();
+  var pres = Object.keys(D.attend[v.date] || {});
+  var old = id && D.sessions.find(x => x.id === id);
+  v.attendance = pres.length || !old ? pres : old.attendance || [];
+  v.by = who(); // 舊紀錄當天沒有點名資料時，保留原本的名單
   if (id) Object.assign(D.sessions.find(x => x.id === id), v);else D.sessions.push(_objectSpread({
     id: uid()
   }, v));
