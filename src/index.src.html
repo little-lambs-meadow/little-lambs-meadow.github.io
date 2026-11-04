@@ -137,7 +137,8 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 .stephead h2{margin:0;font-size:26px;white-space:nowrap}
 .lsel{max-width:50%;padding:6px;font-size:14px;margin-left:10px}
 .nrow{display:flex;align-items:center;gap:8px;max-width:1400px;margin:auto;padding-right:16px}.nrow nav{flex:1 1 auto;min-width:0;margin:0}
-.hsel{flex:0 1 380px;min-width:160px;margin:0 0 4px;padding:6px 8px;font-size:15px;border-radius:8px;border:1px solid #fff8;background:#fffffff0;color:#333}
+.vctl{display:flex;align-items:center;flex-shrink:0;margin:0 0 4px}.vctl .lsel{flex-shrink:0}.vctl>*{margin-right:6px}.vctl .pri{padding:6px 12px;font-size:15px;white-space:nowrap;border-radius:8px}.vctl .lsel{min-width:0!important;margin:0!important;padding:5px 6px!important;font-size:14px!important;border-radius:8px}
+.hsel{flex:0 0 auto;min-width:0;max-width:40vw;margin:0 0 4px;padding:6px 8px;font-size:15px;border-radius:8px;border:1px solid #fff8;background:#fffffff0;color:#333}
 .fill{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .fill>.fit,.fill>.vwrap{flex:1;min-height:0;overflow:hidden}
 .vwrap .video{margin:0 auto}
@@ -437,7 +438,7 @@ function thisWeek(){const t=today();const ls=[...D.lessons].filter(l=>l.date).so
 function copy(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('已複製')).catch(()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();toast('已複製')})}
 function openModal(html){document.getElementById('panel').innerHTML=`<button class="close ghost" onclick="closeModal()">✕</button>`+html;document.getElementById('modal').classList.add('on')}
 function closeModal(){document.getElementById('modal').classList.remove('on');if(Cloud.needRebuild)setTimeout(cloudRebuild,0)}
-function lessonOpts(sel){const bib=lessonOrder()!=='season';let k=0;return sortedLessons().map(l=>{k++;const lab=bib?`${k}. 〔${bibleBook(l)}〕${l.title}（${l.season}第${l.no}課）`:`${l.season} 第${l.no}課 ${l.title}`;return `<option value="${l.id}" ${l.id===sel?'selected':''}>${h(lab)}${l.date?' ('+h(l.date)+')':''}</option>`}).join('')}
+function lessonOpts(sel,short){const bib=lessonOrder()!=='season';let k=0;return sortedLessons().map(l=>{k++;const lab=bib?`${k}. 〔${bibleBook(l)}〕${l.title}（${l.season}第${l.no}課）`:`${l.season} 第${l.no}課 ${l.title}`;return `<option value="${l.id}" ${l.id===sel?'selected':''}>${h(lab)}${l.date&&!short?' ('+h(l.date)+')':''}</option>`}).join('')}
 
 /* ============ 通用表單 ============ */
 let FORM=null;
@@ -479,12 +480,18 @@ function render(){applyZy();
   <div class="who"><button class="sm rld" onclick="hardReload()" title="重新整理（載入最新版）">⟳<span class="hide-m"> 重新整理</span></button>${fsOk&&matchMedia('(pointer: fine)').matches?`<button class="sm" id="fsBtn" onclick="appFs()" title="全螢幕（Esc 離開）">${curFs()===document.documentElement?'⤢<span class="hide-m"> 離開全螢幕</span>':'⛶<span class="hide-m"> 全螢幕</span>'}</button>`:''}${mode==='teach'?`<button class="sm zybtn ${zyOn?'on':''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>`:''}${cloudBadge()}${user?`<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>`:''}
    ${mode==='teach'?`<button class="sm" onclick="enterStaff()">${user||!authOn()?'老師區':'老師登入'}</button>`:`<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn()&&user?`<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>`:''}`}</div></div>
   <div class="nrow"><nav>${tabs.map(([k,n])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${n}</button>`).join('')}</nav>
-  ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id)}</select>`:''}</div>`;
+  ${mode==='teach'&&tab==='video'&&D.lessons.length?videoCtl():''}
+  ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id,true)}</select>`:''}</div>`;
+ fitSel(hd.querySelector('.hsel'));fitSel(hd.querySelector('.vctl .lsel'));
  {const on=hd.querySelector('nav .on');if(on){const n=on.parentNode;n.scrollLeft=on.offsetLeft-(n.clientWidth-on.offsetWidth)/2}}
  const f={rules:tRules,worship:tWorship,ice:tIce,intro:tIntro,video:tVideo,qa:tQA,pray:tPray,lesson:tLesson,verse:tVerse,song:tSong,points:tPoints,rank:tRank,lessons:pLessons,songs:pSongs,shows:pShows,kids:pKids,sessions:pSessions,meetings:pMeetings,meeting:pMeeting,settings:pSettings}[tab];
  document.getElementById('app').innerHTML=f?f():'';
  layout();
 }
+/* 下拉選單的寬度剛好放得下目前選的那一課（不留一大段空白） */
+function fitSel(el){if(!el||el.selectedIndex<0)return;const sp=document.createElement('span');const cs=getComputedStyle(el);
+ sp.style.cssText='position:absolute;visibility:hidden;white-space:pre;font-size:'+cs.fontSize+';font-family:'+cs.fontFamily;
+ sp.textContent=el.options[el.selectedIndex].text;document.body.appendChild(sp);el.style.width=(sp.offsetWidth+50)+'px';sp.remove()}
 function go(t){Cloud.needRender=false;tab=t;render();scrollTo(0,0)}
 /* 進老師區：必須先連上雲端（拿到最新的登入設定），啟用登入時一定要登入 */
 function enterStaff(){
@@ -736,11 +743,17 @@ function sbImport(){
 function sbImportBtn(){if(!confirm('匯入超級妙妙書第一～五季共 67 集？\n影片從雲端硬碟播放。已有的課程只會把影片換成妙妙書版本、補上空白的故事重點，其他內容不會動。'))return;const r=sbImport();render();toast('匯入完成：新增 '+r[0]+' 課、更新 '+r[1]+' 課')}
 function gtvUrl(u){u=String(u||'').trim();return /^https?:\/\/(www\.)?goodtv\.tv\//i.test(u)?u.replace(/^http:/i,'https:'):null}
 function gtvBox(u,id){return `<div class="vwrap"><div class="webbox" id="${id}"><iframe src="${h(u)}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></div></div>`}
+ /* 影片頁的「全螢幕播放」與「串流選擇」放在上方選單列（課程選單左邊） */
+function videoCtl(){const l=cur();const yt=ytId(l.video),gt=gtvUrl(l.video),sc=sbCode(l.video),se=sc&&sbEp(sc);
+ if(se)return `<div class="vctl"><button class="pri" title="全螢幕播放" onclick="sbPlayFull('${se.c}')">▶ 播放</button>${sbSrcBtn(se)}</div>`;
+ if(gt)return '';
+ if(yt)return `<div class="vctl"><button class="pri" title="全螢幕播放" onclick="playFull('${yt}')">▶ 播放</button></div>`;
+ return ''}
 function tVideo(){const l=cur();const yt=ytId(l.video);const gt=gtvUrl(l.video);const sc=sbCode(l.video),se=sc&&sbEp(sc);
- if(se)return stepPage(`<div class="tbar scroll"><button class="pri" style="flex:1;font-size:20px;padding:12px" onclick="sbPlayFull('${se.c}')">▶ 全螢幕播放<span class="hideS">〈${h(se.t)}〉</span></button>${sbSrcBtn(se)}</div>${sbBox(se,'sbbox')}`);
+ if(se)return stepPage(`${sbBox(se,'sbbox')}`);
  if(gt)return stepPage(`<div class="tbar scroll"><button class="pri" style="flex:1;font-size:20px;padding:12px" onclick="fsEl('#gtvbox')">⛶ 全螢幕〈${h(l.title)}〉</button><a class="ghost" style="padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="${h(gt)}" target="_blank" rel="noopener">在 GOODTV 開啟 ↗</a></div>
   <div class="muted" style="flex-shrink:0;margin-bottom:6px">GOODTV 影片：按下方畫面裡的播放鍵開始；全螢幕後若影片沒有放大，再按播放器右下角的全螢幕鍵。</div>${gtvBox(gt,'gtvbox')}`);
- return stepPage(yt?`<div class="tbar"><button class="pri" style="flex:1;font-size:22px;padding:12px" onclick="playFull('${yt}')">▶ 全螢幕播放〈${h(l.title)}〉</button></div><div class="vwrap">${ytBox(yt)}</div>`
+ return stepPage(yt?`<div class="vwrap">${ytBox(yt)}</div>`
   :l.video?`<div class="empty"><a class="pri" style="display:inline-block;padding:16px 30px;border-radius:10px;background:#e2572a;color:#fff;font-size:22px;text-decoration:none" href="${h(l.video)}" target="_blank" rel="noopener">▶ 開啟影片〈${h(l.title)}〉</a></div>`
   :'<div class="empty">這一課還沒有影片網址</div>')}
 function tQA(){const l=cur();const q=l.questions||[];
