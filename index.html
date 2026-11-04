@@ -1310,7 +1310,7 @@ function render() {
   }).join('')}</nav>
   <button class="ricon" onclick="hardReload()" title="重新整理（載入最新版）">⟳</button><span class="nsp"></span>
   ${mode === 'teach' && tab === 'video' && D.lessons.length ? videoCtl() : ''}
-  ${mode === 'teach' && tab !== 'rules' && STEPS.some(x => x[0] === tab) && D.lessons.length ? `<select class="hsel" onchange="if(this.value==='__all'){showAllL=!showAllL;render();return}curLesson=userPick=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id, true, true)}</select>` : ''}${menuBtn()}</div>`;
+  ${mode === 'teach' && tab !== 'rules' && STEPS.some(x => x[0] === tab) && D.lessons.length ? `<select class="hsel" onchange="this.blur();if(this.value==='__all'){showAllL=!showAllL;render();return}curLesson=userPick=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id, true, true)}</select>` : ''}${menuBtn()}</div>`;
   {
     var m = document.getElementById('hmenu');
     if (m) m.innerHTML = menuHtml();
@@ -1812,15 +1812,31 @@ var qIdx = 0,
 function stepIdx() {
   return STEPS.findIndex(x => x[0] === tab);
 }
+/* 像 PPT 換頁：左右鍵（或簡報筆的上下頁鍵）照上方順序換頁：規則→…→禱告→點名→點數；問答頁先一題一題換 */
 function stepGo(d) {
-  var i = stepIdx();
+  var order = TEACH_TABS.map(x => x[0]);
+  var i = order.indexOf(tab);
   if (i < 0) return;
+  if (tab === 'qa' && !qAll) {
+    var q = (cur().questions || []).length;
+    if (d > 0 && qIdx < q - 1) {
+      qIdx++;
+      render();
+      return;
+    }
+    if (d < 0 && qIdx > 0) {
+      qIdx--;
+      render();
+      return;
+    }
+  }
   var n = i + d;
-  if (n >= 0 && n < STEPS.length) {
-    qIdx = 0;
+  if (n >= 0 && n < order.length) {
+    var nt = order[n];
+    qIdx = nt === 'qa' && d < 0 ? Math.max(0, (cur().questions || []).length - 1) : 0;
     hidTok.clear();
     showLyrics = false;
-    go(STEPS[n][0]);
+    go(nt);
   }
 }
 var userPick = null; // 老師自己從選單選的課（就算已上過也照選的顯示）
@@ -4268,8 +4284,11 @@ function _importAll() {
 }
 document.addEventListener('keydown', e => {
   if (mode !== 'teach' || document.getElementById('modal').classList.contains('on')) return;
-  var t = document.activeElement && document.activeElement.tagName;
-  if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+  var ae = document.activeElement,
+    t = ae && ae.tagName;
+  var nav = ['ArrowRight', 'PageDown', 'ArrowLeft', 'PageUp'].indexOf(e.key) >= 0;
+  if (t === 'SELECT' && ae.closest('#hdr') && nav && (e.key === 'PageDown' || e.key === 'PageUp' || e.key === 'ArrowRight' || e.key === 'ArrowLeft')) ae.blur(); // 上方選單選完課後，方向鍵照樣換頁
+  else if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
   if (e.key === 'ArrowRight' || e.key === 'PageDown') {
     stepGo(1);
     e.preventDefault();
