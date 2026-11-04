@@ -1373,7 +1373,7 @@ async function hardReload(){toast('🔄 正在載入最新版…');try{sessionSt
  try{if(Cloud&&Cloud.pw&&cloudDirty().length){cloudTick();await new Promise(r=>setTimeout(r,2000))}}catch(e){}  // 還沒上傳的修改先送出
  try{if(navigator.serviceWorker){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.update().catch(()=>{})))}}catch(e){}
  try{if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}}catch(e){}
- try{await fetch('./index.html?r='+Date.now(),{cache:'reload'})}catch(e){}
+ try{await Promise.all(['./','./index.html','./assets/intro.mp4?v=2','./assets/intro-end.jpg?v=2'].map(u=>fetch(u,{cache:'reload'})))}catch(e){}
  location.replace(location.pathname+'?r='+Date.now()+location.hash)}
 </script>
 </body>
