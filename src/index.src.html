@@ -136,7 +136,16 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 .stephead .num{width:40px;height:40px;border-radius:50%;background:var(--pri);color:#fff;font-size:20px;font-weight:700;text-align:center;line-height:40px;flex-shrink:0;margin-right:10px}
 .stephead h2{margin:0;font-size:26px;white-space:nowrap}
 .lsel{max-width:50%;padding:6px;font-size:14px;margin-left:10px}
-.nrow{display:flex;align-items:center;gap:8px;max-width:1400px;margin:auto;padding-right:16px}.nrow nav{flex:1 1 auto;min-width:0;margin:0}
+.nrow{display:flex;align-items:center;gap:8px;max-width:1400px;margin:auto;padding-right:16px}.nrow nav{flex:0 1 auto;min-width:0;margin:0}.nsp{flex:1}
+@media (max-width:1000px) and (min-width:601px){.vctl .pt{display:none}}
+.ricon,.mbtn{flex-shrink:0;margin:0 0 4px;border:0;border-radius:10px;background:rgba(255,255,255,.28);color:#fff;font-size:20px;line-height:1;width:40px;height:36px;padding:0;cursor:pointer;position:relative}
+.ricon:hover,.mbtn:hover{background:rgba(255,255,255,.45)}.mbtn{background:#fffffff0;color:#333;font-size:22px}
+.mdot{position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:#e23b2a;border:2px solid #fff}
+.hmenu{position:fixed;z-index:35;background:#fff;color:#2b2622;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:8px;min-width:230px;max-width:90vw}
+.hmenu button{display:flex;align-items:center;width:100%;background:none;border:0;border-radius:9px;padding:10px 12px;font-size:16px;text-align:left;color:inherit;cursor:pointer;min-height:0}
+.hmenu button:hover{background:#f6efe6}.hmenu .mi{display:inline-block;min-width:34px;font-weight:700;color:#e2572a}
+.hmenu .mmain{font-weight:700}.hmenu hr{border:0;border-top:1px solid #eee;margin:6px 4px}
+.hmenu .mu{padding:8px 12px 10px;font-weight:700;border-bottom:1px solid #eee;margin-bottom:6px}.hmenu .mu span{font-weight:400;color:#888;font-size:13px;margin-left:8px}
 .vctl{display:flex;align-items:center;flex-shrink:0;margin:0 0 4px}.vctl .lsel{flex-shrink:0}.vctl>*{margin-right:6px}.vctl .pri{padding:6px 12px;font-size:15px;white-space:nowrap;border-radius:8px}.vctl .lsel{min-width:0!important;margin:0!important;padding:5px 6px!important;font-size:14px!important;border-radius:8px}
 .hsel{flex:0 0 auto;min-width:0;max-width:40vw;margin:0 0 4px;padding:6px 8px;font-size:15px;border-radius:8px;border:1px solid #fff8;background:#fffffff0;color:#333}
 .fill{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
@@ -189,7 +198,7 @@ nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
  .stephead .num{width:32px;height:32px;line-height:32px;font-size:17px;margin-right:8px}
  .stephead h2{font-size:21px}
  .lsel{order:9;max-width:none;width:100%;margin:6px 0 0;padding:7px 8px}
- .hrow{flex-wrap:wrap}.nrow{flex-wrap:wrap;padding-right:0}.nrow nav{flex-basis:100%}.hsel{flex:1 1 100%;margin:0 12px 6px;padding:6px 8px;font-size:14px}
+ .hrow{flex-wrap:wrap}.nrow{flex-wrap:wrap;padding-right:0}.nrow nav{flex-basis:100%}.nrow{padding:0 10px 4px}.hsel{order:9;flex:1 1 100%;width:auto!important;max-width:none;margin:2px 0 6px;padding:6px 8px;font-size:14px}.vctl .lsel{order:0;width:auto}
  .stepnav{margin-top:8px;gap:8px}
  .stepnav button{font-size:16px;padding:12px 6px}
  .tbar.scroll,.items{flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
@@ -342,7 +351,7 @@ function cloudTick(){
 function cloudBadge(){if(!Cloud.url)return '';
  const m={ok:['☁️','已同步'],saving:['⏳','儲存中'],off:['⚠️','離線'],err:['⚠️','同步錯誤'],pw:['🔒','需要密碼']}[Cloud.pw?Cloud.state:'pw']||['☁️',''];
  return `<button class="sm" id="cloudBadge" style="background:rgba(255,255,255,.25);color:#fff" onclick="cloudDlg()">${m[0]} <span class="uname">${m[1]}</span></button>`}
-function cloudBadgeUpdate(){const b=document.getElementById('cloudBadge');if(b)b.outerHTML=cloudBadge()}
+function cloudBadgeUpdate(){const b=document.getElementById('mBtn');if(b)b.outerHTML=menuBtn();const m=document.getElementById('hmenu');if(m)m.innerHTML=menuHtml()}
 function cloudPwDlg(init){if(!cloudSafe()&&!document.getElementById('cl_pw'))return;
  openModal(`<h2>🔒 ${init?'設定教會密碼':'輸入教會密碼'}</h2>
  <p class="muted">${init?'第一次使用雲端同步，請設定一組教會密碼（至少 4 碼）。之後每台裝置第一次打開時輸入一次就好。':'小羊樂園的資料存在教會的雲端，請輸入教會密碼。每台裝置只需要輸入一次。'}</p>
@@ -477,11 +486,12 @@ function render(){applyZy();
  const hd=document.getElementById('hdr');hd.className=mode;
  const tabs=mode==='teach'?TEACH_TABS:STAFF_TABS;
  hd.innerHTML=`<div class="hrow"><h1><img class="hlogo" src="icon-192.png" alt=""><span class="hname">${h(D.settings.church)}</span><span class="hdot"> · </span><span class="hsub">${mode==='teach'?'兒童主日學':h(user||'老師區')}</span></h1>
-  <div class="who"><button class="sm rld" onclick="hardReload()" title="重新整理（載入最新版）">⟳<span class="hide-m"> 重新整理</span></button>${fsOk&&matchMedia('(pointer: fine)').matches?`<button class="sm" id="fsBtn" onclick="appFs()" title="全螢幕（Esc 離開）">${curFs()===document.documentElement?'⤢<span class="hide-m"> 離開全螢幕</span>':'⛶<span class="hide-m"> 全螢幕</span>'}</button>`:''}${mode==='teach'?`<button class="sm zybtn ${zyOn?'on':''}" onclick="toggleZy()" title="注音開關">ㄅㄆ</button>`:''}${cloudBadge()}${user?`<span class="uname">👤 ${h(user)}（${roleName(me())}）</span>`:''}
-   ${mode==='teach'?`<button class="sm" onclick="enterStaff()">${user||!authOn()?'老師區':'老師登入'}</button>`:`<button class="sm" onclick="setMode('teach')">教學模式</button>${authOn()&&user?`<button class="sm ghost" style="color:#fff" onclick="logout()">登出</button>`:''}`}</div></div>
+</div>
   <div class="nrow"><nav>${tabs.map(([k,n])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${n}</button>`).join('')}</nav>
+  <button class="ricon" onclick="hardReload()" title="重新整理（載入最新版）">⟳</button><span class="nsp"></span>
   ${mode==='teach'&&tab==='video'&&D.lessons.length?videoCtl():''}
-  ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id,true)}</select>`:''}</div>`;
+  ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id,true)}</select>`:''}${menuBtn()}</div>`;
+ {const m=document.getElementById('hmenu');if(m)m.innerHTML=menuHtml()}
  fitSel(hd.querySelector('.hsel'));fitSel(hd.querySelector('.vctl .lsel'));
  {const on=hd.querySelector('nav .on');if(on){const n=on.parentNode;n.scrollLeft=on.offsetLeft-(n.clientWidth-on.offsetWidth)/2}}
  const f={rules:tRules,worship:tWorship,ice:tIce,intro:tIntro,video:tVideo,qa:tQA,pray:tPray,lesson:tLesson,verse:tVerse,song:tSong,points:tPoints,rank:tRank,lessons:pLessons,songs:pSongs,shows:pShows,kids:pKids,sessions:pSessions,meetings:pMeetings,meeting:pMeeting,settings:pSettings}[tab];
@@ -491,7 +501,25 @@ function render(){applyZy();
 /* 下拉選單的寬度剛好放得下目前選的那一課（不留一大段空白） */
 function fitSel(el){if(!el||el.selectedIndex<0)return;const sp=document.createElement('span');const cs=getComputedStyle(el);
  sp.style.cssText='position:absolute;visibility:hidden;white-space:pre;font-size:'+cs.fontSize+';font-family:'+cs.fontFamily;
- sp.textContent=el.options[el.selectedIndex].text;document.body.appendChild(sp);el.style.width=(sp.offsetWidth+50)+'px';sp.remove()}
+ sp.textContent=el.options[el.selectedIndex].text;document.body.appendChild(sp);el.style.width=(sp.offsetWidth+62)+'px';sp.remove()}
+/* ☰ 選單：全螢幕、注音、雲端同步、帳號、老師區／登入 */
+function menuBtn(){const bad=Cloud.url&&(!Cloud.pw||['err','off','pw'].indexOf(Cloud.state)>=0);
+ return `<button class="mbtn" id="mBtn" onclick="toggleMenu(event)" title="選單">☰${bad?'<i class="mdot"></i>':''}</button>`}
+function closeMenu(){const m=document.getElementById('hmenu');if(m)m.remove()}
+function toggleMenu(ev){if(ev)ev.stopPropagation();if(document.getElementById('hmenu'))return closeMenu();
+ const r=document.getElementById('mBtn').getBoundingClientRect();const d=document.createElement('div');d.id='hmenu';d.className='hmenu';
+ d.style.top=(r.bottom+6)+'px';d.style.right=Math.max(8,innerWidth-r.right)+'px';d.innerHTML=menuHtml();document.body.appendChild(d)}
+document.addEventListener('click',e=>{const m=document.getElementById('hmenu');if(m&&!m.contains(e.target))closeMenu()});
+function menuHtml(){const it=(ic,t,fn,cls)=>`<button class="${cls||''}" onclick="closeMenu();${fn}"><span class="mi">${ic}</span>${t}</button>`;
+ const cs=!Cloud.url?null:!Cloud.pw?['🔒','雲端同步：需要密碼']:({ok:['☁️','雲端同步：已同步'],saving:['⏳','雲端同步：儲存中'],off:['⚠️','雲端同步：離線'],err:['⚠️','雲端同步：錯誤'],pw:['🔒','雲端同步：需要密碼']}[Cloud.state]||['☁️','雲端同步']);
+ let o=user?`<div class="mu">👤 ${h(user)}<span>${roleName(me())}</span></div>`:'';
+ if(mode==='teach')o+=it('ㄅㄆ',zyOn?'注音：開（按一下關閉）':'注音：關（按一下開啟）','toggleZy()');
+ if(fsOk&&matchMedia('(pointer: fine)').matches)o+=curFs()===document.documentElement?it('⤢','離開全螢幕','appFs()'):it('⛶','全螢幕','appFs()');
+ if(cs)o+=it(cs[0],cs[1],'cloudDlg()');
+ o+='<hr>';
+ if(mode==='teach')o+=it('🐑',user||!authOn()?'老師區':'老師登入','enterStaff()','mmain');
+ else{o+=it('📺','回到教學模式','setMode(\'teach\')','mmain');if(authOn()&&user)o+=it('🚪','登出','logout()')}
+ return o}
 function go(t){Cloud.needRender=false;tab=t;render();scrollTo(0,0)}
 /* 進老師區：必須先連上雲端（拿到最新的登入設定），啟用登入時一定要登入 */
 function enterStaff(){
@@ -629,7 +657,7 @@ function appFs(){const d=document.documentElement;
  if(!inst||!desk||!fsOk||localStorage.getItem('llm_autofs')==='0')return;
  const f=()=>{document.removeEventListener('pointerdown',f,true);if(!curFs())appFs()};
  document.addEventListener('pointerdown',f,true)}catch(e){}})();
-document.addEventListener('fullscreenchange',()=>{const b=document.getElementById('fsBtn');if(b)b.innerHTML=curFs()===document.documentElement?'⤢<span class="hide-m"> 離開全螢幕</span>':'⛶<span class="hide-m"> 全螢幕</span>';relayout()});
+document.addEventListener('fullscreenchange',()=>{const m=document.getElementById('hmenu');if(m)m.innerHTML=menuHtml();relayout()});
 window.addEventListener('resize',relayout);
 window.addEventListener('orientationchange',relayout);
 if(window.visualViewport)window.visualViewport.addEventListener('resize',relayout);
@@ -745,9 +773,9 @@ function gtvUrl(u){u=String(u||'').trim();return /^https?:\/\/(www\.)?goodtv\.tv
 function gtvBox(u,id){return `<div class="vwrap"><div class="webbox" id="${id}"><iframe src="${h(u)}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></div></div>`}
  /* 影片頁的「全螢幕播放」與「串流選擇」放在上方選單列（課程選單左邊） */
 function videoCtl(){const l=cur();const yt=ytId(l.video),gt=gtvUrl(l.video),sc=sbCode(l.video),se=sc&&sbEp(sc);
- if(se)return `<div class="vctl"><button class="pri" title="全螢幕播放" onclick="sbPlayFull('${se.c}')">▶ 播放</button>${sbSrcBtn(se)}</div>`;
+ if(se)return `<div class="vctl"><button class="pri" title="全螢幕播放" onclick="sbPlayFull('${se.c}')">▶<span class="pt"> 播放</span></button>${sbSrcBtn(se)}</div>`;
  if(gt)return '';
- if(yt)return `<div class="vctl"><button class="pri" title="全螢幕播放" onclick="playFull('${yt}')">▶ 播放</button></div>`;
+ if(yt)return `<div class="vctl"><button class="pri" title="全螢幕播放" onclick="playFull('${yt}')">▶<span class="pt"> 播放</span></button></div>`;
  return ''}
 function tVideo(){const l=cur();const yt=ytId(l.video);const gt=gtvUrl(l.video);const sc=sbCode(l.video),se=sc&&sbEp(sc);
  if(se)return stepPage(`${sbBox(se,'sbbox')}`);
