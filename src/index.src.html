@@ -1137,14 +1137,21 @@ async function doImport(){
 }
 
 /* ============ 詩歌 ============ */
-function pSongs(){
- return `<div class="row" style="margin-bottom:10px"><h2 class="sp">詩歌</h2><button class="blue" onclick="editSong()">＋新增詩歌</button></div>
- ${D.songs.map(s=>`<div class="card row"><div class="sp"><b>${s.theme?'⭐ ':''}${h(s.title)}</b><div class="muted">${h(QLAB[s.season]||s.season)}</div></div><button class="sm ghost" onclick="curSong='${s.id}';setMode('teach');go('worship')">投影</button><button class="sm ghost" onclick="editSong('${s.id}')">編輯</button><button class="sm danger" onclick="songDelDlg('${s.id}',true)">刪除</button></div>`).join('')||'<div class="empty">還沒有詩歌</div>'}`;
+function pSongs(){const row=s=>`<div class="card row"><div class="sp"><b>${s.theme?'⭐ ':''}${h(s.title)}</b></div><button class="sm ghost" onclick="curSong='${s.id}';setMode('teach');go('worship')">投影</button><button class="sm ghost" onclick="editSong('${s.id}')">編輯</button><button class="sm danger" onclick="songDelDlg('${s.id}',true)">刪除</button></div>`;
+ const other=D.songs.filter(s=>QTRS.indexOf(s.season)<0);
+ return `<h2>詩歌</h2><p class="muted">詩歌照年度季度分開放（1～3月第一季…）；每一季各自新增。同一首歌要用在別季，按「編輯」裡的「📋 複製到其他季」。</p>
+ ${QTRS.map(q=>{const ss=D.songs.filter(s=>s.season===q);return `<div class="sq-sec"><div class="row" style="margin:14px 0 6px"><h3 class="sp" style="margin:0">🎵 ${QLAB[q]}${q===qOf(today())?' <span class="tag ok">目前這一季</span>':''}</h3><button class="blue" onclick="editSong(null,'${q}')">＋新增${q}詩歌</button></div>${ss.map(row).join('')||'<div class="muted" style="padding:4px 2px 8px">這一季還沒有詩歌</div>'}</div>`}).join('')}
+ ${other.length?`<h3 style="margin-top:16px">未分季</h3>${other.map(row).join('')}`:''}`;
 }
-function editSong(id){const s=id?D.songs.find(x=>x.id===id):{season:qOf(today())};
- form(id?'編輯詩歌':'新增詩歌',[['title','歌名'],['season','季（年度季度）','select',QTRS.map(q=>[q,QLAB[q]])],['theme','⭐ 本季主題詩歌（每堂敬拜都會出現）','bool'],['video','YouTube 網址（單首或播放清單）']],s,v=>{
-  if(!v.title){toast('請填歌名');return false}if(id)Object.assign(s,v);else D.songs.push({id:uid(),...v});save((id?'修改':'新增')+'詩歌 '+v.title)},
-  id?`<div class="actions"><button class="danger" onclick="songDelete('${id}')">刪除這首詩歌</button></div>`:'')}
+/* 季度不在歌裡編輯：在哪一季新增就屬於哪一季；同一首歌要用在別季，用「複製到其他季」 */
+function editSong(id,q){const s=id?D.songs.find(x=>x.id===id):{season:q||qOf(today())};const sq=s.season;
+ const others=QTRS.filter(x=>x!==sq);
+ form((id?'編輯詩歌':'新增詩歌')+`<div class="muted" style="font-size:15px;font-weight:400;margin-top:4px">🎵 ${h(QLAB[sq]||sq||'未分季')}</div>`,[['title','歌名'],['theme','⭐ 本季主題詩歌（每堂敬拜都會出現）','bool'],['video','YouTube 網址（單首或播放清單）']],s,v=>{
+  if(!v.title){toast('請填歌名');return false}v.season=sq;if(id)Object.assign(s,v);else D.songs.push({id:uid(),...v});save((id?'修改':'新增')+'詩歌 '+v.title+'（'+sq+'）')},
+  id?`<div class="actions" style="align-items:center"><select id="cpq" style="width:auto;padding:8px"><option value="">📋 複製到其他季…</option>${others.map(x=>`<option value="${x}">${QLAB[x]}</option>`).join('')}</select><button class="ghost" onclick="copySong('${id}')">複製</button><span class="sp"></span><button class="danger" onclick="songDelete('${id}')">刪除這首詩歌</button></div>`:'')}
+function copySong(id){const q=document.getElementById('cpq').value;if(!q){toast('請先選要複製到哪一季');return}const s=D.songs.find(x=>x.id===id);if(!s)return;
+ if(D.songs.some(x=>x.season===q&&x.title===s.title)){toast('「'+s.title+'」在'+q+'已經有了');return}
+ D.songs.push({id:uid(),title:s.title,season:q,theme:!!s.theme,video:s.video||''});save('複製詩歌 '+s.title+' 到'+q);closeModal();render();toast('已複製「'+s.title+'」到'+QLAB[q])}
 
 /* ============ 成發 ============ */
 function pShows(){
