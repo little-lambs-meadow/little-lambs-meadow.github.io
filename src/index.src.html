@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#e2572a">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bpmf+Iansui&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png"><link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -52,7 +51,7 @@ h3{margin:0 0 6px;font-size:16px}
 .sec h4{margin:0 0 4px;font-size:14px;color:var(--pri);border-left:4px solid var(--pri);padding-left:8px}
 .sec ol,.sec ul{margin:4px 0;padding-left:22px}
 .pre{white-space:pre-wrap}
-body.bpmf .zy{font-family:"Bpmf Iansui","PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;font-weight:400;line-height:1.75}
+body.bpmf .zy{font-weight:400;line-height:1.75}
 body.bpmf .zy .zh,body.bpmf .zy .en,body.bpmf .zy b{font-weight:400}
 body.bpmf .zy .en,body.bpmf .zy .ref{font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
 .zybtn.on{background:#fff;color:#e2572a}
@@ -153,7 +152,7 @@ body.sz-l #app,body.sz-l .modal .panel,body.sz-l #hdr .nrow nav{zoom:1.2}body.sz
 @media (max-width:600px){body.sz-l #app,body.sz-l .modal .panel,body.sz-l #hdr .nrow nav{zoom:1.12}body.sz-xl #app,body.sz-xl .modal .panel,body.sz-xl #hdr .nrow nav{zoom:1.25}}
 body.sbig #app,body.sbig .modal .panel,body.sbig #app input,body.sbig #app textarea,body.sbig #app select,body.sbig .panel input,body.sbig .panel textarea,body.sbig .panel select,body.sbig #hdr nav button{font-weight:600}
 body.sbig .muted,body.sbig label.f,body.sbig .panel label.f{color:#4a423b}
-.hmenu .mfs{display:flex;align-items:center;padding:6px 12px;font-size:16px}.hmenu .mfs button{display:inline-block;width:auto;padding:5px 10px;margin-left:6px;border:1px solid #ddd;border-radius:8px;font-size:15px}.hmenu .mfs button.on{background:#e2572a;color:#fff;border-color:#e2572a}
+.hmenu .mfs{display:flex;flex-wrap:wrap;row-gap:6px;align-items:center;padding:6px 12px;font-size:16px}.hmenu .mfs button{display:inline-block;width:auto;padding:5px 10px;margin-left:6px;border:1px solid #ddd;border-radius:8px;font-size:15px}.hmenu .mfs button.on{background:#e2572a;color:#fff;border-color:#e2572a}
 .hmenu{position:fixed;z-index:35;background:#fff;color:#2b2622;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:8px;min-width:230px;max-width:90vw}
 .hmenu button{display:flex;align-items:center;width:100%;background:none;border:0;border-radius:9px;padding:10px 12px;font-size:16px;text-align:left;color:inherit;cursor:pointer;min-height:0}
 .hmenu button:hover{background:#f6efe6}.hmenu .mi{display:inline-block;min-width:34px;font-weight:700;color:#e2572a}
@@ -540,6 +539,7 @@ document.addEventListener('click',e=>{const m=document.getElementById('hmenu');i
 function menuHtml(){const it=(ic,t,fn,cls)=>`<button class="${cls||''}" onclick="closeMenu();${fn}"><span class="mi">${ic}</span>${t}</button>`;
  const cs=!Cloud.url?null:!Cloud.pw?['🔒','雲端同步：需要密碼']:({ok:['☁️','雲端同步：已同步'],saving:['⏳','雲端同步：儲存中'],off:['⚠️','雲端同步：離線'],err:['⚠️','雲端同步：錯誤'],pw:['🔒','雲端同步：需要密碼']}[Cloud.state]||['☁️','雲端同步']);
  let o=user?`<div class="mu">👤 ${h(user)}<span>${roleName(me())}</span></div>`:'';
+ if(mode==='teach')o+=`<div class="mfs"><span class="mi">🔤</span>字體${Object.keys(TFONTS).map(k=>`<button class="${tFont===k?'on':''}" onclick="event.stopPropagation();setTFont('${k}')">${TFONTS[k][0]}</button>`).join('')}</div>`;
  if(mode==='teach')o+=it('ㄅㄆ',zyOn?'注音：開（按一下關閉）':'注音：關（按一下開啟）','toggleZy()');
  if(fsOk&&matchMedia('(pointer: fine)').matches)o+=curFs()===document.documentElement?it('⤢','離開全螢幕','appFs()'):it('⛶','全螢幕','appFs()');
  if(cs)o+=it(cs[0],cs[1],'cloudDlg()');
@@ -860,7 +860,17 @@ function sayEn(rate){const l=cur();if(!l.verseEn)return;const ss=window.speechSy
 if(window.speechSynthesis&&speechSynthesis.addEventListener)speechSynthesis.addEventListener('voiceschanged',()=>{});
 /* 注音：用 Bpmf Iansui 注音字型，字旁自動顯示注音；每台裝置可以自己開關 */
 let zyOn=true;try{zyOn=localStorage.getItem('llm_bpmf')!=='0'}catch(x){}
-function applyZy(){document.body.classList.toggle('bpmf',zyOn)}
+/* 上課畫面字體（適合小朋友的圓體、手寫、楷體）：每台裝置自己選，開注音時用同風格的注音字型 */
+const TFONTS={huninn:['粉圓','Huninn','Bpmf Huninn'],round:['圓體','Chiron GoRound TC','Bpmf Huninn'],iansui:['芫荽','Iansui','Bpmf Iansui'],kai:['楷體','LXGW WenKai TC','Bpmf Zihi Kai Std'],std:['標準','','Bpmf Iansui']};
+let tFont='huninn';try{tFont=localStorage.getItem('llm_tfont')||'huninn'}catch(e){}
+const _fl={};function loadFont(n){if(!n||_fl[n])return;_fl[n]=1;const l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family='+n.replace(/ /g,'+')+'&display=swap';document.head.appendChild(l)}
+function applyTFont(){const f=TFONTS[tFont]||TFONTS.huninn;if(mode==='teach')loadFont(f[1]);if(zyOn)loadFont(f[2]);
+ const SYS='"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif';let st=document.getElementById('tfStyle');
+ if(!st){st=document.createElement('style');st.id='tfStyle';document.head.appendChild(st)}
+ const css=(f[1]?`body.teachm #app,body.teachm #hdr h1,body.teachm #hdr nav,body.teachm #hdr .vctl,body.teachm #hdr .hsel,body.teachm #intro button{font-family:"${f[1]}",${SYS}}`:'')+`body.bpmf .zy{font-family:"${f[2]}",${SYS}}`;
+ if(st.textContent!==css)st.textContent=css;document.body.classList.toggle('teachm',mode==='teach')}
+function setTFont(k){tFont=k;try{localStorage.setItem('llm_tfont',k)}catch(e){}applyTFont();render();toast('上課字體：'+TFONTS[k][0])}
+function applyZy(){document.body.classList.toggle('bpmf',zyOn);applyTFont()}
 function toggleZy(){zyOn=!zyOn;try{localStorage.setItem('llm_bpmf',zyOn?'1':'0')}catch(x){}applyZy();render();toast(zyOn?'已開啟注音':'已關閉注音')}
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(mode==='teach')layout()});
 if(document.fonts&&document.fonts.addEventListener)document.fonts.addEventListener('loadingdone',()=>{if(mode==='teach')layout()});
