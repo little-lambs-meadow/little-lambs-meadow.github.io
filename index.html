@@ -1579,8 +1579,7 @@ function _doLogin() {
 function setupDlg() {
   openModal(`<h2>🐑 小羊樂園 初次設定</h2>
  <p class="muted">建立第一個管理帳號。主控和設計師都可以發驗證碼讓老師註冊、管理老師帳號和系統設定。</p>
- <label class="f">帳號（登入用，中文、英文、數字都可以）<input id="su_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
- <label class="f">稱呼（顯示在紀錄上，例如：Jimmy、林傳道）<input id="su_n"></label>
+ <label class="f">帳號（登入用，也是其他老師看到的名字）<input id="su_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
  <label class="f">身分<select id="su_r"><option value="admin">主控（負責同工、院長）</option><option value="designer">設計師（負責 app 程式）</option></select></label>
  <label class="f">設定密碼（至少 6 碼）<input id="su_p" type="password"></label>
  <label class="f">再輸入一次<input id="su_p2" type="password"></label>
@@ -1593,7 +1592,7 @@ function doSetup() {
 function _doSetup() {
   _doSetup = _asyncToGenerator(function* () {
     var a = val('su_a'),
-      n = val('su_n') || a,
+      n = a,
       p = document.getElementById('su_p').value;
     if (!a) {
       toast('請填帳號');
@@ -1625,8 +1624,7 @@ function applyDlg() {
   if (needCloud()) return;
   openModal(`<h2>🙋 申請老師帳號</h2>
  <p class="muted">填好後送出，主控或設計師的 app 會收到通知，按「核准」後你就能用這組帳號密碼登入。</p>
- <label class="f">帳號（登入用，中文、英文、數字都可以，自己記得就好）<input id="ap_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
- <label class="f">稱呼（顯示在紀錄上，例如：陳老師、美玲姊妹）<input id="ap_n"></label>
+ <label class="f">帳號（登入用，也是其他老師看到的名字，例如：陳老師）<input id="ap_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
  <label class="f">設定密碼（至少 6 碼）<input id="ap_p" type="password"></label>
  <label class="f">再輸入一次<input id="ap_p2" type="password"></label>
  <label class="f">給核准的人看的話（可不填，例如：我是幼兒班的助教）<input id="ap_m"></label>
@@ -1638,7 +1636,7 @@ function doApply() {
 function _doApply() {
   _doApply = _asyncToGenerator(function* () {
     var acc = val('ap_a'),
-      n = val('ap_n') || acc,
+      n = acc,
       p = document.getElementById('ap_p').value;
     if (!acc) {
       toast('請填帳號');
@@ -1654,7 +1652,7 @@ function _doApply() {
       return;
     }
     if (D.teachers.some(t => t.name === n)) {
-      toast('已經有同樣稱呼的老師，請換個稱呼');
+      toast('這個名字已經有人使用，請換一個');
       return;
     }
     D.teachers.push({
@@ -1699,7 +1697,7 @@ function rejectT(id) {
 function pendingCard() {
   var ps = pendingT();
   if (!ps.length) return '';
-  return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t => `<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="muted">帳號：${h(accOf(t))} · ${h(t.applied || '')} 申請</span>${t.applyNote ? `<div class="muted">「${h(t.applyNote)}」</div>` : ''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher">身分：老師</option><option value="admin">身分：主控（院長／負責同工）</option><option value="designer">身分：設計師</option></select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`;
+  return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t => `<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="muted">${accOf(t) !== t.name ? '帳號：' + h(accOf(t)) + ' · ' : ''}${h(t.applied || '')} 申請</span>${t.applyNote ? `<div class="muted">「${h(t.applyNote)}」</div>` : ''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher">身分：老師</option><option value="admin">身分：主控（院長／負責同工）</option><option value="designer">身分：設計師</option></select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`;
 }
 var _penSeen = -1;
 function pendingNotify() {
@@ -1714,8 +1712,7 @@ function registerDlg() {
   openModal(`<h2>🐑 老師註冊</h2>
  <p class="muted">請輸入主控同工給你的驗證碼（6 碼，限用一次）。</p>
  <label class="f">驗證碼<input id="rg_c" style="text-transform:uppercase;letter-spacing:4px;font-size:20px" maxlength="8"></label>
- <label class="f">帳號（登入用，中文、英文、數字都可以，自己記得就好）<input id="rg_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
- <label class="f">稱呼（顯示在紀錄上，例如：陳老師、美玲姊妹）<input id="rg_n"></label>
+ <label class="f">帳號（登入用，也是其他老師看到的名字，例如：陳老師）<input id="rg_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
  <label class="f">設定密碼（至少 6 碼）<input id="rg_p" type="password"></label>
  <label class="f">再輸入一次<input id="rg_p2" type="password"></label>
  <div class="actions"><button class="blue" onclick="doRegister()">註冊</button><button class="ghost" onclick="loginDlg()">返回登入</button></div>`);
@@ -1727,7 +1724,7 @@ function _doRegister() {
   _doRegister = _asyncToGenerator(function* () {
     var code = val('rg_c').toUpperCase().replace(/\s/g, ''),
       acc = val('rg_a'),
-      n = val('rg_n') || acc,
+      n = acc,
       p = document.getElementById('rg_p').value;
     var inv = D.invites.find(i => i.code === code);
     if (!inv && Cloud.pw) {
@@ -1756,7 +1753,7 @@ function _doRegister() {
       return;
     }
     if (D.teachers.some(t => t.name === n)) {
-      toast('已經有同樣稱呼的老師，請換個稱呼');
+      toast('這個名字已經有人使用，請換一個');
       return;
     }
     if (!pwOk(p, document.getElementById('rg_p2').value)) return;
@@ -3317,7 +3314,7 @@ var LESSON_EDIT_FIELDS = () => {
   var d = f.find(x => x[0] === 'date');
   return [d].concat(f.filter(x => x !== d));
 };
-var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['songIds', '本課詩歌', 'checks', D.songs.map(s => s.title)], ['prayer', '⑧ 結束禱告（空白就用設定裡的預設禱告）', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
+var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['songIds', '本課詩歌', 'checks', D.songs.map(s => s.title)], ['prayer', '⑧ 結束禱告', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
 /* 年度規劃：每個年度都是同樣的課，各自標記「要上／不上」、各自的上課日期
    isSkip(l,y)：y 年不上；dateIn(l,y)：y 年排的上課日期；taughtDate(l,y)：y 年已上（日期已過或有上課紀錄） */
 var curYear = () => today().slice(0, 4);
@@ -4080,14 +4077,13 @@ function pSettings() {
  <div class="row"><input id="iv_note" class="sp" placeholder="給誰（例如：陳姊妹）"><button class="blue" onclick="genInvite()">產生驗證碼</button></div>
  ${open.map(i => `<div class="row card" style="margin:8px 0"><b style="font-size:22px;letter-spacing:3px;font-family:monospace">${i.code}</b><span class="sp muted">${h(i.note)} · ${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效</span><button class="sm ghost" onclick="copyInvite('${i.code}')">複製訊息</button><button class="sm danger" onclick="revokeInvite('${i.code}')">作廢</button></div>`).join('')}
  ${used.length ? `<div class="muted" style="margin-top:6px">最近使用：${used.map(i => `${i.code} → ${h(i.usedBy)}（${h(i.usedAt)}）`).join('、')}</div>` : ''}</div>
- ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t => !t.pending).map(t => `<tr style="${t.active === false ? 'opacity:.5' : ''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role) ? 't' : 'o'}">${roleName(t)}</span> <span class="muted">帳號：${h(accOf(t))}</span>${t.active === false ? ' <span class="tag">已停用</span>' : ''}<div class="muted">${h(t.created || '')} 加入</div></td>
+ ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t => !t.pending).map(t => `<tr style="${t.active === false ? 'opacity:.5' : ''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role) ? 't' : 'o'}">${roleName(t)}</span> ${accOf(t) !== t.name ? `<span class="muted">帳號：${h(accOf(t))}</span>` : ''}${t.active === false ? ' <span class="tag">已停用</span>' : ''}<div class="muted">${h(t.created || '')} 加入</div></td>
  <td style="text-align:right">${t.name === user ? '<span class="muted">（你）</span>' : `<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).map(r => `<option value="${r}" ${(t.role || 'teacher') === r ? 'selected' : ''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active === false ? 'ghost' : 'danger'}" onclick="toggleT('${t.id}')">${t.active === false ? '啟用' : '停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
  <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議。</p></div>
 ` : ''}
  <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
  <label class="f">① 主日學規則（一行一條，上課時大家一起念）<textarea id="st_rules">${h((S.rules || []).join('\n'))}</textarea></label>
  <label class="f">① 參加主日學的原因（一行一條，顯示在規則下面）<textarea id="st_reasons">${h((S.reasons || []).join('\n'))}</textarea></label>
- <label class="f">⑧ 預設結束禱告<textarea id="st_pray">${h(S.prayer || '')}</textarea></label>
  ${authOn() ? '' : `<label class="f">老師名單（一行一位，用於上課紀錄與會議）<textarea id="st_tn">${h((S.teacherNames || []).join('\n'))}</textarea></label>`}
  ${authOn() ? `<label class="f"><input type="checkbox" id="st_r" ${S.requireLogin ? 'checked' : ''}> 教學模式點名加點需要老師登入</label>` : ''}
  <div class="row"><label class="f">報到截止時間<input id="st_cut" type="time" value="${h(S.cutoff)}"></label><label class="f">準時報到點數<input id="st_on" type="number" value="${S.onPts}"></label><label class="f">晚到報到點數<input id="st_late" type="number" value="${S.latePts}"></label></div><label class="f">每日點數上限（每個孩子一天最多得幾點，0＝不限）<input id="st_cap" type="number" min="0" value="${S.dailyCap || 0}"></label><p class="muted">準時與晚到不重複計算；其他項目每人每天各算一次。補登舊點數、扣點、兌換不受上限影響。</p>
@@ -4204,7 +4200,6 @@ function saveSettings() {
   S.church = v('st_c').trim() || '小羊樂園';
   S.rules = v('st_rules').split('\n').map(x => x.trim()).filter(Boolean);
   S.reasons = v('st_reasons').split('\n').map(x => x.trim()).filter(Boolean);
-  S.prayer = v('st_pray').trim() || DEFAULT_PRAYER;
   var r = document.getElementById('st_r');
   if (r) S.requireLogin = r.checked;
   var tn = document.getElementById('st_tn');
