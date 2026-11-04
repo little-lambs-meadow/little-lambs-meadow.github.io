@@ -1005,7 +1005,7 @@ function ytId(u) {
 function ytQueue(ids) {
   if (!ids.length) return null;
   var key = 'Q_' + ids.join('').slice(0, 40);
-  return ytReg(key, 'https://www.youtube.com/embed/' + ids[0] + (ids.length > 1 ? '?playlist=' + ids.slice(1).join(',') : ''), 'https://i.ytimg.com/vi/' + ids[0] + '/hqdefault.jpg', 'https://www.youtube.com/watch_videos?video_ids=' + ids.join(','));
+  return ytReg(key, 'https://www.youtube.com/embed/' + ids[0] + (ids.length > 1 ? '?playlist=' + ids.join(',') : ''), 'https://i.ytimg.com/vi/' + ids[0] + '/hqdefault.jpg', 'https://www.youtube.com/watch_videos?video_ids=' + ids.join(','));
 }
 function ytBox(key) {
   var y = YTMAP[key] || {};

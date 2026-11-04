@@ -429,7 +429,7 @@ function ytId(u){u=String(u||'');
  return ytReg(key,v?'https://www.youtube.com/embed/'+v+(l?'?list='+l:''):'https://www.youtube.com/embed/videoseries?list='+l,
   v?'https://i.ytimg.com/vi/'+v+'/hqdefault.jpg':'',v?'https://www.youtube.com/watch?v='+v+(l?'&list='+l:''):'https://www.youtube.com/playlist?list='+l)}
 function ytQueue(ids){if(!ids.length)return null;const key='Q_'+ids.join('').slice(0,40);
- return ytReg(key,'https://www.youtube.com/embed/'+ids[0]+(ids.length>1?'?playlist='+ids.slice(1).join(','):''),'https://i.ytimg.com/vi/'+ids[0]+'/hqdefault.jpg','https://www.youtube.com/watch_videos?video_ids='+ids.join(','))}
+ return ytReg(key,'https://www.youtube.com/embed/'+ids[0]+(ids.length>1?'?playlist='+ids.join(','):''),'https://i.ytimg.com/vi/'+ids[0]+'/hqdefault.jpg','https://www.youtube.com/watch_videos?video_ids='+ids.join(','))}
 function ytBox(key){const y=YTMAP[key]||{};
  return `<div class="video" id="vid_${key}" onclick="playInline('${key}')">${y.thumb?`<img src="${y.thumb}" alt="">`:'<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:#1f1b2e"></div>'}<div class="play">▶</div></div>`}
 function ytSrc(key){const s=YTMAP[key].src;return s+(s.indexOf('?')>=0?'&':'?')+'autoplay=1&rel=0'}
