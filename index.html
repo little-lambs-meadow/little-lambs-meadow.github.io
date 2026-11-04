@@ -56,10 +56,10 @@ body.bpmf .zy .zh,body.bpmf .zy .en,body.bpmf .zy b{font-weight:400}
 body.bpmf .zy .en,body.bpmf .zy .ref{font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
 .zybtn.on{background:#fff;color:#e2572a}
 .proj .en{line-height:1.45}.tok.tap{cursor:pointer}.tok.tap:hover{text-decoration:underline dotted}
-.rules1{text-align:center;justify-content:center}.rules1 .rhd{color:#f2c46b;white-space:nowrap;margin-bottom:.15em}
+.rules1{text-align:center;justify-content:center}.rules1 .rhd{color:#d9541e;white-space:nowrap;margin-bottom:.15em}
 .rules1 ol{margin:0;padding:0;list-style:none;counter-reset:rn}.rules1 li{counter-increment:rn;white-space:nowrap;line-height:1.55}.rules1 li::before{content:counter(rn) ". "}
-.rules2{display:flex;flex-direction:column;align-items:center;text-align:center}.rules2 .rcol{width:100%}.rules2 .rhd{color:#f2c46b;margin-bottom:.15em}
-.rules2 .rsep{width:40%;border-top:2px dashed rgba(255,255,255,0.25);margin:.45em auto}.rules2 ol{margin:0;padding:0;list-style:none;counter-reset:rn}.rules2 li{counter-increment:rn}.rules2 li::before{content:counter(rn) ". "}
+.rules2{display:flex;flex-direction:column;align-items:center;text-align:center}.rules2 .rcol{width:100%}.rules2 .rhd{color:#d9541e;margin-bottom:.15em}
+.rules2 .rsep{width:40%;border-top:2px dashed rgba(0,0,0,0.16);margin:.45em auto}.rules2 ol{margin:0;padding:0;list-style:none;counter-reset:rn}.rules2 li{counter-increment:rn}.rules2 li::before{content:counter(rn) ". "}
 .tok.say{background:#f2c46b;color:#1f1b2e;border-radius:4px}
 .video{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000}
 .video:fullscreen{padding-top:0!important;border-radius:0;width:100%!important;height:100%!important}.video:-webkit-full-screen{padding-top:0!important;border-radius:0;width:100%!important;height:100%!important}
@@ -85,9 +85,9 @@ td,th{padding:7px 6px;border-bottom:1px solid #e6ddd0;text-align:left;vertical-a
 th{font-size:12px;color:#7a7068;font-weight:600}
 /* 投影 */
 .proj{background:#1f1b2e;color:#fff;border-radius:16px;padding:28px 20px;text-align:center;min-height:260px;display:flex;flex-direction:column;justify-content:center}
-.proj .ref{color:#f2c46b;font-size:18px;margin-top:14px}
+.proj .ref{color:#c2410c;font-size:18px;margin-top:14px}
 .proj .zh{font-size:34px;font-size:clamp(24px,5vw,44px);font-weight:700;line-height:1.5}
-.proj .en{font-size:24px;font-size:clamp(18px,3.4vw,30px);margin-top:12px;color:#d8d4ee}
+.proj .en{font-size:24px;font-size:clamp(18px,3.4vw,30px);margin-top:12px;color:#3d3566}
 .tok{cursor:pointer;border-radius:4px}
 .tok.hid{background:#f2c46b;color:transparent;user-select:none}
 .lyrics{background:#1f1b2e;color:#fff;border-radius:16px;padding:24px;white-space:pre-wrap;text-align:center;line-height:1.8}
@@ -186,8 +186,8 @@ body.sbig .muted,body.sbig label.f,body.sbig .panel label.f{color:#4a423b}
 .notice{background:#fff1df;border-radius:10px;padding:10px 12px;font-size:14px}
 a{color:#2a6fd6}
 /* 毛玻璃：上課畫面的面板半透明，透出背景圖 */
-main.teach .bigcard,main.teach .proj,main.teach .lyrics{background:rgba(31,27,46,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);box-shadow:0 6px 24px rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.18);text-shadow:0 2px 6px rgba(0,0,0,.6)}
-main.teach .qcard{background:rgba(255,255,255,.68);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+main.teach .bigcard,main.teach .proj,main.teach .lyrics{background:rgba(255,255,255,.75);color:#2b2622;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);box-shadow:0 6px 24px rgba(0,0,0,.12);border:1px solid rgba(255,255,255,.6);text-shadow:0 1px 2px rgba(255,255,255,.7)}
+main.teach .qcard{background:rgba(255,255,255,.75);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 main.teach .kid{background:rgba(255,255,255,.8)}main.teach .kid.here{background:rgba(239,250,243,.88)}main.teach .kid.here.late{background:rgba(255,244,214,.88)}
 main.teach .card{background:rgba(255,255,255,.75);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 /* ===== 手機版 ===== */
@@ -2152,13 +2152,13 @@ function tIce() {
   var st = l.expSteps || [];
   return stepPage(`${l.iceName ? `<div class="tbar" style="font-size:24px;font-weight:700">🎲 ${h(l.iceName)}</div>` : ''}
   ${st.length ? `<div class="bigcard fit" data-max="34"><ol>${st.map(x => `<li>${h(x)}</li>`).join('')}</ol>
-   ${l.props && l.props.length ? `<div style="color:#f2c46b;margin-top:.4em;font-size:.75em">🧰 道具：${l.props.map(h).join('、')}</div>` : ''}
-   ${l.safety ? `<div style="color:#ffcf9e;font-size:.75em">⚠️ ${h(l.safety)}</div>` : ''}</div>` : '<div class="empty">這一課還沒有寫破冰遊戲</div>'}`);
+   ${l.props && l.props.length ? `<div style="color:#c2410c;margin-top:.4em;font-size:.75em">🧰 道具：${l.props.map(h).join('、')}</div>` : ''}
+   ${l.safety ? `<div style="color:#b45309;font-size:.75em">⚠️ ${h(l.safety)}</div>` : ''}</div>` : '<div class="empty">這一課還沒有寫破冰遊戲</div>'}`);
 }
 function tIntro() {
   var l = cur();
   var t = l.intro || l.story;
-  return stepPage(`<div class="bigcard fit zy" data-max="40"><div style="font-size:1.25em;font-weight:700">${h(l.title)}</div><div style="color:#f2c46b;font-size:.7em;margin-bottom:.4em">📜 ${h(l.scripture)}</div>
+  return stepPage(`<div class="bigcard fit zy" data-max="40"><div style="font-size:1.25em;font-weight:700">${h(l.title)}</div><div style="color:#c2410c;font-size:.7em;margin-bottom:.4em">📜 ${h(l.scripture)}</div>
   <div class="pre">${h(t) || '（這一課還沒有寫前言）'}</div></div>`);
 }
 /* ===== 超級妙妙書 67 集：雲端硬碟（主要）＋ 官網（備用，第一～四季） ===== */
@@ -2931,7 +2931,7 @@ function tQA() {
 function tPray() {
   var l = cur();
   return stepPage(`<div class="bigcard fit zy" data-max="36"><div style="text-align:center;font-size:1.4em">🙏</div><div class="pre">${h(l.prayer || D.settings.prayer)}</div>
-  <div style="text-align:center;margin-top:.6em;color:#f2c46b">🐑 下課囉！我們下週見 👋</div></div>`);
+  <div style="text-align:center;margin-top:.6em;color:#d9541e">🐑 下課囉！我們下週見 👋</div></div>`);
 }
 function fsEl(sel) {
   var e = document.querySelector(sel);
