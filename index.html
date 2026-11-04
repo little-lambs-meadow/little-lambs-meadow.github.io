@@ -1667,6 +1667,7 @@ function stepPage(body, needLesson) {
   return `<div class="stage"><div class="fill">${needLesson !== false && !l.id ? '<div class="empty">還沒有課程，請老師到「老師區 → 備課」新增</div>' : body}</div>
   </div>`;
 }
+var DVH = !!(window.CSS && CSS.supports && CSS.supports('height', '100dvh'));
 function layout() {
   var m = document.getElementById('app');
   if (mode !== 'teach') {
@@ -1677,8 +1678,14 @@ function layout() {
   }
   m.className = 'teach';
   document.body.style.overflow = 'hidden';
-  var vh = window.visualViewport && window.visualViewport.height || window.innerHeight;
-  m.style.height = Math.max(160, Math.min(vh, window.innerHeight) - document.getElementById('hdr').offsetHeight) + 'px';
+  var hh = document.getElementById('hdr').offsetHeight;
+  /* 轉向後 iPhone 會晚一點才回報新高度：能用 dvh 就交給瀏覽器（轉向時自動跟著變），不能用才用量到的最小值 */
+  if (DVH) m.style.height = 'calc(100dvh - ' + hh + 'px)';else {
+    var vv = window.visualViewport;
+    var vh = Math.min(window.innerHeight, vv ? vv.height : 1e9, document.documentElement.clientHeight || 1e9);
+    m.style.height = Math.max(160, vh - hh) + 'px';
+  }
+  if (window.scrollY) window.scrollTo(0, 0);
   document.querySelectorAll('.vwrap').forEach(w => {
     var v = w.querySelector('.video');
     if (!v) return;
@@ -1717,7 +1724,7 @@ function relayout() {
     }
   };
   go();
-  _rlT = [80, 250, 500, 900].map(t => setTimeout(go, t));
+  _rlT = [80, 250, 500, 900, 1400, 2200].map(t => setTimeout(go, t));
 }
 /* ===== 整個 app 全螢幕（電腦版） ===== */
 function curFs() {
@@ -1758,6 +1765,12 @@ document.addEventListener('fullscreenchange', () => {
 window.addEventListener('resize', relayout);
 window.addEventListener('orientationchange', relayout);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', relayout);
+try {
+  matchMedia('(orientation: portrait)').addListener(relayout);
+} catch (e) {}
+try {
+  screen.orientation && screen.orientation.addEventListener('change', relayout);
+} catch (e) {}
 if (window.matchMedia) {
   var mq = window.matchMedia('(orientation: portrait)');
   if (mq.addEventListener) mq.addEventListener('change', relayout);else if (mq.addListener) mq.addListener(relayout);

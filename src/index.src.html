@@ -635,11 +635,16 @@ function stepPage(body,needLesson){
  const i=stepIdx();const n=STEPS[i][1];const prev=STEPS[i-1],next=STEPS[i+1];const l=cur();
  return `<div class="stage"><div class="fill">${needLesson!==false&&!l.id?'<div class="empty">還沒有課程，請老師到「老師區 → 備課」新增</div>':body}</div>
   </div>`}
+const DVH=!!(window.CSS&&CSS.supports&&CSS.supports('height','100dvh'));
 function layout(){
  const m=document.getElementById('app');
  if(mode!=='teach'){m.className='';m.style.height='';document.body.style.overflow='';return}
  m.className='teach';document.body.style.overflow='hidden';
- const vh=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;m.style.height=Math.max(160,Math.min(vh,window.innerHeight)-document.getElementById('hdr').offsetHeight)+'px';
+ const hh=document.getElementById('hdr').offsetHeight;
+ /* 轉向後 iPhone 會晚一點才回報新高度：能用 dvh 就交給瀏覽器（轉向時自動跟著變），不能用才用量到的最小值 */
+ if(DVH)m.style.height='calc(100dvh - '+hh+'px)';
+ else{const vv=window.visualViewport;const vh=Math.min(window.innerHeight,vv?vv.height:1e9,document.documentElement.clientHeight||1e9);m.style.height=Math.max(160,vh-hh)+'px'}
+ if(window.scrollY)window.scrollTo(0,0);
  document.querySelectorAll('.vwrap').forEach(w=>{const v=w.querySelector('.video');if(!v)return;const W=w.clientWidth,H=w.clientHeight;const vw=Math.max(160,Math.min(W,H*16/9));v.style.width=vw+'px';v.style.height=(vw*9/16)+'px';v.style.paddingTop='0'});
  document.querySelectorAll('.fit').forEach(fitText);
 }
@@ -648,7 +653,7 @@ function fitText(e){if(window.innerWidth<=600&&e.classList.contains('kidsfit')){
 /* 翻轉手機／平板時，瀏覽器的新尺寸要過一下子才會到位：分幾次重新排版，等尺寸穩定 */
 let _rlT=[];function relayout(){_rlT.forEach(clearTimeout);if(elFs())return;
  const go=()=>{if(mode==='teach')layout();const n=document.querySelector('header nav .on');if(n){const p=n.parentNode;p.scrollLeft=n.offsetLeft-(p.clientWidth-n.offsetWidth)/2}};
- go();_rlT=[80,250,500,900].map(t=>setTimeout(go,t))}
+ go();_rlT=[80,250,500,900,1400,2200].map(t=>setTimeout(go,t))}
 /* ===== 整個 app 全螢幕（電腦版） ===== */
 function curFs(){return document.fullscreenElement||document.webkitFullscreenElement||null}
 function elFs(){const e=curFs();return e&&e!==document.documentElement?e:null}  // 影片或投影等「單一元件」的全螢幕
@@ -667,6 +672,8 @@ document.addEventListener('fullscreenchange',()=>{const m=document.getElementByI
 window.addEventListener('resize',relayout);
 window.addEventListener('orientationchange',relayout);
 if(window.visualViewport)window.visualViewport.addEventListener('resize',relayout);
+try{matchMedia('(orientation: portrait)').addListener(relayout)}catch(e){}
+try{screen.orientation&&screen.orientation.addEventListener('change',relayout)}catch(e){}
 if(window.matchMedia){const mq=window.matchMedia('(orientation: portrait)');if(mq.addEventListener)mq.addEventListener('change',relayout);else if(mq.addListener)mq.addListener(relayout)}
 document.addEventListener('fullscreenchange',()=>setTimeout(relayout,300));document.addEventListener('webkitfullscreenchange',()=>setTimeout(relayout,300));
 function tRules(){const r=D.settings.rules||[],w=D.settings.reasons||[];
