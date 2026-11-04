@@ -540,6 +540,7 @@ function render(){applyZy();applyStaffFs();setTimeout(pendingNotify,0);
  const f={rules:tRules,worship:tWorship,ice:tIce,intro:tIntro,video:tVideo,qa:tQA,pray:tPray,lesson:tLesson,verse:tVerse,song:tSong,points:tPoints,rank:tRank,lessons:pLessons,songs:pSongs,shows:pShows,kids:pKids,sessions:pSessions,meetings:pMeetings,meeting:pMeeting,settings:pSettings}[tab];
  document.getElementById('app').innerHTML=f?f():'';
  layout();
+ if(mode==='staff'&&isHelper()&&['sessions','meetings','meeting'].indexOf(tab)>=0)helperRO();
 }
 /* 下拉選單的寬度剛好放得下目前選的那一課（不留一大段空白） */
 function fitSel(el,pad){if(!el||el.selectedIndex<0)return;const sp=document.createElement('span');const cs=getComputedStyle(el);
@@ -566,6 +567,11 @@ function menuHtml(){const it=(ic,t,fn,cls)=>`<button class="${cls||''}" onclick=
  if(mode==='teach'){o+=it('🐑',user||!authOn()?'老師區':'老師登入','enterStaff()','mmain');if(authOn()&&user)o+=it('🚪','登出','logout()')}
  else{o+=`<div class="mfs"><span class="mi">🔠</span>字體${[['n','標準'],['l','大'],['xl','特大']].map(([k,t])=>`<button class="${staffFs===k?'on':''}" onclick="event.stopPropagation();setStaffFs('${k}')">${t}</button>`).join('')}</div><hr>`;o+=it('📺','回到教學模式','setMode(\'teach\')','mmain');if(authOn()&&user)o+=it('🚪','登出','logout()')}
  return o}
+/* 小助教看上課紀錄／會議：拿掉新增、編輯、輸入的按鈕和欄位，只留觀看用的（進入會議、返回、整合會議記錄、孩子紀錄） */
+function helperRO(){const app=document.getElementById('app');
+ app.querySelectorAll('button').forEach(b=>{const o=b.getAttribute('onclick')||'';if(!/go\('meeting|curMeeting=|^render\(\)$|kidHist\(|compileDlg/.test(o))b.remove()});
+ app.querySelectorAll('input,select,textarea').forEach(e=>e.remove());
+ if(!app.querySelector('.ro-note'))app.insertAdjacentHTML('afterbegin','<div class="notice ro-note" style="margin-bottom:10px">👀 小助教只能觀看，不能新增或修改</div>')}
 function go(t){if(t==='rules'&&tab!=='rules')rulePg=0;Cloud.needRender=false;tab=t;render();scrollTo(0,0)}
 /* 進老師區：必須先連上雲端（拿到最新的登入設定），啟用登入時一定要登入 */
 function enterStaff(){
@@ -580,7 +586,7 @@ const activeT=()=>D.teachers.filter(t=>t.active!==false);
 const me=()=>D.teachers.find(t=>t.name===user);
 const authOn=()=>!!D.settings.auth;
 const ROLES={admin:'主控',designer:'設計師',teacher:'老師',helper:'小助教'};
-const HELPER_TABS=['kids','settings'];  // 小助教：只幫忙登記點數（上課點名加點＋老師區的孩子點數）
+const HELPER_TABS=['kids','sessions','meetings','meeting','settings'];  // 上課紀錄、會議：小助教只能看  // 小助教：只幫忙登記點數（上課點名加點＋老師區的孩子點數）
 const isHelper=()=>authOn()&&(me()||{}).role==='helper';
 const isAdminRole=r=>r==='admin'||r==='designer';
 const isAdmin=()=>!authOn()||isAdminRole((me()||{}).role);
@@ -1185,7 +1191,7 @@ function pSessions(){
  ${(s.kidNotes||[]).length?`<div class="sec"><h4>個別孩子</h4>${s.kidNotes.map(n=>`<div>${n.flag?'⚠️ ':''}<b>${h((kid(n.kidId)||{}).name||'?')}</b>：${h(n.note)}</div>`).join('')}</div>`:''}</div>`}).join('')||'<div class="empty">還沒有上課紀錄</div>'}`;
 }
 let sessAll=false;
-function sessionDlg(id,preset){
+function sessionDlg(id,preset){if(isHelper()){toast('小助教只能觀看，不能編輯');return}
  const s=preset||(id?D.sessions.find(x=>x.id===id):{date:today(),lessonId:(thisWeek()||{}).id,teachers:[who()].filter(n=>teacherNames().includes(n)),learn:'',order:'',diff:'',pray:'',handover:'',kidNotes:[]});
  window._sess={id,s,date:s.date};
  const present=Object.keys(D.attend[s.date]||{}).length?Object.keys(D.attend[s.date]):(s.attendance||[]);  // 沒有點名資料的舊紀錄（例如紙本匯入）用存下來的名單
@@ -1216,7 +1222,7 @@ function readSess(){const s=window._sess.s;
  v.kidNotes=[...document.querySelectorAll('.kn')].map(e=>({kidId:e.dataset.k,note:e.value.trim(),flag:flags[e.dataset.k]})).filter(n=>n.note||n.flag);
  return v}
 function keepSess(){const v=readSess();sessionDlg(window._sess.id,{...window._sess.s,...v})}
-function saveSession(){const v=readSess();const {id}=window._sess;
+function saveSession(){if(isHelper()){toast('小助教只能觀看，不能編輯');return}const v=readSess();const {id}=window._sess;
  const pres=Object.keys(D.attend[v.date]||{});const old=id&&D.sessions.find(x=>x.id===id);
  v.attendance=pres.length||!old?pres:(old.attendance||[]);v.by=who();  // 舊紀錄當天沒有點名資料時，保留原本的名單
  if(id)Object.assign(D.sessions.find(x=>x.id===id),v);else D.sessions.push({id:uid(),...v});
@@ -1229,14 +1235,14 @@ function pMeetings(){
  <p class="muted">開會時每位老師用自己的手機進入同一個會議，各自在議程下輸入意見、決議、待辦，幾秒內大家都看得到，最後按「整合會議記錄」合成一份。</p>
  ${[...D.meetings].sort((a,b)=>b.date.localeCompare(a.date)).map(m=>`<div class="card row"><div class="sp"><b>${h(m.title)}</b><div class="muted">${h(m.date)} · ${m.agenda.length} 項議程 · ${m.entries.length} 則紀錄</div></div><button class="sm blue" onclick="curMeeting='${m.id}';go('meeting')">進入</button>${canEditMeeting(m)?` <button class="sm ghost" onclick="editMeeting('${m.id}')">編輯</button> <button class="sm danger" onclick="delMeeting('${m.id}')">刪除</button>`:''}</div>`).join('')||'<div class="empty">還沒有會議</div>'}`;
 }
-function newMeeting(){form('新會議',[['title','會議名稱'],['date','日期','date'],['agenda','議程（一行一項）','lines']],{date:today(),title:'主日學同工會'},v=>{
+function newMeeting(){if(isHelper()){toast('小助教只能觀看，不能編輯');return}form('新會議',[['title','會議名稱'],['date','日期','date'],['agenda','議程（一行一項）','lines']],{date:today(),title:'主日學同工會'},v=>{
  if(!v.title)return false;const m={id:uid(),by:who(),title:v.title,date:v.date,agenda:v.agenda.map(t=>({id:uid(),title:t})),entries:[]};if(!m.agenda.length)m.agenda.push({id:uid(),title:'一般討論'});
  D.meetings.push(m);curMeeting=m.id;tab='meeting';save('新增會議 '+v.title)})}
 function canEditMeeting(m){return isAdmin()||!m.by||m.by===who()}
 function delMeeting(id){const m=D.meetings.find(x=>x.id===id);if(!m)return;
  if(!confirm(`確定要刪除「${m.title}」（${m.date}）？\n裡面 ${m.entries.length} 則紀錄會一起刪除，所有裝置都會同步刪除，無法復原。`))return;
  D.meetings=D.meetings.filter(x=>x.id!==id);if(curMeeting===id)tab='meetings';save('刪除會議 '+m.title+'（'+m.date+'）');render();toast('已刪除會議')}
-function editMeeting(id){const m=D.meetings.find(x=>x.id===id);
+function editMeeting(id){if(isHelper()){toast('小助教只能觀看，不能編輯');return}const m=D.meetings.find(x=>x.id===id);
  form('編輯會議',[['title','會議名稱'],['date','日期','date'],['agenda','議程（一行一項；刪掉的議程，底下的紀錄也會一起刪除）','lines']],{title:m.title,date:m.date,agenda:m.agenda.map(a=>a.title)},v=>{
   if(!v.title){toast('請填會議名稱');return false}
   const old=m.agenda.slice();const used={};
@@ -1256,11 +1262,11 @@ function pMeeting(){
   <div class="row" id="td_${a.id}" style="display:none;margin-top:6px"><input id="ow_${a.id}" placeholder="負責人" style="width:110px"><input id="du_${a.id}" type="date"></div></div>`}).join('')}
  <div class="row"><input id="newAg" class="sp" placeholder="臨時動議／新增議程"><button class="ghost" onclick="const v=document.getElementById('newAg').value.trim();if(v){D.meetings.find(x=>x.id==='${m.id}').agenda.push({id:uid(),title:v});save();render()}">＋議程</button></div>`;
 }
-function addEntry(aid){if(!authOn()&&!myName){toast('請先在上方選擇「我是」哪位老師');return}const m=D.meetings.find(x=>x.id===curMeeting);const g=k=>document.getElementById(k+'_'+aid).value.trim();
+function addEntry(aid){if(isHelper()){toast('小助教只能觀看，不能編輯');return}if(!authOn()&&!myName){toast('請先在上方選擇「我是」哪位老師');return}const m=D.meetings.find(x=>x.id===curMeeting);const g=k=>document.getElementById(k+'_'+aid).value.trim();
  const text=g('tx');if(!text)return;const type=document.getElementById('ty_'+aid).value;
  m.entries.push({id:uid(),aid,type,text,owner:type==='待辦'?g('ow'):'',due:type==='待辦'?g('du'):'',by:who(),ts:Date.now()});save();render();
  const n=document.getElementById('tx_'+aid);n&&n.focus()}
-function delEntry(id){const m=D.meetings.find(x=>x.id===curMeeting);m.entries=m.entries.filter(e=>e.id!==id);save();render()}
+function delEntry(id){if(isHelper()){toast('小助教只能觀看，不能編輯');return}const m=D.meetings.find(x=>x.id===curMeeting);m.entries=m.entries.filter(e=>e.id!==id);save();render()}
 function compileMeeting(m){
  const ppl=[...new Set(m.entries.map(e=>e.by))];const E=t=>m.entries.filter(e=>e.type===t);
  let s=`【${m.title}】會議記錄\n日期：${m.date}\n參與：${ppl.join('、')}\n\n`;

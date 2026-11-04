@@ -1358,6 +1358,7 @@ function render() {
   }[tab];
   document.getElementById('app').innerHTML = f ? f() : '';
   layout();
+  if (mode === 'staff' && isHelper() && ['sessions', 'meetings', 'meeting'].indexOf(tab) >= 0) helperRO();
 }
 /* 下拉選單的寬度剛好放得下目前選的那一課（不留一大段空白） */
 function fitSel(el, pad) {
@@ -1427,6 +1428,16 @@ function menuHtml() {
   }
   return o;
 }
+/* 小助教看上課紀錄／會議：拿掉新增、編輯、輸入的按鈕和欄位，只留觀看用的（進入會議、返回、整合會議記錄、孩子紀錄） */
+function helperRO() {
+  var app = document.getElementById('app');
+  app.querySelectorAll('button').forEach(b => {
+    var o = b.getAttribute('onclick') || '';
+    if (!/go\('meeting|curMeeting=|^render\(\)$|kidHist\(|compileDlg/.test(o)) b.remove();
+  });
+  app.querySelectorAll('input,select,textarea').forEach(e => e.remove());
+  if (!app.querySelector('.ro-note')) app.insertAdjacentHTML('afterbegin', '<div class="notice ro-note" style="margin-bottom:10px">👀 小助教只能觀看，不能新增或修改</div>');
+}
 function go(t) {
   if (t === 'rules' && tab !== 'rules') rulePg = 0;
   Cloud.needRender = false;
@@ -1466,7 +1477,7 @@ var ROLES = {
   teacher: '老師',
   helper: '小助教'
 };
-var HELPER_TABS = ['kids', 'settings']; // 小助教：只幫忙登記點數（上課點名加點＋老師區的孩子點數）
+var HELPER_TABS = ['kids', 'sessions', 'meetings', 'meeting', 'settings']; // 上課紀錄、會議：小助教只能看  // 小助教：只幫忙登記點數（上課點名加點＋老師區的孩子點數）
 var isHelper = () => authOn() && (me() || {}).role === 'helper';
 var isAdminRole = r => r === 'admin' || r === 'designer';
 var isAdmin = () => !authOn() || isAdminRole((me() || {}).role);
@@ -3860,6 +3871,10 @@ function pSessions() {
 }
 var sessAll = false;
 function sessionDlg(id, preset) {
+  if (isHelper()) {
+    toast('小助教只能觀看，不能編輯');
+    return;
+  }
   var s = preset || (id ? D.sessions.find(x => x.id === id) : {
     date: today(),
     lessonId: (thisWeek() || {}).id,
@@ -3920,6 +3935,10 @@ function keepSess() {
   sessionDlg(window._sess.id, _objectSpread(_objectSpread({}, window._sess.s), v));
 }
 function saveSession() {
+  if (isHelper()) {
+    toast('小助教只能觀看，不能編輯');
+    return;
+  }
   var v = readSess();
   var id = window._sess.id;
   var pres = Object.keys(D.attend[v.date] || {});
@@ -3949,6 +3968,10 @@ function pMeetings() {
  ${[...D.meetings].sort((a, b) => b.date.localeCompare(a.date)).map(m => `<div class="card row"><div class="sp"><b>${h(m.title)}</b><div class="muted">${h(m.date)} · ${m.agenda.length} 項議程 · ${m.entries.length} 則紀錄</div></div><button class="sm blue" onclick="curMeeting='${m.id}';go('meeting')">進入</button>${canEditMeeting(m) ? ` <button class="sm ghost" onclick="editMeeting('${m.id}')">編輯</button> <button class="sm danger" onclick="delMeeting('${m.id}')">刪除</button>` : ''}</div>`).join('') || '<div class="empty">還沒有會議</div>'}`;
 }
 function newMeeting() {
+  if (isHelper()) {
+    toast('小助教只能觀看，不能編輯');
+    return;
+  }
   form('新會議', [['title', '會議名稱'], ['date', '日期', 'date'], ['agenda', '議程（一行一項）', 'lines']], {
     date: today(),
     title: '主日學同工會'
@@ -3989,6 +4012,10 @@ function delMeeting(id) {
   toast('已刪除會議');
 }
 function editMeeting(id) {
+  if (isHelper()) {
+    toast('小助教只能觀看，不能編輯');
+    return;
+  }
   var m = D.meetings.find(x => x.id === id);
   form('編輯會議', [['title', '會議名稱'], ['date', '日期', 'date'], ['agenda', '議程（一行一項；刪掉的議程，底下的紀錄也會一起刪除）', 'lines']], {
     title: m.title,
@@ -4049,6 +4076,10 @@ function pMeeting() {
  <div class="row"><input id="newAg" class="sp" placeholder="臨時動議／新增議程"><button class="ghost" onclick="const v=document.getElementById('newAg').value.trim();if(v){D.meetings.find(x=>x.id==='${m.id}').agenda.push({id:uid(),title:v});save();render()}">＋議程</button></div>`;
 }
 function addEntry(aid) {
+  if (isHelper()) {
+    toast('小助教只能觀看，不能編輯');
+    return;
+  }
   if (!authOn() && !myName) {
     toast('請先在上方選擇「我是」哪位老師');
     return;
@@ -4074,6 +4105,10 @@ function addEntry(aid) {
   n && n.focus();
 }
 function delEntry(id) {
+  if (isHelper()) {
+    toast('小助教只能觀看，不能編輯');
+    return;
+  }
   var m = D.meetings.find(x => x.id === curMeeting);
   m.entries = m.entries.filter(e => e.id !== id);
   save();
