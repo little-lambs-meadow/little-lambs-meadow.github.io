@@ -525,7 +525,7 @@ function render(){applyZy();applyStaffFs();
   <div class="nrow"><nav>${tabs.map(([k,n])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${n}</button>`).join('')}</nav>
   <button class="ricon" onclick="hardReload()" title="重新整理（載入最新版）">⟳</button><span class="nsp"></span>
   ${mode==='teach'&&tab==='video'&&D.lessons.length?videoCtl():''}
-  ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="if(this.value==='__all'){showAllL=!showAllL;render();return}curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id,true,true)}</select>`:''}${menuBtn()}</div>`;
+  ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="if(this.value==='__all'){showAllL=!showAllL;render();return}curLesson=userPick=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id,true,true)}</select>`:''}${menuBtn()}</div>`;
  {const m=document.getElementById('hmenu');if(m)m.innerHTML=menuHtml()}
  fitSel(hd.querySelector('.hsel'));fitSel(hd.querySelector('.vctl .lsel'),58);
  {const on=hd.querySelector('nav .on');if(on){const n=on.parentNode;n.scrollLeft=on.offsetLeft-(n.clientWidth-on.offsetWidth)/2}}
@@ -658,7 +658,8 @@ function lessonPicker(onchange){const l=lessonById(curLesson)||thisWeek();curLes
 let qIdx=0, qAll=false, showLyrics=false;
 function stepIdx(){return STEPS.findIndex(x=>x[0]===tab)}
 function stepGo(d){const i=stepIdx();if(i<0)return;const n=i+d;if(n>=0&&n<STEPS.length){qIdx=0;hidTok.clear();showLyrics=false;go(STEPS[n][0])}}
-function cur(){const l=lessonById(curLesson)||thisWeek();curLesson=l&&l.id;return l||{}}
+let userPick=null;  // 老師自己從選單選的課（就算已上過也照選的顯示）
+function cur(){let l=lessonById(curLesson);if(!l||(curLesson!==userPick&&hiddenNow(l)))l=thisWeek();curLesson=l&&l.id;return l||{}}  // 已上過／今年不上的課自動換成下一課
 function lsel(){return D.lessons.length?`<select class="lsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(curLesson)}</select>`:''}
 function stepPage(body,needLesson){
  const i=stepIdx();const n=STEPS[i][1];const prev=STEPS[i-1],next=STEPS[i+1];const l=cur();
