@@ -495,6 +495,7 @@ function fieldHtml([k,label,type='text',opts],o){
  if(type==='select')return `<label class="f">${label}<select id="${id}">${opts.map(([a,b])=>`<option value="${h(a)}" ${a===v?'selected':''}>${h(b)}</option>`).join('')}</select></label>`;
  if(type==='checks')return `<label class="f">${label}<div class="checks" id="${id}">${opts.map(n=>`<label><input type="checkbox" value="${h(n)}" ${(v||[]).includes(n)?'checked':''}> ${h(n)}</label>`).join('')}</div></label>`;
  if(type==='bool')return `<label class="f"><input type="checkbox" id="${id}" ${v?'checked':''}> ${label}</label>`;
+ if(type==='date')return `<label class="f">${label}<div class="row" style="flex-wrap:nowrap"><input id="${id}" type="date" class="sp" value="${h(v)}"><button type="button" class="ghost" style="white-space:nowrap" onclick="document.getElementById('${id}').value=''">✕ 清除日期</button></div></label>`;
  return `<label class="f">${label}<input id="${id}" type="${type}" value="${h(v)}"></label>`;
 }
 function submitForm(){
@@ -1058,6 +1059,9 @@ function editLesson(id){
   if(!id&&!v.title){toast('請填課名');return false}
   if(!id&&sbCode(v.video)){const e=sbEp(sbCode(v.video));if(e)v.story=e.d}  // 新增妙妙書課：內部保留官網劇情，前言空白時使用
   if(id&&!v.date){const ds=Object.assign({},l.dates||{});if(l.date&&!ds[l.date.slice(0,4)])ds[l.date.slice(0,4)]=l.date;delete ds[planYear];v.dates=ds;v.date=Object.values(ds).sort().pop()||''}  // 清掉這一年的日期
+  if(v.date){const y=v.date.slice(0,4);D.lessons.filter(o=>o.id!==id&&dateIn(o,y)===v.date).forEach(o=>{  // 同一天原本排給別的課：自動把那一課的日期清掉
+   const od=Object.assign({},o.dates||{});if(o.date&&!od[o.date.slice(0,4)])od[o.date.slice(0,4)]=o.date;delete od[y];o.dates=od;o.date=Object.values(od).sort().pop()||'';
+   toast(v.date.slice(5).split('-').map(Number).join('/')+' 原本排的〈'+o.title+'〉已取消日期，改排這一課')})}
   if(v.date){const ds=Object.assign({},(id&&l.dates)||{});if(id&&l.date&&!ds[l.date.slice(0,4)])ds[l.date.slice(0,4)]=l.date;ds[v.date.slice(0,4)]=v.date;v.dates=ds}  // 每個年度的上課日期分開記
   if(id)Object.assign(l,v);else D.lessons.push({id:uid(),...v});save((id?'修改':'新增')+'課程 '+(v.title||l.title));
  },(id?'':sbSel)+(id&&isAdmin()&&(!sbCode(l.video)||D.lessons.filter(x=>x.video===l.video).length>1)?`<div class="actions"><button class="danger" onclick="if(confirm('刪除這一課？')){D.lessons=D.lessons.filter(x=>x.id!=='${id}');save('刪除課程');closeModal();render()}">刪除這一課</button></div>`:''));

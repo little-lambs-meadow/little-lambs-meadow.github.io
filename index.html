@@ -1212,6 +1212,7 @@ function fieldHtml(_ref, o) {
   }).join('')}</select></label>`;
   if (type === 'checks') return `<label class="f">${label}<div class="checks" id="${id}">${opts.map(n => `<label><input type="checkbox" value="${h(n)}" ${(v || []).includes(n) ? 'checked' : ''}> ${h(n)}</label>`).join('')}</div></label>`;
   if (type === 'bool') return `<label class="f"><input type="checkbox" id="${id}" ${v ? 'checked' : ''}> ${label}</label>`;
+  if (type === 'date') return `<label class="f">${label}<div class="row" style="flex-wrap:nowrap"><input id="${id}" type="date" class="sp" value="${h(v)}"><button type="button" class="ghost" style="white-space:nowrap" onclick="document.getElementById('${id}').value=''">✕ 清除日期</button></div></label>`;
   return `<label class="f">${label}<input id="${id}" type="${type}" value="${h(v)}"></label>`;
 }
 function submitForm() {
@@ -3516,6 +3517,18 @@ function editLesson(id) {
       v.dates = ds;
       v.date = Object.values(ds).sort().pop() || '';
     } // 清掉這一年的日期
+    if (v.date) {
+      var y = v.date.slice(0, 4);
+      D.lessons.filter(o => o.id !== id && dateIn(o, y) === v.date).forEach(o => {
+        // 同一天原本排給別的課：自動把那一課的日期清掉
+        var od = Object.assign({}, o.dates || {});
+        if (o.date && !od[o.date.slice(0, 4)]) od[o.date.slice(0, 4)] = o.date;
+        delete od[y];
+        o.dates = od;
+        o.date = Object.values(od).sort().pop() || '';
+        toast(v.date.slice(5).split('-').map(Number).join('/') + ' 原本排的〈' + o.title + '〉已取消日期，改排這一課');
+      });
+    }
     if (v.date) {
       var _ds = Object.assign({}, id && l.dates || {});
       if (id && l.date && !_ds[l.date.slice(0, 4)]) _ds[l.date.slice(0, 4)] = l.date;
