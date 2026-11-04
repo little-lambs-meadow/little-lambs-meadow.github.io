@@ -981,10 +981,10 @@ function tapKid(id){
  const S=D.settings,d=today();D.attend[d]=D.attend[d]||{};const k=kid(id);
  if(pickItem===null||pickItem==='on'||pickItem==='late'){
   const on=pickItem!=='late';const old=D.ledger.find(x=>x.id===D.attend[d][id]);
-  if(old&&old.reason===ciLabel(on)){if(!confirm(k.name+' 今天已經'+old.reason+'了。要取消嗎？')){return}delLedger(old.id);delete D.attend[d][id];save();toast('取消 '+k.name+' 的報到')}
+  if(old&&old.reason===ciLabel(on)){delLedger(old.id);delete D.attend[d][id];save();toast('取消 '+k.name+' 的報到')}
   else{if(old)delLedger(old.id);_capNote=false;const e=giveCapped(id,on?S.onPts:S.latePts,ciLabel(on),true);D.attend[d][id]=e.id;undoStack.push({lid:e.id,att:true,d});save();if(!_capNote)toast(k.name+' '+e.reason+' +'+e.pts)}
  }else{const it=S.items[pickItem];const old=todayOf(id).find(x=>x.reason===it.name);
-  if(old){if(!confirm(k.name+' 今天已經拿過「'+it.name+'」的點數，同一個項目一天只能加一次。\n要取消這次的「'+it.name+'」嗎？')){return}delLedger(old.id);save();toast('取消 '+k.name+' 的「'+it.name+'」')}
+  if(old){delLedger(old.id);save();toast('取消 '+k.name+' 的「'+it.name+'」')}
   else{_capNote=false;const e=giveCapped(id,it.pts,it.name);if(e){undoStack.push({lid:e.id});save();if(!_capNote)toast(k.name+' '+it.name+' +'+e.pts)}}}
  render();const el=document.getElementById('k_'+id);el&&el.classList.add('pop');
 }

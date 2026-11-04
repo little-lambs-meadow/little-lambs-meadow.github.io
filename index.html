@@ -3273,9 +3273,6 @@ function tapKid(id) {
     var on = pickItem !== 'late';
     var old = D.ledger.find(x => x.id === D.attend[d][id]);
     if (old && old.reason === ciLabel(on)) {
-      if (!confirm(k.name + ' 今天已經' + old.reason + '了。要取消嗎？')) {
-        return;
-      }
       delLedger(old.id);
       delete D.attend[d][id];
       save();
@@ -3297,9 +3294,6 @@ function tapKid(id) {
     var it = S.items[pickItem];
     var _old = todayOf(id).find(x => x.reason === it.name);
     if (_old) {
-      if (!confirm(k.name + ' 今天已經拿過「' + it.name + '」的點數，同一個項目一天只能加一次。\n要取消這次的「' + it.name + '」嗎？')) {
-        return;
-      }
       delLedger(_old.id);
       save();
       toast('取消 ' + k.name + ' 的「' + it.name + '」');
