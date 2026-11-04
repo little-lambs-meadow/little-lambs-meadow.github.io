@@ -1291,6 +1291,7 @@ function setStaffFs(v) {
 function render() {
   applyZy();
   applyStaffFs();
+  setTimeout(pendingNotify, 0);
   if (authOn() && user && !(me() && me().active !== false)) {
     setUser(null);
     mode = 'teach';
@@ -1360,8 +1361,9 @@ function fitSel(el, pad) {
   sp.remove();
 }
 /* ☰ 選單：全螢幕、注音、雲端同步、帳號、老師區／登入 */
+var penN = () => authOn() && user && isAdminRole((me() || {}).role) ? pendingT().length : 0;
 function menuBtn() {
-  var bad = Cloud.url && (!Cloud.pw || ['err', 'off', 'pw'].indexOf(Cloud.state) >= 0);
+  var bad = penN() || Cloud.url && (!Cloud.pw || ['err', 'off', 'pw'].indexOf(Cloud.state) >= 0);
   return `<button class="mbtn" id="mBtn" onclick="toggleMenu(event)" title="選單">☰${bad ? '<i class="mdot"></i>' : ''}</button>`;
 }
 function closeMenu() {
@@ -1394,6 +1396,7 @@ function menuHtml() {
     pw: ['🔒', '雲端同步：需要密碼']
   }[Cloud.state] || ['☁️', '雲端同步'];
   var o = user ? `<div class="mu">👤 ${h(user)}<span>${roleName(me())}</span></div>` : '';
+  if (penN()) o += it('🙋', '老師申請（' + penN() + ' 位待核准）', "mode='staff';go('settings')", 'mmain');
   if (mode === 'teach') o += `<div class="mfs"><span class="mi">🔤</span>字體${Object.keys(TFONTS).map(k => `<button class="${tFont === k ? 'on' : ''}" onclick="event.stopPropagation();setTFont('${k}')">${TFONTS[k][0]}</button>`).join('')}</div>`;
   if (mode === 'teach') o += it('ㄅㄆ', zyOn ? '注音：開（按一下關閉）' : '注音：關（按一下開啟）', 'toggleZy()');
   if (fsOk && matchMedia('(pointer: fine)').matches) o += curFs() === document.documentElement ? it('⤢', '離開全螢幕', 'appFs()') : it('⛶', '全螢幕', 'appFs()');
@@ -1537,7 +1540,7 @@ function loginDlg() {
  <label class="f">帳號<input id="lg_a" autocomplete="username" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('lg_p').focus()"></label>
  <label class="f">密碼<input id="lg_p" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></label>
  <div class="actions"><button class="blue" onclick="doLogin()">登入</button></div>
- <div class="notice" style="margin-top:14px">第一次使用？請向主控同工索取驗證碼，再 <a href="#" onclick="registerDlg();return false"><b>用驗證碼註冊</b></a>。<br>忘記密碼請找主控重設。</div>
+ <div class="notice" style="margin-top:14px">第一次使用？<button class="blue" style="margin:6px 0" onclick="applyDlg()">🙋 申請老師帳號</button><br>送出後由主控或設計師核准，核准後就能登入。<br><span class="muted">有驗證碼的話也可以 <a href="#" onclick="registerDlg();return false">用驗證碼註冊</a>。忘記密碼請找主控重設。</span></div>
  <p class="muted">登入後會記住在這台裝置，不用每次輸入；換人使用請按「登出」。</p>`);
   setTimeout(() => {
     var e = document.getElementById('lg_a');
@@ -1558,6 +1561,10 @@ function _doLogin() {
       return;
     }
     var t = findAcc(a);
+    if (t && t.pending && !t.active) {
+      toast('帳號還在等待核准，請主控或設計師按「核准」');
+      return;
+    }
     if (!t || t.active === false || t.pwHash !== (yield hashPw(document.getElementById('lg_p').value))) {
       toast('帳號或密碼不正確');
       return;
@@ -1582,6 +1589,7 @@ function setupDlg() {
 function doSetup() {
   return _doSetup.apply(this, arguments);
 }
+/* ===== 申請老師帳號 → 主控／設計師核准（不用驗證碼） ===== */
 function _doSetup() {
   _doSetup = _asyncToGenerator(function* () {
     var a = val('su_a'),
@@ -1611,6 +1619,94 @@ function _doSetup() {
     toast(ROLES[r] + '帳號建立完成');
   });
   return _doSetup.apply(this, arguments);
+}
+function applyDlg() {
+  if (Cloud.needRebuild) cloudRebuild();
+  if (needCloud()) return;
+  openModal(`<h2>🙋 申請老師帳號</h2>
+ <p class="muted">填好後送出，主控或設計師的 app 會收到通知，按「核准」後你就能用這組帳號密碼登入。</p>
+ <label class="f">帳號（登入用，中文、英文、數字都可以，自己記得就好）<input id="ap_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
+ <label class="f">稱呼（顯示在紀錄上，例如：陳老師、美玲姊妹）<input id="ap_n"></label>
+ <label class="f">設定密碼（至少 6 碼）<input id="ap_p" type="password"></label>
+ <label class="f">再輸入一次<input id="ap_p2" type="password"></label>
+ <label class="f">給核准的人看的話（可不填，例如：我是幼兒班的助教）<input id="ap_m"></label>
+ <div class="actions"><button class="blue" onclick="doApply()">送出申請</button><button class="ghost" onclick="loginDlg()">返回登入</button></div>`);
+}
+function doApply() {
+  return _doApply.apply(this, arguments);
+}
+function _doApply() {
+  _doApply = _asyncToGenerator(function* () {
+    var acc = val('ap_a'),
+      n = val('ap_n') || acc,
+      p = document.getElementById('ap_p').value;
+    if (!acc) {
+      toast('請填帳號');
+      return;
+    }
+    if (!pwOk(p, document.getElementById('ap_p2').value)) return;
+    if (Cloud.pw) {
+      toast('正在確認…');
+      yield cloudNow();
+    }
+    if (findAcc(acc) || D.teachers.some(t => normAcc(t.name) === normAcc(acc) && !t.account)) {
+      toast('這個帳號已經有人使用或申請過，請換一個');
+      return;
+    }
+    if (D.teachers.some(t => t.name === n)) {
+      toast('已經有同樣稱呼的老師，請換個稱呼');
+      return;
+    }
+    D.teachers.push({
+      id: uid(),
+      account: acc,
+      name: n,
+      role: 'teacher',
+      active: false,
+      pending: true,
+      applyNote: val('ap_m'),
+      applied: today(),
+      pwHash: yield hashPw(p),
+      created: today()
+    });
+    save('申請老師帳號 ' + n);
+    cloudSoon();
+    openModal(`<h2>✅ 申請已送出</h2><p>已通知主控和設計師。核准後，用帳號「<b>${h(acc)}</b>」和你設定的密碼就能登入。</p><p class="muted">可以請負責的同工打開 app 核准。</p><div class="actions"><button class="blue" onclick="closeModal()">好</button></div>`);
+  });
+  return _doApply.apply(this, arguments);
+}
+var pendingT = () => D.teachers.filter(t => t.pending && !t.active);
+function approveT(id) {
+  var t = D.teachers.find(x => x.id === id);
+  if (!t) return;
+  var r = document.getElementById('apr_' + id);
+  if (r && ROLES[r.value]) t.role = r.value;
+  t.active = true;
+  delete t.pending;
+  t.approvedBy = who();
+  t.approved = today();
+  save('核准 ' + t.name + '（' + ROLES[t.role] + '）');
+  render();
+  toast('已核准 ' + t.name + '（' + ROLES[t.role] + '），現在可以登入了');
+}
+function rejectT(id) {
+  var t = D.teachers.find(x => x.id === id);
+  if (!t || !confirm('不核准「' + t.name + '」的申請？（申請資料會刪除）')) return;
+  D.teachers = D.teachers.filter(x => x.id !== id);
+  save('不核准申請 ' + t.name);
+  render();
+}
+function pendingCard() {
+  var ps = pendingT();
+  if (!ps.length) return '';
+  return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t => `<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="muted">帳號：${h(accOf(t))} · ${h(t.applied || '')} 申請</span>${t.applyNote ? `<div class="muted">「${h(t.applyNote)}」</div>` : ''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher">身分：老師</option><option value="admin">身分：主控（院長／負責同工）</option><option value="designer">身分：設計師</option></select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`;
+}
+var _penSeen = -1;
+function pendingNotify() {
+  if (!authOn() || !user || !isAdminRole((me() || {}).role)) return;
+  var n = pendingT().length;
+  if (n > _penSeen && n > 0) toast('🙋 有 ' + n + ' 位老師申請帳號，請到「☰ → 老師申請」核准');
+  _penSeen = n;
 }
 function registerDlg() {
   if (Cloud.needRebuild) cloudRebuild();
@@ -3984,7 +4080,7 @@ function pSettings() {
  <div class="row"><input id="iv_note" class="sp" placeholder="給誰（例如：陳姊妹）"><button class="blue" onclick="genInvite()">產生驗證碼</button></div>
  ${open.map(i => `<div class="row card" style="margin:8px 0"><b style="font-size:22px;letter-spacing:3px;font-family:monospace">${i.code}</b><span class="sp muted">${h(i.note)} · ${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效</span><button class="sm ghost" onclick="copyInvite('${i.code}')">複製訊息</button><button class="sm danger" onclick="revokeInvite('${i.code}')">作廢</button></div>`).join('')}
  ${used.length ? `<div class="muted" style="margin-top:6px">最近使用：${used.map(i => `${i.code} → ${h(i.usedBy)}（${h(i.usedAt)}）`).join('、')}</div>` : ''}</div>
- <div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.map(t => `<tr style="${t.active === false ? 'opacity:.5' : ''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role) ? 't' : 'o'}">${roleName(t)}</span> <span class="muted">帳號：${h(accOf(t))}</span>${t.active === false ? ' <span class="tag">已停用</span>' : ''}<div class="muted">${h(t.created || '')} 加入</div></td>
+ ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t => !t.pending).map(t => `<tr style="${t.active === false ? 'opacity:.5' : ''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role) ? 't' : 'o'}">${roleName(t)}</span> <span class="muted">帳號：${h(accOf(t))}</span>${t.active === false ? ' <span class="tag">已停用</span>' : ''}<div class="muted">${h(t.created || '')} 加入</div></td>
  <td style="text-align:right">${t.name === user ? '<span class="muted">（你）</span>' : `<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).map(r => `<option value="${r}" ${(t.role || 'teacher') === r ? 'selected' : ''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active === false ? 'ghost' : 'danger'}" onclick="toggleT('${t.id}')">${t.active === false ? '啟用' : '停用'}</button>`}</td></tr>`).join('')}</table>
  <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議。</p></div>
 ` : ''}
