@@ -1647,7 +1647,6 @@ function lessonBody(l) {
   return `<div class="muted">${h(l.season)} · 第 ${h(l.no)} 課${l.date ? ' · ' + h(l.date) : ''}</div><h2>${h(l.title)}</h2>
   ${l.scripture ? `<div class="muted">📜 ${h(l.scripture)}</div>` : ''}
   ${sbCode(l.video) && sbEp(sbCode(l.video)) ? `<div class="sec"><h4>影片</h4><div>📺 超級妙妙書官網 ${sbLabel(sbEp(sbCode(l.video)))}〈${h(sbEp(sbCode(l.video)).t)}〉</div><img src="${sbPoster(sbEp(sbCode(l.video)))}" style="width:100%;max-width:420px;border-radius:10px;margin-top:6px" alt=""></div>` : yt ? `<div class="sec"><h4>影片</h4><button class="pri" style="width:100%;font-size:17px;padding:12px;margin-bottom:8px" onclick="playFull('${yt}')">▶ 全螢幕播放</button>${ytBox(yt)}</div>` : sec('影片', l.video ? `<a href="${h(l.video)}" target="_blank" rel="noopener">▶ 開啟影片</a>` : '')}
-  ${sec('故事重點', l.story ? `<div class="pre">${linkify(l.story)}</div>` : '')}
   ${sec('體驗活動流程', list(l.expSteps, 'ol'))}
   ${sec('道具', list(l.props, 'ul'))}
   ${sec('安全提醒', l.safety ? `<div class="notice">${h(l.safety)}</div>` : '')}
@@ -3121,7 +3120,7 @@ var LESSON_EDIT_FIELDS = () => {
   var d = f.find(x => x[0] === 'date');
   return [d].concat(f.filter(x => x !== d));
 };
-var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'], ['story', '故事重點', 'textarea'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['songIds', '本課詩歌', 'checks', D.songs.map(s => s.title)], ['prayer', '⑧ 結束禱告（空白就用設定裡的預設禱告）', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
+var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['songIds', '本課詩歌', 'checks', D.songs.map(s => s.title)], ['prayer', '⑧ 結束禱告（空白就用設定裡的預設禱告）', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
 function pLessons() {
   var bib = lessonOrder() !== 'season';
   var grp = [];
@@ -3169,6 +3168,10 @@ function editLesson(id) {
       toast('請填課名');
       return false;
     }
+    if (!id && sbCode(v.video)) {
+      var e = sbEp(sbCode(v.video));
+      if (e) v.story = e.d;
+    } // 新增妙妙書課：內部保留官網劇情，前言空白時使用
     if (id) Object.assign(l, v);else D.lessons.push(_objectSpread({
       id: uid()
     }, v));
