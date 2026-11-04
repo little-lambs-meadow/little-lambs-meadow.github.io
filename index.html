@@ -141,6 +141,12 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 .ricon,.mbtn{flex-shrink:0;margin:0 0 4px;border:0;border-radius:10px;background:rgba(255,255,255,.28);color:#fff;font-size:20px;line-height:1;width:40px;height:36px;padding:0;cursor:pointer;position:relative}
 .ricon:hover,.mbtn:hover{background:rgba(255,255,255,.45)}.mbtn{background:rgba(255,255,255,0.94);color:#333;font-size:22px}
 .mdot{position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:#e23b2a;border:2px solid #fff}
+#intro{position:fixed;top:0;right:0;bottom:0;left:0;z-index:60;background:#cfe3a3;overflow:hidden;transition:opacity .6s}
+#intro .ibg{position:absolute;top:-20px;right:-20px;bottom:-20px;left:-20px;background:url(assets/intro-end.jpg) center/cover;filter:blur(18px)}
+#intro video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;cursor:pointer}
+@media (orientation:portrait){#intro video{object-fit:contain}}
+#intro button{position:absolute;bottom:22px;border:0;border-radius:22px;padding:9px 18px;font-size:16px;background:rgba(255,255,255,.88);color:#5a4630;box-shadow:0 3px 12px rgba(0,0,0,.18);cursor:pointer}
+#introSkip{right:22px}#introSnd{left:22px}
 .hmenu{position:fixed;z-index:35;background:#fff;color:#2b2622;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:8px;min-width:230px;max-width:90vw}
 .hmenu button{display:flex;align-items:center;width:100%;background:none;border:0;border-radius:9px;padding:10px 12px;font-size:16px;text-align:left;color:inherit;cursor:pointer;min-height:0}
 .hmenu button:hover{background:#f6efe6}.hmenu .mi{display:inline-block;min-width:34px;font-weight:700;color:#e2572a}
@@ -3890,6 +3896,56 @@ document.getElementById('modal').addEventListener('click', e => {
   if (e.target.id === 'modal') closeModal();
 });
 render();
+/* ===== 開場動畫：打開 app 時先播放（按「重新整理」回來時不播） ===== */
+(function () {
+  if (VIEW0) return;
+  var o = document.createElement('div');
+  o.id = 'intro';
+  o.innerHTML = '<div class="ibg"></div><video id="introV" src="assets/intro.mp4" playsinline preload="auto"></video><button id="introSnd" type="button">🔊 開聲音</button><button id="introSkip" type="button">跳過 ›</button>';
+  document.body.appendChild(o);
+  var v = o.querySelector('video'),
+    snd = o.querySelector('#introSnd');
+  var done = false;
+  var end = () => {
+    if (done) return;
+    done = true;
+    o.style.opacity = '0';
+    setTimeout(() => {
+      try {
+        v.pause();
+      } catch (e) {}
+      o.remove();
+    }, 650);
+  };
+  var unmute = () => {
+    v.muted = false;
+    snd.style.display = 'none';
+    var r = v.play();
+    if (r && r.catch) r.catch(() => {});
+  };
+  snd.onclick = e => {
+    e.stopPropagation();
+    unmute();
+  };
+  o.querySelector('#introSkip').onclick = e => {
+    e.stopPropagation();
+    end();
+  };
+  v.onclick = () => {
+    if (v.muted) unmute();
+  };
+  v.onended = () => setTimeout(end, 700);
+  v.onerror = end;
+  setTimeout(end, 16000);
+  var p = v.play(); // 先試著有聲播放；瀏覽器擋下來就改靜音播放，並顯示「開聲音」按鈕
+  if (p && p.then) p.then(() => {
+    snd.style.display = 'none';
+  }, () => {
+    v.muted = true;
+    var q = v.play();
+    if (q && q.catch) q.catch(end);
+  });else snd.style.display = 'none';
+})();
 cloudStart();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 /* 重新整理：安裝成 App 後沒有瀏覽器的重新整理鍵，所以在上方放一顆；會先更新程式、清掉舊快取，再載入最新版 */
