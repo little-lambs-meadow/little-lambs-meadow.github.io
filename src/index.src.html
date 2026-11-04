@@ -411,7 +411,7 @@ let user=null;try{user=localStorage.getItem('llm_user')||sessionStorage.getItem(
 let mode='teach', tab='rules', VIEW0=null;
 try{const v=VIEW0=JSON.parse(sessionStorage.getItem('llm_view')||'null');sessionStorage.removeItem('llm_view');
  if(v&&(v.mode==='teach'||(v.mode==='staff'&&user))){mode=v.mode;tab=v.tab||(v.mode==='staff'?'lessons':'rules')}}catch(e){}
-let curLesson=(VIEW0&&VIEW0.lesson)||null, curSong=null, curMeeting=null, verseLang='both', hidTok=new Set(), fontSize=26, pickItem=null, undoStack=[];
+let curLesson=(VIEW0&&VIEW0.lesson)||null, curSong=null, curMeeting=null, verseLang='both', hidTok=new Set(), fontSize=26, pickItem='on', undoStack=[];
 
 /* ============ 工具 ============ */
 function h(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -932,17 +932,16 @@ function todayOf(id){const d=today();return D.ledger.filter(x=>x.kidId===id&&x.d
 function tPoints(){
  if(!canPoint())return `<div class="card empty">目前設定為「加點需要老師登入」<br><br><button class="blue" onclick="loginDlg()">老師登入</button></div>`;
  const S=D.settings,d=today();const at=D.attend[d]||{};const kids=D.kids.filter(k=>k.active).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
- const auto=nowHM()<S.cutoff;
- const hint=manageKids?'管理名單中：點孩子的名字可以隱藏、改名或刪除'+(D.kids.some(k=>!k.active)?`　<a href="#" onclick="hiddenKidsDlg();return false">查看已隱藏的孩子（${D.kids.filter(k=>!k.active).length}）</a>`:''):pickItem===null?`點名字＝報到（現在 ${nowHM()}，${auto?'準時 +'+S.onPts:'晚到 +'+S.latePts}）`:pickItem==='on'?'點名字＝準時報到 +'+S.onPts:pickItem==='late'?'點名字＝晚到報到 +'+S.latePts:'點名字＝「'+h(S.items[pickItem].name)+'」，再點一次取消';
+ const hint=manageKids?'管理名單中：點孩子的名字可以隱藏、改名或刪除'+(D.kids.some(k=>!k.active)?`　<a href="#" onclick="hiddenKidsDlg();return false">查看已隱藏的孩子（${D.kids.filter(k=>!k.active).length}）</a>`:''):pickItem==='on'?'點名字＝準時報到 +'+S.onPts:pickItem==='late'?'點名字＝晚到報到 +'+S.latePts:'點名字＝「'+h(S.items[pickItem].name)+'」，再點一次取消';
  return `<div class="stage"><div class="stephead"><h2>⭐ <span class="hide-m">${d} </span>點名加點</h2><span class="sp"></span><span class="muted" style="margin-right:10px;white-space:nowrap">報到 ${Object.keys(at).length} 人</span><button class="${manageKids?'blue':'ghost'}" style="white-space:nowrap" onclick="manageKids=!manageKids;render()">${manageKids?'✓ 完成管理':'👥 管理名單'}</button></div>
   <div class="fill"><div class="tbar items">
-   <button class="${pickItem===null?'on':''}" onclick="pickItem=null;render()">✅ 報到（自動判斷）</button><button class="${pickItem==='on'?'on':''}" onclick="pickItem='on';render()">準時 +${S.onPts}</button><button class="${pickItem==='late'?'on':''}" onclick="pickItem='late';render()">晚到 +${S.latePts}</button>
+   <button class="${pickItem==='on'?'on':''}" onclick="pickItem='on';render()">準時 +${S.onPts}</button><button class="${pickItem==='late'?'on':''}" onclick="pickItem='late';render()">晚到 +${S.latePts}</button>
    <span class="hide-m" style="width:12px"></span>
    ${S.items.map((it,i)=>`<button class="${pickItem===i?'on':''}" onclick="pickItem=${i};render()">${h(it.name)} +${it.pts}</button>`).join('')}</div>
   <div class="muted" style="flex-shrink:0;margin-bottom:6px">${hint}</div>
   <div class="fit kidsfit" data-max="28"><div class="kids">${kids.map(k=>{const t=todayOf(k.id);const tp=earnedOn(k.id,d),cap=capOf(),full=cap&&tp>=cap;const ci=t.find(x=>x.id===at[k.id]);
-   const done=pickItem!==null&&typeof pickItem==='number'&&t.some(x=>x.reason===S.items[pickItem].name);
-   return `<div class="kid ${ci?(ci.reason===ciLabel(true)?'here':'here late'):''} ${done?'got':''}" id="k_${k.id}" onclick="${manageKids?'kidManage':'tapKid'}('${k.id}')"><div class="n">${manageKids?'✏️ ':''}${h(k.name)}</div><div class="p" ${full?'style="color:#c33;font-weight:700"':''}>今日 +${tp}${cap?'/'+cap:''}${full?' 滿':''}</div><div class="p">⭐ ${bal(k.id)}</div></div>`}).join('')}</div></div></div>
+   const done=typeof pickItem==='number'&&S.items[pickItem]&&t.some(x=>x.reason===S.items[pickItem].name);
+   return `<div class="kid ${ci?(ci.reason===ciLabel(true)?'here':'here late'):''} ${done?'got':''}" id="k_${k.id}" onclick="${manageKids?'kidManage':'tapKid'}('${k.id}')"><div class="n">${manageKids?'✏️ ':''}${h(k.name)}${done?' <span style="color:var(--pri)">✓</span>':''}</div><div class="p" ${full?'style="color:#c33;font-weight:700"':''}>今日 +${tp}${cap?'/'+cap:''}${full?' 滿':''}</div><div class="p">⭐ ${bal(k.id)}</div></div>`}).join('')}</div></div></div>
   <div class="row" style="margin-top:8px;flex-shrink:0;flex-wrap:nowrap"><input id="newKid" class="sp" style="font-size:16px;min-width:0" placeholder="新朋友的名字" onkeydown="if(event.key==='Enter')quickKid()"><button class="pri" style="white-space:nowrap" onclick="quickKid()">＋<span class="hide-m">加入並報到</span><span class="show-m">新朋友</span></button>
    <button class="ghost" style="white-space:nowrap" onclick="undo()" ${undoStack.length?'':'disabled'}>↶<span class="hide-m"> 復原</span></button></div></div>`;
 }
@@ -975,11 +974,11 @@ function delLedger(lid){D.ledger=D.ledger.filter(x=>x.id!==lid);undoStack=undoSt
 function tapKid(id){
  const S=D.settings,d=today();D.attend[d]=D.attend[d]||{};const k=kid(id);
  if(pickItem===null||pickItem==='on'||pickItem==='late'){
-  const on=pickItem===null?nowHM()<S.cutoff:pickItem==='on';const old=D.ledger.find(x=>x.id===D.attend[d][id]);
-  if(old&&(pickItem===null||old.reason===ciLabel(on))){delLedger(old.id);delete D.attend[d][id];save();toast('取消 '+k.name+' 的報到')}
+  const on=pickItem!=='late';const old=D.ledger.find(x=>x.id===D.attend[d][id]);
+  if(old&&old.reason===ciLabel(on)){if(!confirm(k.name+' 今天已經'+old.reason+'了。要取消嗎？')){return}delLedger(old.id);delete D.attend[d][id];save();toast('取消 '+k.name+' 的報到')}
   else{if(old)delLedger(old.id);_capNote=false;const e=giveCapped(id,on?S.onPts:S.latePts,ciLabel(on),true);D.attend[d][id]=e.id;undoStack.push({lid:e.id,att:true,d});save();if(!_capNote)toast(k.name+' '+e.reason+' +'+e.pts)}
  }else{const it=S.items[pickItem];const old=todayOf(id).find(x=>x.reason===it.name);
-  if(old){delLedger(old.id);save();toast('取消 '+k.name+' 的「'+it.name+'」')}
+  if(old){if(!confirm(k.name+' 今天已經拿過「'+it.name+'」的點數，同一個項目一天只能加一次。\n要取消這次的「'+it.name+'」嗎？')){return}delLedger(old.id);save();toast('取消 '+k.name+' 的「'+it.name+'」')}
   else{_capNote=false;const e=giveCapped(id,it.pts,it.name);if(e){undoStack.push({lid:e.id});save();if(!_capNote)toast(k.name+' '+it.name+' +'+e.pts)}}}
  render();const el=document.getElementById('k_'+id);el&&el.classList.add('pop');
 }
@@ -987,7 +986,7 @@ function undo(){const u=undoStack.pop();if(!u)return;D.ledger=D.ledger.filter(x=
 function quickKid(){const e=document.getElementById('newKid');const n=e.value.trim();if(!n)return;
  if(D.kids.some(k=>k.name===n&&k.active)&&!confirm('已經有叫「'+n+'」的孩子，還要再新增一位嗎？'))return;
  const k={id:uid(),name:n,group:'',active:true,flag:false,flagNote:'',created:today()};D.kids.push(k);save('新增孩子 '+n);
- const p=pickItem;pickItem=null;tapKid(k.id);pickItem=p;render();toast('歡迎 '+n+'！已報到')}
+ const p=pickItem;pickItem=p==='late'?'late':'on';tapKid(k.id);pickItem=p;render();toast('歡迎 '+n+'！已報到')}
 function tRank(){
  const at=D.attend[today()]||{};
  const ks=D.kids.filter(k=>k.active).sort((a,b)=>a.name.localeCompare(b.name,'zh-TW-u-co-stroke'));
