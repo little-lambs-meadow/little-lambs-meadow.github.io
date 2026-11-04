@@ -469,8 +469,10 @@ function copy(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.r
 function openModal(html){document.getElementById('panel').innerHTML=`<button class="close ghost" onclick="closeModal()">✕</button>`+html;document.getElementById('modal').classList.add('on')}
 function closeModal(){document.getElementById('modal').classList.remove('on');if(Cloud.needRebuild)setTimeout(cloudRebuild,0)}
 let showAllL=false;
-function lessonOpts(sel,short,teach){const bib=lessonOrder()!=='season';let k=0;const all=sortedLessons();let hid=0;
- const o=all.map(l=>{k++;if(teach&&!showAllL&&l.id!==sel&&hiddenNow(l)){hid++;return ''}const lab=bib?`${k}. 〔${bibleBook(l)}〕${l.title}（${l.season}第${l.no}課）`:`${l.season} 第${l.no}課 ${l.title}`;return `<option value="${l.id}" ${l.id===sel?'selected':''}>${h(lab)}${l.date&&!short?' ('+h(l.date)+')':''}${isSkip(l,curYear())?'〔今年不上〕':taughtDate(l,curYear())&&taughtDate(l,curYear())<today()?'〔已上〕':''}</option>`}).join('');
+function lessonOpts(sel,short,teach){const bib=lessonOrder()!=='season';let k=0;let all=sortedLessons();let hid=0;
+ const rk=new Map(all.map((l,i)=>[l.id,i+1]));
+ if(teach){const y=curYear();const dd=l=>dateIn(l,y);all=all.filter(l=>dd(l)).sort((a,b)=>dd(a).localeCompare(dd(b))).concat(all.filter(l=>!dd(l)))}  // 上課畫面：已排日期的課先列（照日期），其他照課程順序
+ const o=all.map(l=>{k=rk.get(l.id);if(teach&&!showAllL&&l.id!==sel&&hiddenNow(l)){hid++;return ''}const lab=bib?`${k}. 〔${bibleBook(l)}〕${l.title}（${l.season}第${l.no}課）`:`${l.season} 第${l.no}課 ${l.title}`;return `<option value="${l.id}" ${l.id===sel?'selected':''}>${h(lab)}${l.date&&!short?' ('+h(l.date)+')':''}${teach&&dateIn(l,curYear())?'（'+dateIn(l,curYear()).slice(5).split('-').map(Number).join('/')+'）':''}${isSkip(l,curYear())?'〔今年不上〕':taughtDate(l,curYear())&&taughtDate(l,curYear())<today()?'〔已上〕':''}</option>`}).join('');
  return o+(teach&&(hid||showAllL)?`<option value="__all">${showAllL?'📂 只顯示還沒上的課':'📂 顯示全部課程（含已上過、不上的 '+hid+' 課）'}</option>`:'')}
 
 /* ============ 通用表單 ============ */
@@ -717,16 +719,12 @@ let _rlT=[];function relayout(){_rlT.forEach(clearTimeout);if(elFs())return;
 function curFs(){return document.fullscreenElement||document.webkitFullscreenElement||null}
 function elFs(){const e=curFs();return e&&e!==document.documentElement?e:null}  // 影片或投影等「單一元件」的全螢幕
 const fsOk=!!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen);
-function appFs(){const d=document.documentElement;
- if(curFs()){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}
- else{const r=(d.requestFullscreen||d.webkitRequestFullscreen).call(d);if(r&&r.catch)r.catch(()=>{})}}
-/* 安裝到電腦桌面的 app：打開後第一次點畫面，自動進入全螢幕（瀏覽器規定一定要先點一下才能全螢幕） */
-(function(){try{
- const inst=matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: minimal-ui)').matches;
- const desk=matchMedia('(pointer: fine)').matches&&screen.width>=1024;
- if(!inst||!desk||!fsOk||localStorage.getItem('llm_autofs')==='0')return;
- const f=()=>{document.removeEventListener('pointerdown',f,true);if(!curFs())appFs()};
- document.addEventListener('pointerdown',f,true)}catch(e){}})();
+function appFs(){const d=document.documentElement,kb=navigator.keyboard;
+ if(curFs()){try{kb&&kb.unlock&&kb.unlock()}catch(e){}(document.exitFullscreen||document.webkitExitFullscreen).call(document)}
+ else{const r=(d.requestFullscreen||d.webkitRequestFullscreen).call(d);
+  if(r&&r.then)r.then(()=>{if(kb&&kb.lock)kb.lock(['Escape']).catch(()=>{})},()=>{})}}
+/* 全螢幕只能手動開關（☰ → 全螢幕）。開啟時鎖住 Esc 鍵：短按 Esc 只關影片的全螢幕，不會關掉整個 app 的全螢幕 */
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&elFs()){e.preventDefault();try{const r=(document.exitFullscreen||document.webkitExitFullscreen).call(document);if(r&&r.catch)r.catch(()=>{})}catch(x){}}},true);
 document.addEventListener('fullscreenchange',()=>{const m=document.getElementById('hmenu');if(m)m.innerHTML=menuHtml();relayout()});
 window.addEventListener('resize',relayout);
 window.addEventListener('orientationchange',relayout);
