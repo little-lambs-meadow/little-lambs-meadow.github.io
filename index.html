@@ -4198,9 +4198,65 @@ function compileDlg() {
 
 /* ============ 設定 ============ */
 function myAccount() {
+  var t = me() || {};
   return `<div class="card"><h3>我的帳號：${h(user)}</h3>
+ <p class="muted">登入帳號：<b>${h(accOf(t))}</b>（登入時用這個，不會因為改顯示名稱而改變）</p>
+ <div class="row" style="align-items:flex-end"><label class="f sp" style="margin:0">顯示名稱（大家在紀錄上看到的名字）<input id="mp_dn" value="${h(user)}"></label><button class="blue" onclick="renameT('${t.id}',document.getElementById('mp_dn').value)">改名</button></div>
+ <hr style="border:0;border-top:1px solid #e6ddd0;margin:14px 0">
  <label class="f">目前密碼<input id="mp_o" type="password"></label><label class="f">新密碼（至少 6 碼）<input id="mp_n" type="password"></label><label class="f">再輸入一次<input id="mp_n2" type="password"></label>
  <div class="actions"><button class="blue" onclick="changeMyPw()">修改密碼</button></div></div>`;
+}
+/* 改顯示名稱：登入帳號保持原本的；過去紀錄上的名字一起換成新名字 */
+function renameT(id, nn) {
+  var t = D.teachers.find(x => x.id === id);
+  if (!t) return;
+  nn = String(nn || '').trim();
+  var old = t.name;
+  if (!nn) {
+    toast('請輸入顯示名稱');
+    return;
+  }
+  if (nn === old) {
+    toast('名稱沒有改變');
+    return;
+  }
+  if (t.name !== user && !canManage(t)) {
+    toast('設計師的帳號只有設計師能修改');
+    return;
+  }
+  if (D.teachers.some(x => x.id !== id && (x.name === nn || normAcc(accOf(x)) === normAcc(nn)))) {
+    toast('這個名稱已經有人使用，請換一個');
+    return;
+  }
+  if (!t.account) t.account = old; // 原本帳號就是名字的，固定下來當登入帳號
+  var sw = v => v === old ? nn : v;
+  D.sessions.forEach(x => {
+    if (x.teachers) x.teachers = x.teachers.map(sw);
+    x.by = sw(x.by);
+    if (x.mainTeacher) x.mainTeacher = sw(x.mainTeacher);
+  });
+  D.ledger.forEach(x => {
+    x.by = sw(x.by);
+  });
+  D.log.forEach(x => {
+    x.by = sw(x.by);
+  });
+  D.meetings.forEach(m => {
+    m.by = sw(m.by);
+    (m.entries || []).forEach(e => {
+      e.by = sw(e.by);
+      if (e.owner) e.owner = sw(e.owner);
+    });
+  });
+  (D.invites || []).forEach(i => {
+    i.usedBy = sw(i.usedBy);
+  });
+  if (D.settings.teacherNames) D.settings.teacherNames = D.settings.teacherNames.map(sw);
+  t.name = nn;
+  if (user === old) setUser(nn);
+  save('「' + old + '」改名為「' + nn + '」');
+  render();
+  toast('已改名為「' + nn + '」，登入帳號還是「' + accOf(t) + '」');
 }
 function changeMyPw() {
   return _changeMyPw.apply(this, arguments);
@@ -4233,7 +4289,7 @@ function pSettings() {
   var cloudCard = Cloud.pw ? `<div class="card"><div class="row"><h3 class="sp">☁️ 教會密碼（雲端同步）</h3><button class="sm ghost" onclick="cloudChangePw()">更改教會密碼</button></div><p class="muted">每台裝置第一次打開 app 時要輸入的密碼。改了之後，所有裝置都要重新輸入新密碼。</p></div>` : '';
   return `<h2>設定${authOn() ? '（' + roleName(me()) + '）' : ''}</h2>${authCard}${cloudCard}${authOn() ? `
  ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t => !t.pending).map(t => `<tr style="${t.active === false ? 'opacity:.5' : ''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role) ? 't' : 'o'}">${roleName(t)}</span> ${accOf(t) !== t.name ? `<span class="muted">帳號：${h(accOf(t))}</span>` : ''}${t.active === false ? ' <span class="tag">已停用</span>' : ''}<div class="muted">${h(t.created || '')} 加入</div></td>
- <td style="text-align:right">${t.name === user ? '<span class="muted">（你）</span>' : !canManage(t) ? '<span class="muted">🔒 只有設計師能修改</span>' : `<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).filter(r => r !== 'designer' || amDesigner()).map(r => `<option value="${r}" ${(t.role || 'teacher') === r ? 'selected' : ''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active === false ? 'ghost' : 'danger'}" onclick="toggleT('${t.id}')">${t.active === false ? '啟用' : '停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
+ <td style="text-align:right">${t.name === user ? '<span class="muted">（你）</span>' : !canManage(t) ? '<span class="muted">🔒 只有設計師能修改</span>' : `<button class="sm ghost" onclick="const n=prompt('「${h(t.name)}」的新顯示名稱（登入帳號不變）','${h(t.name)}');if(n!==null)renameT('${t.id}',n)">✏️ 改名</button> <button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).filter(r => r !== 'designer' || amDesigner()).map(r => `<option value="${r}" ${(t.role || 'teacher') === r ? 'selected' : ''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active === false ? 'ghost' : 'danger'}" onclick="toggleT('${t.id}')">${t.active === false ? '啟用' : '停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
  <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議；小助教＝登記點數、編輯詩歌；成發、上課紀錄、會議只能觀看。</p></div>
 ` : ''}
  <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
