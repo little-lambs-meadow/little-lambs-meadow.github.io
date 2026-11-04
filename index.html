@@ -72,6 +72,8 @@ select,input,textarea{font:inherit;padding:8px;border:1px solid #e6ddd0;border-r
 label.f{display:block;margin-top:10px;font-size:13px;color:#7a7068}
 label.f>input:not([type=checkbox]),label.f>textarea,label.f>select{display:block;width:100%;margin-top:3px}
 textarea{min-height:70px;resize:vertical;width:100%}
+.rhead,.rrow{display:flex;align-items:center;gap:6px}.rhead{font-size:12px;color:#7a7068;margin:4px 0 2px}.rrow{margin-bottom:6px}
+.rrow input{min-width:0;margin:0}.rbtn{flex:0 0 74px;display:flex;gap:4px}.rbtn button{padding:4px 8px;min-height:0}
 .checks{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .checks label{background:#f4f1ec;border-radius:16px;padding:3px 10px;color:#2b2622;font-size:14px}
 .tag{display:inline-block;font-size:12px;border-radius:10px;padding:1px 8px;background:#eee;color:#555}
@@ -1167,6 +1169,12 @@ function fieldHtml(_ref, o) {
   var id = 'f_' + k;
   if (type === 'textarea') return `<label class="f">${label}<textarea id="${id}">${h(v)}</textarea></label>`;
   if (type === 'lines') return `<label class="f">${label}<textarea id="${id}">${h((v || []).join('\n'))}</textarea></label>`;
+  if (type === 'rows') {
+    var rows = (v || []).length ? v : [[]]; // 表格式欄位：每一行分成幾格，不用打「|」
+    return `<div class="f" style="margin-top:12px"><div>${label}</div><div class="rhead">${opts.map(c => `<span style="flex:${c.w || 1}">${h(c.label)}</span>`).join('')}<span class="rbtn"></span></div>
+  <div class="rows" id="${id}" data-cols="${h(JSON.stringify(opts))}">${rows.map(r => rowHtml(opts, r)).join('')}</div>
+  <button type="button" class="sm ghost" style="margin-top:6px" onclick="rowAdd('${id}')">＋ 新增一行</button></div>`;
+  }
   if (type === 'select') return `<label class="f">${label}<select id="${id}">${opts.map(_ref3 => {
     var _ref4 = _slicedToArray(_ref3, 2),
       a = _ref4[0],
@@ -1187,7 +1195,7 @@ function submitForm() {
         k = _step$value[0],
         type = _step$value[2];
       var e = document.getElementById('f_' + k);
-      if (type === 'lines') out[k] = e.value.split('\n').map(x => x.trim()).filter(Boolean);else if (type === 'checks') out[k] = [...e.querySelectorAll('input:checked')].map(x => x.value);else if (type === 'bool') out[k] = e.checked;else if (type === 'number') out[k] = Number(e.value) || 0;else out[k] = e.value.trim();
+      if (type === 'lines') out[k] = e.value.split('\n').map(x => x.trim()).filter(Boolean);else if (type === 'rows') out[k] = [...e.querySelectorAll('.rrow')].map(r => [...r.querySelectorAll('input')].map(i => i.value.trim())).filter(r => r[0]);else if (type === 'checks') out[k] = [...e.querySelectorAll('input:checked')].map(x => x.value);else if (type === 'bool') out[k] = e.checked;else if (type === 'number') out[k] = Number(e.value) || 0;else out[k] = e.value.trim();
     }
   } catch (err) {
     _iterator.e(err);
@@ -1198,6 +1206,26 @@ function submitForm() {
     closeModal();
     render();
   }
+}
+function rowHtml(cols, vals) {
+  vals = vals || [];
+  return `<div class="rrow">${cols.map((c, i) => `<input style="flex:${c.w || 1}" ${c.type ? `type="${c.type}" min="0"` : ''} placeholder="${h(c.ph || c.label)}" value="${h(vals[i] == null ? '' : vals[i])}">`).join('')}<span class="rbtn"><button type="button" class="sm ghost" title="往上移" onclick="rowMove(this)">↑</button><button type="button" class="sm ghost" title="刪除這一行" onclick="rowDel(this)">✕</button></span></div>`;
+}
+function rowAdd(id) {
+  var e = document.getElementById(id);
+  e.insertAdjacentHTML('beforeend', rowHtml(JSON.parse(e.dataset.cols)));
+  var r = e.lastElementChild.querySelector('input');
+  r && r.focus();
+}
+function rowDel(b) {
+  var r = b.closest('.rrow'),
+    box = r.parentNode;
+  r.remove();
+  if (!box.children.length) rowAdd(box.id);
+}
+function rowMove(b) {
+  var r = b.closest('.rrow');
+  if (r.previousElementSibling) r.parentNode.insertBefore(r, r.previousElementSibling);
 }
 function pairs(lines, numeric) {
   return lines.map(s => {
@@ -3336,12 +3364,32 @@ function editShow(id) {
     tasks: []
   };
   var o = _objectSpread(_objectSpread({}, s), {}, {
-    items: s.items.map(x => x.join(' | ')),
-    tasks: s.tasks.map(t => t.o ? t.t + ' | ' + t.o : t.t)
+    items: s.items.map(x => x.slice()),
+    tasks: s.tasks.map(t => [t.t, t.o || ''])
   });
-  form(id ? '編輯成發' : '新增成發', [['title', '名稱'], ['season', '季'], ['date', '日期', 'date'], ['items', '節目（一行一個：節目 | 負責 | 分鐘）', 'lines'], ['tasks', '準備事項（一行一個：事項 | 負責人）', 'lines'], ['notes', '備註（彩排時間、場地等）', 'textarea']], o, v => {
-    v.items = pairs(v.items);
-    v.tasks = pairs(v.tasks).map(p => ({
+  form(id ? '編輯成發' : '新增成發', [['title', '名稱'], ['season', '季'], ['date', '日期', 'date'], ['items', '節目', 'rows', [{
+    label: '節目',
+    ph: '例如：開場詩歌',
+    w: 3
+  }, {
+    label: '負責',
+    ph: '例如：全體小朋友',
+    w: 2
+  }, {
+    label: '分鐘',
+    ph: '分鐘',
+    w: 1,
+    type: 'number'
+  }]], ['tasks', '準備事項', 'rows', [{
+    label: '事項',
+    ph: '例如：訂主堂場地',
+    w: 3
+  }, {
+    label: '負責人',
+    ph: '例如：王老師',
+    w: 2
+  }]], ['notes', '備註（彩排時間、場地等）', 'textarea']], o, v => {
+    v.tasks = v.tasks.map(p => ({
       t: p[0],
       o: p[1] || '',
       done: !!(s.tasks.find(x => x.t === p[0]) || {}).done
