@@ -886,7 +886,7 @@ function tLesson(){const p=lessonPicker('');return `${p}<div class="card">${less
 function tokens(s,lang){return lang==='zh'?[...s]:s.split(/(\s+)/)}
 function isWord(t){return /[\p{L}\p{N}]/u.test(t)}
 function verseHtml(s,lang){const tk=tokens(s,lang);const long=lang==='en'&&s.length>70;
- return tk.map((t,i)=>{if(!isWord(t)){if(lang==='en'&&/\s/.test(t)&&i>0&&(/[;:.?!]$/.test(tk[i-1])||(long&&/,$/.test(tk[i-1]))))return '<br>';return h(t)}
+ return tk.map((t,i)=>{if(!isWord(t)){if(lang==='en'&&/\s/.test(t)&&i>0&&/[.?!]$/.test(tk[i-1]))return '<br>';/* 英文只在句子結束時換行，逗號、分號不換行 */return h(t)}
   const hid=hidTok.has(lang+i);const act=hid?`hidTok.delete('${lang}${i}');render()`:lang==='en'?`sayWord(this)`:'';
   return `<span class="tok ${hid?'hid':''}${lang==='en'?' tap':''}" data-i="${i}" ${act?`onclick="${act}"`:''}>${h(t)}</span>`}).join('')}
 function tVerse(){

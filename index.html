@@ -2974,7 +2974,7 @@ function verseHtml(s, lang) {
   var long = lang === 'en' && s.length > 70;
   return tk.map((t, i) => {
     if (!isWord(t)) {
-      if (lang === 'en' && /\s/.test(t) && i > 0 && (/[;:.?!]$/.test(tk[i - 1]) || long && /,$/.test(tk[i - 1]))) return '<br>';
+      if (lang === 'en' && /\s/.test(t) && i > 0 && /[.?!]$/.test(tk[i - 1])) return '<br>'; /* 英文只在句子結束時換行，逗號、分號不換行 */
       return h(t);
     }
     var hid = hidTok.has(lang + i);
