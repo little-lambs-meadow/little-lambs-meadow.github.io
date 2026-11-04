@@ -146,7 +146,7 @@ main.teach>.stage{max-width:1400px;margin:0 auto}
 .hmenu button:hover{background:#f6efe6}.hmenu .mi{display:inline-block;min-width:34px;font-weight:700;color:#e2572a}
 .hmenu .mmain{font-weight:700}.hmenu hr{border:0;border-top:1px solid #eee;margin:6px 4px}
 .hmenu .mu{padding:8px 12px 10px;font-weight:700;border-bottom:1px solid #eee;margin-bottom:6px}.hmenu .mu span{font-weight:400;color:#888;font-size:13px;margin-left:8px}
-.vctl{display:flex;align-items:center;flex-shrink:0;margin:0 0 4px}.vctl .lsel{flex-shrink:0}.vctl>*{margin-right:6px}.vctl .pri{padding:6px 12px;font-size:15px;white-space:nowrap;border-radius:8px}.vctl .lsel{min-width:0!important;margin:0!important;padding:5px 6px!important;font-size:14px!important;border-radius:8px}
+.vctl{display:flex;align-items:center;flex-shrink:0;margin:0 0 4px}.vctl .lsel{flex-shrink:0}.vctl>*{margin-right:4px}.vctl .pri{padding:6px 12px;font-size:15px;white-space:nowrap;border-radius:8px}.vctl .lsel{min-width:0!important;margin:0!important;padding:5px 6px!important;font-size:14px!important;border-radius:8px}
 .hsel{flex:0 0 auto;min-width:0;max-width:40vw;margin:0 0 4px;padding:6px 8px;font-size:15px;border-radius:8px;border:1px solid #fff8;background:#fffffff0;color:#333}
 .fill{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .fill>.fit,.fill>.vwrap{flex:1;min-height:0;overflow:hidden}
@@ -492,16 +492,16 @@ function render(){applyZy();
   ${mode==='teach'&&tab==='video'&&D.lessons.length?videoCtl():''}
   ${mode==='teach'&&tab!=='rules'&&STEPS.some(x=>x[0]===tab)&&D.lessons.length?`<select class="hsel" onchange="curLesson=this.value;qIdx=0;hidTok.clear();render()">${lessonOpts(cur().id,true)}</select>`:''}${menuBtn()}</div>`;
  {const m=document.getElementById('hmenu');if(m)m.innerHTML=menuHtml()}
- fitSel(hd.querySelector('.hsel'));fitSel(hd.querySelector('.vctl .lsel'));
+ fitSel(hd.querySelector('.hsel'));fitSel(hd.querySelector('.vctl .lsel'),58);
  {const on=hd.querySelector('nav .on');if(on){const n=on.parentNode;n.scrollLeft=on.offsetLeft-(n.clientWidth-on.offsetWidth)/2}}
  const f={rules:tRules,worship:tWorship,ice:tIce,intro:tIntro,video:tVideo,qa:tQA,pray:tPray,lesson:tLesson,verse:tVerse,song:tSong,points:tPoints,rank:tRank,lessons:pLessons,songs:pSongs,shows:pShows,kids:pKids,sessions:pSessions,meetings:pMeetings,meeting:pMeeting,settings:pSettings}[tab];
  document.getElementById('app').innerHTML=f?f():'';
  layout();
 }
 /* 下拉選單的寬度剛好放得下目前選的那一課（不留一大段空白） */
-function fitSel(el){if(!el||el.selectedIndex<0)return;const sp=document.createElement('span');const cs=getComputedStyle(el);
+function fitSel(el,pad){if(!el||el.selectedIndex<0)return;const sp=document.createElement('span');const cs=getComputedStyle(el);
  sp.style.cssText='position:absolute;visibility:hidden;white-space:pre;font-size:'+cs.fontSize+';font-family:'+cs.fontFamily;
- sp.textContent=el.options[el.selectedIndex].text;document.body.appendChild(sp);el.style.width=(sp.offsetWidth+62)+'px';sp.remove()}
+ sp.textContent=el.options[el.selectedIndex].text;document.body.appendChild(sp);el.style.width=(sp.offsetWidth+(pad||40))+'px';sp.remove()}
 /* ☰ 選單：全螢幕、注音、雲端同步、帳號、老師區／登入 */
 function menuBtn(){const bad=Cloud.url&&(!Cloud.pw||['err','off','pw'].indexOf(Cloud.state)>=0);
  return `<button class="mbtn" id="mBtn" onclick="toggleMenu(event)" title="選單">☰${bad?'<i class="mdot"></i>':''}</button>`}
