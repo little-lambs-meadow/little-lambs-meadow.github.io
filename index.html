@@ -1540,7 +1540,7 @@ function loginDlg() {
  <label class="f">帳號<input id="lg_a" autocomplete="username" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('lg_p').focus()"></label>
  <label class="f">密碼<input id="lg_p" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></label>
  <div class="actions"><button class="blue" onclick="doLogin()">登入</button></div>
- <div class="notice" style="margin-top:14px">第一次使用？<button class="blue" style="margin:6px 0" onclick="applyDlg()">🙋 申請老師帳號</button><br>送出後由主控或設計師核准，核准後就能登入。<br><span class="muted">有驗證碼的話也可以 <a href="#" onclick="registerDlg();return false">用驗證碼註冊</a>。忘記密碼請找主控重設。</span></div>
+ <div class="notice" style="margin-top:14px">第一次使用？<button class="blue" style="margin:6px 0" onclick="applyDlg()">🙋 申請老師帳號</button><br>送出後由主控或設計師核准，核准後就能登入。<br><span class="muted">忘記密碼請找主控或設計師重設。</span></div>
  <p class="muted">登入後會記住在這台裝置，不用每次輸入；換人使用請按「登出」。</p>`);
   setTimeout(() => {
     var e = document.getElementById('lg_a');
@@ -4069,14 +4069,10 @@ function pSettings() {
   var open = D.invites.filter(i => !i.usedBy && !i.revoked && i.expires > now);
   var used = D.invites.filter(i => i.usedBy).slice(-5).reverse();
   var admins = D.teachers.filter(t => isAdminRole(t.role) && t.active !== false).length;
-  var authCard = authOn() ? `<div class="card"><div class="row"><h3 class="sp">🔐 老師帳號登入：已啟用</h3><button class="sm danger" onclick="if(confirm('關閉帳號登入？帳號資料會保留')){D.settings.auth=false;setUser(null);save('關閉老師帳號登入');render()}">關閉</button></div></div>` : `<div class="card" style="border-color:#2a6fd6"><h3>🔐 老師帳號（尚未啟用）</h3><p class="muted">啟用後：老師用自己的帳號登入才能進老師區；新老師需要主控或設計師發的驗證碼才能註冊；刪除孩子、課程和修改設定只有主控和設計師能做。教學模式（上課畫面）不需要登入。</p>
+  var authCard = authOn() ? '' : `<div class="card" style="border-color:#2a6fd6"><h3>🔐 老師帳號（尚未啟用）</h3><p class="muted">啟用後：老師用自己的帳號登入才能進老師區；新老師需要主控或設計師發的驗證碼才能註冊；刪除孩子、課程和修改設定只有主控和設計師能做。教學模式（上課畫面）不需要登入。</p>
    <button class="blue" onclick="enableAuth()">啟用老師帳號</button></div>`;
   var cloudCard = Cloud.pw ? `<div class="card"><div class="row"><h3 class="sp">☁️ 教會密碼（雲端同步）</h3><button class="sm ghost" onclick="cloudChangePw()">更改教會密碼</button></div><p class="muted">每台裝置第一次打開 app 時要輸入的密碼。改了之後，所有裝置都要重新輸入新密碼。</p></div>` : '';
   return `<h2>設定${authOn() ? '（' + roleName(me()) + '）' : ''}</h2>${authCard}${cloudCard}${authOn() ? `
- <div class="card"><h3>🔑 發驗證碼給新老師</h3><p class="muted">每組驗證碼限用一次、7 天內有效。用 LINE 傳給老師，老師在登入畫面點「用驗證碼註冊」。</p>
- <div class="row"><input id="iv_note" class="sp" placeholder="給誰（例如：陳姊妹）"><button class="blue" onclick="genInvite()">產生驗證碼</button></div>
- ${open.map(i => `<div class="row card" style="margin:8px 0"><b style="font-size:22px;letter-spacing:3px;font-family:monospace">${i.code}</b><span class="sp muted">${h(i.note)} · ${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效</span><button class="sm ghost" onclick="copyInvite('${i.code}')">複製訊息</button><button class="sm danger" onclick="revokeInvite('${i.code}')">作廢</button></div>`).join('')}
- ${used.length ? `<div class="muted" style="margin-top:6px">最近使用：${used.map(i => `${i.code} → ${h(i.usedBy)}（${h(i.usedAt)}）`).join('、')}</div>` : ''}</div>
  ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t => !t.pending).map(t => `<tr style="${t.active === false ? 'opacity:.5' : ''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role) ? 't' : 'o'}">${roleName(t)}</span> ${accOf(t) !== t.name ? `<span class="muted">帳號：${h(accOf(t))}</span>` : ''}${t.active === false ? ' <span class="tag">已停用</span>' : ''}<div class="muted">${h(t.created || '')} 加入</div></td>
  <td style="text-align:right">${t.name === user ? '<span class="muted">（你）</span>' : !canManage(t) ? '<span class="muted">🔒 只有設計師能修改</span>' : `<button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).filter(r => r !== 'designer' || amDesigner()).map(r => `<option value="${r}" ${(t.role || 'teacher') === r ? 'selected' : ''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active === false ? 'ghost' : 'danger'}" onclick="toggleT('${t.id}')">${t.active === false ? '啟用' : '停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
  <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議。</p></div>
