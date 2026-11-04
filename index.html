@@ -1361,6 +1361,7 @@ function render() {
   document.getElementById('app').innerHTML = f ? f() : '';
   if (mode === 'staff' && tab === 'settings') settingsTabs();
   layout();
+  if (mode === 'teach' && !canPoint()) teachRO();
   if (mode === 'staff' && isHelper() && ['shows', 'sessions', 'meetings', 'meeting'].indexOf(tab) >= 0) helperRO(); // 詩歌可以編輯；成發、上課紀錄、會議只能看
 }
 /* 下拉選單的寬度剛好放得下目前選的那一課（不留一大段空白） */
@@ -1432,6 +1433,26 @@ function menuHtml() {
   return o;
 }
 /* 小助教看上課紀錄／會議：拿掉新增、編輯、輸入的按鈕和欄位，只留觀看用的（進入會議、返回、整合會議記錄、孩子紀錄） */
+/* 沒登入：上課畫面只能看（點名、點數、敬拜的新增／刪除／加點都拿掉） */
+function teachRO() {
+  var app = document.getElementById('app');
+  if (tab === 'points') {
+    app.querySelectorAll('.items,#newKid').forEach(e => {
+      var r = e.id === 'newKid' ? e.parentNode : e;
+      r.remove();
+    });
+    app.querySelectorAll('.stephead button').forEach(b => b.remove());
+    app.querySelectorAll('.kid').forEach(k => {
+      k.removeAttribute('onclick');
+      k.style.cursor = 'default';
+    });
+    var m = app.querySelector('.fill .muted');
+    if (m) m.innerHTML = '👀 只能觀看。要點名加點請先 <a href="#" onclick="loginDlg();return false"><b>登入帳號</b></a>';
+  }
+  if (tab === 'worship') app.querySelectorAll('button').forEach(b => {
+    if (/quickSongDlg|songDelDlg/.test(b.getAttribute('onclick') || '')) b.remove();
+  });
+}
 function helperRO() {
   var app = document.getElementById('app');
   app.querySelectorAll('button').forEach(b => {
@@ -2109,6 +2130,10 @@ function snack(msg, fn) {
   e._t = setTimeout(() => e.classList.remove('on'), 8000);
 }
 function songDelDlg(id, fromLib) {
+  if (!canPoint()) {
+    toast('請先登入帳號才能編輯');
+    return;
+  }
   var sg = D.songs.find(x => x.id === id);
   if (!sg) return;
   var l = fromLib ? null : cur();
@@ -2166,6 +2191,10 @@ function songDelete(id) {
   });
 }
 function quickSongDlg() {
+  if (!canPoint()) {
+    toast('請先登入帳號才能編輯');
+    return;
+  }
   openModal(`<h2>＋ 加一首敬拜詩歌</h2>
  <label class="f">歌名<input id="ws_t"></label><label class="f">YouTube 網址（單首或播放清單都可以）<input id="ws_u"></label>
  <label class="f"><input type="checkbox" id="ws_theme"> ⭐ 設為本季主題詩歌（每堂課都會出現）</label>
@@ -3188,8 +3217,8 @@ function tSong() {
   <div class="lyrics" id="lyr" style="font-size:${fontSize}px"><b>${h(s.title)}</b>\n\n${h(s.lyrics)}</div>`;
 }
 function canPoint() {
-  return !(authOn() && D.settings.requireLogin && !user);
-}
+  return !authOn() || !!user;
+} // 上課畫面的新增、刪除、加點：一定要登入帳號
 function nowHM() {
   var t = new Date();
   return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
@@ -3202,7 +3231,6 @@ function todayOf(id) {
   return D.ledger.filter(x => x.kidId === id && x.date === d);
 }
 function tPoints() {
-  if (!canPoint()) return `<div class="card empty">目前設定為「加點需要老師登入」<br><br><button class="blue" onclick="loginDlg()">老師登入</button></div>`;
   var S = D.settings,
     d = today();
   var at = D.attend[d] || {};
@@ -3228,6 +3256,10 @@ function tPoints() {
 }
 var manageKids = false;
 function kidManage(id) {
+  if (!canPoint()) {
+    toast('請先登入帳號才能編輯');
+    return;
+  }
   var k = kid(id);
   openModal(`<h2>${h(k.name)}</h2><div class="muted">累計 ⭐ ${bal(id)}</div>
  <label class="f">改名<input id="km_n" value="${h(k.name)}"></label>
@@ -3274,6 +3306,10 @@ function deleteKid(id) {
   toast('已刪除 ' + k.name);
 }
 function hiddenKidsDlg() {
+  if (!canPoint()) {
+    toast('請先登入帳號才能編輯');
+    return;
+  }
   var ks = D.kids.filter(k => !k.active);
   openModal(`<h2>已隱藏的孩子</h2>${ks.map(k => `<div class="row card" style="margin:6px 0"><b class="sp">${h(k.name)}</b><span class="muted">⭐ ${bal(k.id)}</span><button class="blue sm" onclick="kid('${k.id}').active=true;save('恢復孩子 '+kid('${k.id}').name);hiddenKidsDlg();render()">恢復</button><button class="danger sm" onclick="deleteKid('${k.id}')">刪除</button></div>`).join('') || '<p class="muted">沒有隱藏的孩子</p>'}`);
 }
@@ -3327,6 +3363,10 @@ function exMates(n) {
   return g ? g.filter(x => x !== n) : [];
 }
 function tapKid(id) {
+  if (!canPoint()) {
+    toast('請先登入帳號才能編輯');
+    return;
+  }
   var S = D.settings,
     d = today();
   D.attend[d] = D.attend[d] || {};
@@ -3388,6 +3428,10 @@ function tapKid(id) {
   el && el.classList.add('pop');
 }
 function undo() {
+  if (!canPoint()) {
+    toast('請先登入帳號才能編輯');
+    return;
+  }
   var u = undoStack.pop();
   if (!u) return;
   D.ledger = D.ledger.filter(x => x.id !== u.lid);
@@ -3399,6 +3443,10 @@ function undo() {
   toast('已復原');
 }
 function quickKid() {
+  if (!canPoint()) {
+    toast('請先登入帳號才能編輯');
+    return;
+  }
   var e = document.getElementById('newKid');
   var n = e.value.trim();
   if (!n) return;
@@ -4296,7 +4344,6 @@ function pSettings() {
  <label class="f">① 主日學規則（一行一條，上課時大家一起念）<textarea id="st_rules">${h((S.rules || []).join('\n'))}</textarea></label>
  <label class="f">① 參加主日學的原因（一行一條，顯示在規則下面）<textarea id="st_reasons">${h((S.reasons || []).join('\n'))}</textarea></label>
  ${authOn() ? '' : `<label class="f">老師名單（一行一位，用於上課紀錄與會議）<textarea id="st_tn">${h((S.teacherNames || []).join('\n'))}</textarea></label>`}
- ${authOn() ? `<label class="f"><input type="checkbox" id="st_r" ${S.requireLogin ? 'checked' : ''}> 教學模式點名加點需要老師登入</label>` : ''}
  <div class="row"><label class="f">報到截止時間<input id="st_cut" type="time" value="${h(S.cutoff)}"></label><label class="f">準時報到點數<input id="st_on" type="number" value="${S.onPts}"></label><label class="f">晚到報到點數<input id="st_late" type="number" value="${S.latePts}"></label></div><label class="f">每日點數上限（每個孩子一天最多得幾點，0＝不限）<input id="st_cap" type="number" min="0" value="${S.dailyCap || 0}"></label><p class="muted">準時與晚到不重複計算；其他項目每人每天各算一次。補登舊點數、扣點、兌換不受上限影響。</p>
  <label class="f">其他加分項目（一行一個：名稱 | 點數）<textarea id="st_i">${h(S.items.map(i => i.name + ' | ' + i.pts).join('\n'))}</textarea></label>
  <label class="f">獎勵（一行一個：名稱 | 所需點數）<textarea id="st_w">${h(S.rewards.map(i => i.name + ' | ' + i.cost).join('\n'))}</textarea></label>
