@@ -3298,7 +3298,7 @@ function pLessons() {
       var _ref14 = _slicedToArray(_ref13, 2),
         n = _ref14[0],
         l = _ref14[1];
-      return `<tr class="${isSkip(l, planYear) ? 'lskip' : ''}"><td style="width:34px"><input type="checkbox" class="lchk" ${isSkip(l, planYear) ? '' : 'checked'} title="勾選＝這一年要上；取消勾選＝這一年不上" onchange="toggleSkip('${l.id}',this.checked)"></td><td style="width:${bib ? 96 : 60}px">${bib ? `${n}.<div class="muted" style="font-size:12px">${h(l.season)}第${h(l.no)}課</div>` : `第${h(l.no)}課`}</td><td><b>${h(l.title)}</b>${isSkip(l, planYear) ? ' <span class="tag">不上</span>' : ''}${taughtDate(l, planYear) ? ` <span class="tag ok">✅ 已上 ${h(taughtDate(l, planYear).slice(5))}</span>` : ''}<div class="muted">${h(dateIn(l, planYear))} ${h(l.verseRef)}${l.notes ? ' · 📝有備註' : ''}</div></td>
+      return `<tr class="${isSkip(l, planYear) ? 'lskip' : ''}"><td style="width:34px"><input type="checkbox" class="lchk" ${isSkip(l, planYear) ? '' : 'checked'} title="勾選＝這一年要上；取消勾選＝這一年不上" onchange="toggleSkip('${l.id}',this.checked)"></td><td style="width:${bib ? 96 : 60}px">${bib ? `${n}.<div class="muted" style="font-size:12px">${h(l.season)}第${h(l.no)}課</div>` : `第${h(l.no)}課`}</td><td><b>${h(l.title)}</b>${isSkip(l, planYear) ? ' <span class="tag">不上</span>' : ''}${taughtDate(l, planYear) ? ` <span class="tag ok">✅ 已上 ${h(taughtDate(l, planYear).slice(5))}</span>` : ''}<div class="muted">${h(dateIn(l, planYear))} ${h(l.verseRef)}</div></td>
   <td style="text-align:right;white-space:nowrap"><button class="sm ghost" onclick="viewLesson('${l.id}')">看</button> <button class="sm ghost" onclick="editLesson('${l.id}')">編輯</button></td></tr>`;
     }).join('')}</table></div>`;
   }).join('') || '<div class="empty">還沒有課程</div>'}`;
