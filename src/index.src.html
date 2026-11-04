@@ -148,7 +148,7 @@ header.teach .nrow{padding-top:8px}.vctl>*:last-child{margin-right:0}
 .ricon:hover,.mbtn:hover{background:rgba(255,255,255,.45)}.mbtn{background:#fffffff0;color:#333;font-size:22px}
 .mdot{position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:#e23b2a;border:2px solid #fff}
 #intro{position:fixed;top:0;right:0;bottom:0;left:0;z-index:60;background:#cfe3a3;overflow:hidden;transition:opacity .6s}
-#intro .ibg{position:absolute;top:-20px;right:-20px;bottom:-20px;left:-20px;background:url(assets/intro-end.jpg) center/cover;filter:blur(18px)}
+#intro .ibg{position:absolute;top:-20px;right:-20px;bottom:-20px;left:-20px;background:url(assets/intro-end.jpg?v=2) center/cover;filter:blur(18px)}
 #intro video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;cursor:pointer}
 @media (orientation:portrait){#intro video{object-fit:contain}}
 #intro button{position:absolute;bottom:22px;border:0;border-radius:22px;padding:9px 18px;font-size:16px;background:rgba(255,255,255,.88);color:#5a4630;box-shadow:0 3px 12px rgba(0,0,0,.18);cursor:pointer}
@@ -1354,7 +1354,7 @@ render();
 /* ===== 開場動畫：打開 app 時先播放（按「重新整理」回來時不播） ===== */
 (function(){if(VIEW0)return;
  const o=document.createElement('div');o.id='intro';
- o.innerHTML='<div class="ibg"></div><video id="introV" src="assets/intro.mp4" playsinline preload="auto"></video><button id="introSnd" type="button">🔊 開聲音</button><button id="introSkip" type="button">跳過 ›</button>';
+ o.innerHTML='<div class="ibg"></div><video id="introV" src="assets/intro.mp4?v=2" playsinline preload="auto"></video><button id="introSnd" type="button">🔊 開聲音</button><button id="introSkip" type="button">跳過 ›</button>';
  document.body.appendChild(o);const v=o.querySelector('video'),snd=o.querySelector('#introSnd');let done=false;
  const end=()=>{if(done)return;done=true;o.style.opacity='0';setTimeout(()=>{try{v.pause()}catch(e){}o.remove()},650)};
  const unmute=()=>{v.muted=false;snd.style.display='none';const r=v.play();if(r&&r.catch)r.catch(()=>{})};
