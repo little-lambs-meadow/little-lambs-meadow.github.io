@@ -4341,6 +4341,15 @@ document.addEventListener('keydown', e => {
   var nav = ['ArrowRight', 'PageDown', 'ArrowLeft', 'PageUp'].indexOf(e.key) >= 0;
   if (t === 'SELECT' && ae.closest('#hdr') && nav && (e.key === 'PageDown' || e.key === 'PageUp' || e.key === 'ArrowRight' || e.key === 'ArrowLeft')) ae.blur(); // 上方選單選完課後，方向鍵照樣換頁
   else if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+  if (e.key === 'Enter' && (tab === 'video' || tab === 'worship')) {
+    // Enter：妙妙書全螢幕播放；敬拜全部連續播放（只有一首就播這首）
+    var b = tab === 'video' ? document.querySelector('#hdr .vctl .pri') || document.querySelector('#app .tbar .pri') : document.querySelector('#app .tbar .pri');
+    if (b) {
+      e.preventDefault();
+      b.click();
+      return;
+    }
+  }
   if (e.key === 'ArrowRight' || e.key === 'PageDown') {
     stepGo(1);
     e.preventDefault();
