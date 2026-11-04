@@ -4292,7 +4292,7 @@ function pSettings() {
  <td style="text-align:right">${t.name === user ? '<span class="muted">（你）</span>' : !canManage(t) ? '<span class="muted">🔒 只有設計師能修改</span>' : `<button class="sm ghost" onclick="const n=prompt('「${h(t.name)}」的新顯示名稱（登入帳號不變）','${h(t.name)}');if(n!==null)renameT('${t.id}',n)">✏️ 改名</button> <button class="sm ghost" onclick="resetPw('${t.id}')">重設密碼</button> <select class="sm" style="padding:4px" onchange="setRole('${t.id}',this.value)">${Object.keys(ROLES).filter(r => r !== 'designer' || amDesigner()).map(r => `<option value="${r}" ${(t.role || 'teacher') === r ? 'selected' : ''}>${ROLES[r]}</option>`).join('')}</select> <button class="sm ${t.active === false ? 'ghost' : 'danger'}" onclick="toggleT('${t.id}')">${t.active === false ? '啟用' : '停用'}</button> <button class="sm danger" title="刪除這個帳號" onclick="delT('${t.id}')">🗑 刪除</button>`}</td></tr>`).join('')}</table>
  <p class="muted">停用的老師不能再登入，但過去寫的紀錄都會保留。目前可管理的帳號（主控＋設計師）${admins} 位，建議至少兩位，避免忘記密碼時沒人能管理。<br>身分說明：主控＝負責同工／院長；設計師＝負責 app 程式；兩者都能管理帳號與設定。老師＝備課、上課、點名、紀錄、會議；小助教＝登記點數、編輯詩歌；成發、上課紀錄、會議只能觀看。</p></div>
 ` : ''}
- <div class="card"><h3>⭐ 點數與教學設定</h3><label class="f">名稱<input id="st_c" value="${h(S.church)}"></label>
+ <div class="card"><h3>⭐ 點數與教學設定</h3>
  <label class="f">① 主日學規則（一行一條，上課時大家一起念）<textarea id="st_rules">${h((S.rules || []).join('\n'))}</textarea></label>
  <label class="f">① 參加主日學的原因（一行一條，顯示在規則下面）<textarea id="st_reasons">${h((S.reasons || []).join('\n'))}</textarea></label>
  ${authOn() ? '' : `<label class="f">老師名單（一行一位，用於上課紀錄與會議）<textarea id="st_tn">${h((S.teacherNames || []).join('\n'))}</textarea></label>`}
@@ -4429,7 +4429,7 @@ function _resetPw() {
 function saveSettings() {
   var v = k => document.getElementById(k).value;
   var S = D.settings;
-  S.church = v('st_c').trim() || '小羊樂園';
+  S.church = '小羊樂園';
   S.rules = v('st_rules').split('\n').map(x => x.trim()).filter(Boolean);
   S.reasons = v('st_reasons').split('\n').map(x => x.trim()).filter(Boolean);
   var r = document.getElementById('st_r');
