@@ -2081,9 +2081,33 @@ function tRules() {
   var sw = w.length ? `<div class="tbar" style="justify-content:center"><button class="${rulePg ? 'ghost' : 'blue'}" onclick="rulePg=0;render()">📏 主日學規則</button><button class="${rulePg ? 'blue' : 'ghost'}" onclick="rulePg=1;render()">❤️ 參加的原因</button></div>` : '';
   return stepPage(`${sw}<div class="bigcard fit zy rules1" data-max="110"><div class="rhd">${pg[0]}</div><ol>${pg[1].map(x => `<li>${h(x)}</li>`).join('')}</ol></div>`, false);
 }
+/* 詩歌的季＝年度季度（1～3月第一季…），跟妙妙書的出版季不同；每課用哪一季的詩歌：可在敬拜頁選，預設照上課日期所在的季 */
+var QTRS = ['第一季', '第二季', '第三季', '第四季'],
+  QLAB = {
+    第一季: '第一季（1～3月）',
+    第二季: '第二季（4～6月）',
+    第三季: '第三季（7～9月）',
+    第四季: '第四季（10～12月）'
+  };
+var qOf = d => QTRS[Math.floor((Number(String(d || today()).slice(5, 7)) || 1) - 1) / 3 | 0] || '第一季';
+var songQ = l => l.songQ || qOf(dateIn(l, curYear()) || today());
+function setSongQ(q) {
+  var l = cur();
+  if (!l.id) return;
+  if (!canPoint()) {
+    toast('請先登入帳號才能編輯');
+    render();
+    return;
+  }
+  if (q === qOf(dateIn(l, curYear()) || today())) delete l.songQ;else l.songQ = q;
+  curSong = null;
+  save(l.title + ' 敬拜改用' + q + '詩歌');
+  render();
+}
 function worshipList(l) {
   var ids = [];
-  D.songs.filter(x => x.theme && (!l.season || x.season === l.season)).forEach(x => ids.push(x.id));
+  var q = songQ(l);
+  D.songs.filter(x => x.theme && x.season === q).forEach(x => ids.push(x.id));
   (l.songIds || []).forEach(i => {
     if (!ids.includes(i)) ids.push(i);
   });
@@ -2095,7 +2119,7 @@ function hasLyrics(s) {
 function tWorship() {
   var l = cur();
   var list = worshipList(l);
-  if (!list.length) list = D.songs.filter(x => !l.season || x.season === l.season);
+  if (!list.length) list = D.songs.filter(x => x.season === songQ(l));
   var vids = list.map(x => {
     var m = String(x.video || '').match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/|live\/)([\w-]{11})/);
     return m && !/[?&]list=/.test(x.video) ? m[1] : null;
@@ -2105,7 +2129,7 @@ function tWorship() {
   if (s) curSong = s.id;
   var yt = s && ytId(s.video);
   var box = yt || q;
-  var bar = `<div class="tbar scroll">${q ? `<button class="pri" style="font-size:18px" onclick="playFull('${box}','${q}')">▶ 全部連續播放（${vids.length} 首）</button>` : ''}
+  var bar = `<div class="tbar scroll">${l.id ? canPoint() ? `<select class="lsel" style="width:auto;font-size:16px;margin:0 6px 6px 0" title="這一課用哪一季的詩歌" onchange="setSongQ(this.value)">${QTRS.map(q => `<option value="${q}" ${q === songQ(l) ? 'selected' : ''}>🎵 ${QLAB[q]}詩歌</option>`).join('')}</select>` : `<span class="tag" style="font-size:15px">🎵 ${QLAB[songQ(l)]}詩歌</span>` : ''}${q ? `<button class="pri" style="font-size:18px" onclick="playFull('${box}','${q}')">▶ 全部連續播放（${vids.length} 首）</button>` : ''}
   ${list.map((x, i) => `<button class="${x.id === s.id ? 'blue' : 'ghost'}" onclick="curSong='${x.id}';showLyrics=false;render()">${i + 1}. ${x.theme ? '⭐ ' : ''}${h(x.title)}</button>`).join('')}
   <span class="sp"></span>${yt ? `<button class="pri" onclick="playFull('${yt}')">▶ 全螢幕播放這首</button>` : ''}${s && hasLyrics(s) ? `<button class="ghost" onclick="showLyrics=!showLyrics;render()">${showLyrics ? '🎬 看影片' : '📝 歌詞'}</button>` : ''}<button class="ghost" onclick="quickSongDlg()">＋ 加歌</button>${s ? `<button class="ghost" onclick="songDelDlg('${s.id}')">🗑 移除</button>` : ''}</div>`;
   if (!s) return stepPage(bar + '<div class="empty">這一課還沒有敬拜詩歌，按「＋ 加歌」貼上 YouTube 網址</div>');
@@ -2212,7 +2236,7 @@ function quickSong() {
   var sg = {
     id: uid(),
     title: t,
-    season: l.season || '',
+    season: songQ(l),
     theme: th,
     video: u,
     lyrics: '',
@@ -3788,11 +3812,13 @@ function _doImport() {
 }
 function pSongs() {
   return `<div class="row" style="margin-bottom:10px"><h2 class="sp">詩歌</h2><button class="blue" onclick="editSong()">＋新增詩歌</button></div>
- ${D.songs.map(s => `<div class="card row"><div class="sp"><b>${s.theme ? '⭐ ' : ''}${h(s.title)}</b><div class="muted">${h(s.season)}${s.notes ? ' · ' + h(s.notes).slice(0, 40) : ''}</div></div><button class="sm ghost" onclick="curSong='${s.id}';setMode('teach');go('worship')">投影</button><button class="sm ghost" onclick="editSong('${s.id}')">編輯</button><button class="sm danger" onclick="songDelDlg('${s.id}',true)">刪除</button></div>`).join('') || '<div class="empty">還沒有詩歌</div>'}`;
+ ${D.songs.map(s => `<div class="card row"><div class="sp"><b>${s.theme ? '⭐ ' : ''}${h(s.title)}</b><div class="muted">${h(QLAB[s.season] || s.season)}</div></div><button class="sm ghost" onclick="curSong='${s.id}';setMode('teach');go('worship')">投影</button><button class="sm ghost" onclick="editSong('${s.id}')">編輯</button><button class="sm danger" onclick="songDelDlg('${s.id}',true)">刪除</button></div>`).join('') || '<div class="empty">還沒有詩歌</div>'}`;
 }
 function editSong(id) {
-  var s = id ? D.songs.find(x => x.id === id) : {};
-  form(id ? '編輯詩歌' : '新增詩歌', [['title', '歌名'], ['season', '季（例如 第一季）'], ['theme', '⭐ 本季主題詩歌（每堂敬拜都會出現）', 'bool'], ['video', 'YouTube 網址（單首或播放清單）'], ['lyrics', '歌詞（選填）', 'textarea'], ['notes', '教唱重點／動作提示', 'textarea']], s, v => {
+  var s = id ? D.songs.find(x => x.id === id) : {
+    season: qOf(today())
+  };
+  form(id ? '編輯詩歌' : '新增詩歌', [['title', '歌名'], ['season', '季（年度季度）', 'select', QTRS.map(q => [q, QLAB[q]])], ['theme', '⭐ 本季主題詩歌（每堂敬拜都會出現）', 'bool'], ['video', 'YouTube 網址（單首或播放清單）']], s, v => {
     if (!v.title) {
       toast('請填歌名');
       return false;
