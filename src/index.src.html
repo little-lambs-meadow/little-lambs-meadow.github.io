@@ -819,7 +819,7 @@ function sbWhich(e){const a=sbAvail(e);let v='drv';try{v=localStorage.getItem('l
 function sbUseDrv(e){return sbWhich(e)==='drv'}
 function sbSetSrc(v){try{localStorage.setItem('llm_vsrc',v)}catch(x){}render();toast('改用 '+SB_SRC[v]+' 播放')}
 function sbUrl(e,w,auto){w=w||sbWhich(e);
- if(w==='drv')return drvSrc(sbDrv(e.c));
+ if(w==='drv'){const u=drvSrc(sbDrv(e.c));return auto?u+(u.indexOf('?')>=0?'&':'?')+'autoplay=1':u}
  if(w==='gtv')return 'https://www.goodtv.tv/watch?episode='+SB_GTV[e.c];
  if(w==='yt')return 'https://www.youtube.com/embed/'+SB_YT[e.c]+'?rel=0&playsinline=1'+(auto?'&autoplay=1':'');
  return sbSrc(e,auto)}
@@ -835,7 +835,7 @@ function sbPlayFull(c){const e=sbEp(c),box=document.getElementById('sbbox');if(!
  const f=box.querySelector('iframe');const fs=box.requestFullscreen||box.webkitRequestFullscreen;
  const w=sbWhich(e);
  if(fs){try{const r=fs.call(box);r&&r.catch&&r.catch(()=>{})}catch(x){}}else{window.open(sbOpenUrl(e,w),'_blank');return}
- if(w==='cf'||w==='yt')f.src=sbUrl(e,w,true)}
+ if(f&&(w==='cf'||w==='yt'||w==='drv'))f.src=sbUrl(e,w,true)}  // 全螢幕後自動開始播放
 function sbSrcBtn(e){const w=sbWhich(e),av=sbAvail(e);
  return `<select class="lsel" style="font-size:16px" title="切換影片來源" onchange="if(this.value==='open'){window.open('${sbOpenUrl(e,w)}','_blank');this.value='${w}'}else sbSetSrc(this.value)">${av.map((k,i)=>`<option value="${k}" ${k===w?'selected':''}>${i+1}. ${SB_SRC[k]}</option>`).join('')}<option value="open">↗ 在新分頁開啟</option></select>`}
 function sbOptions(sel){return SB_SEASONS.map((sn,i)=>`<optgroup label="${sn}">${SB_EPS.filter(e=>e.c[1]==String(i+1)).map(e=>`<option value="${e.c}" ${e.c===sel?'selected':''}>${sbLabel(e)}｜${h(e.t)}</option>`).join('')}</optgroup>`).join('')}
