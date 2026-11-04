@@ -517,7 +517,7 @@ function menuHtml(){const it=(ic,t,fn,cls)=>`<button class="${cls||''}" onclick=
  if(fsOk&&matchMedia('(pointer: fine)').matches)o+=curFs()===document.documentElement?it('⤢','離開全螢幕','appFs()'):it('⛶','全螢幕','appFs()');
  if(cs)o+=it(cs[0],cs[1],'cloudDlg()');
  o+='<hr>';
- if(mode==='teach')o+=it('🐑',user||!authOn()?'老師區':'老師登入','enterStaff()','mmain');
+ if(mode==='teach'){o+=it('🐑',user||!authOn()?'老師區':'老師登入','enterStaff()','mmain');if(authOn()&&user)o+=it('🚪','登出','logout()')}
  else{o+=it('📺','回到教學模式','setMode(\'teach\')','mmain');if(authOn()&&user)o+=it('🚪','登出','logout()')}
  return o}
 function go(t){Cloud.needRender=false;tab=t;render();scrollTo(0,0)}
@@ -599,7 +599,7 @@ async function doRegister(){
  if(!pwOk(p,document.getElementById('rg_p2').value))return;
  D.teachers.push({id:uid(),account:acc,name:n,role:'teacher',active:true,pwHash:await hashPw(p),created:today()});
  inv.usedBy=n;inv.usedAt=today();setUser(n);save('用驗證碼 '+code+' 註冊');closeModal();setMode('staff');toast('註冊完成，歡迎 '+n);cloudSoon()}
-function logout(){setUser(null);setMode('teach')}
+function logout(){setUser(null);setMode('teach');toast('已登出')}
 
 /* ============ 教學模式 ============ */
 function lessonBody(l){

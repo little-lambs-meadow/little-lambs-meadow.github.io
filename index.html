@@ -1318,7 +1318,10 @@ function menuHtml() {
   if (fsOk && matchMedia('(pointer: fine)').matches) o += curFs() === document.documentElement ? it('⤢', '離開全螢幕', 'appFs()') : it('⛶', '全螢幕', 'appFs()');
   if (cs) o += it(cs[0], cs[1], 'cloudDlg()');
   o += '<hr>';
-  if (mode === 'teach') o += it('🐑', user || !authOn() ? '老師區' : '老師登入', 'enterStaff()', 'mmain');else {
+  if (mode === 'teach') {
+    o += it('🐑', user || !authOn() ? '老師區' : '老師登入', 'enterStaff()', 'mmain');
+    if (authOn() && user) o += it('🚪', '登出', 'logout()');
+  } else {
     o += it('📺', '回到教學模式', 'setMode(\'teach\')', 'mmain');
     if (authOn() && user) o += it('🚪', '登出', 'logout()');
   }
@@ -1597,6 +1600,7 @@ function _doRegister() {
 function logout() {
   setUser(null);
   setMode('teach');
+  toast('已登出');
 }
 
 /* ============ 教學模式 ============ */
