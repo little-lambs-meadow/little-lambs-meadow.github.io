@@ -938,7 +938,7 @@ function todayOf(id){const d=today();return D.ledger.filter(x=>x.kidId===id&&x.d
 function tPoints(){
  if(!canPoint())return `<div class="card empty">目前設定為「加點需要老師登入」<br><br><button class="blue" onclick="loginDlg()">老師登入</button></div>`;
  const S=D.settings,d=today();const at=D.attend[d]||{};const kids=D.kids.filter(k=>k.active).sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
- const hint=manageKids?'管理名單中：點孩子的名字可以隱藏、改名或刪除'+(D.kids.some(k=>!k.active)?`　<a href="#" onclick="hiddenKidsDlg();return false">查看已隱藏的孩子（${D.kids.filter(k=>!k.active).length}）</a>`:''):pickItem==='on'?'點名字＝準時報到 +'+S.onPts:pickItem==='late'?'點名字＝晚到報到 +'+S.latePts:'點名字＝「'+h(S.items[pickItem].name)+'」，再點一次取消';
+ const hint=manageKids?'管理名單中：點孩子的名字可以隱藏、改名或刪除'+(D.kids.some(k=>!k.active)?`　<a href="#" onclick="hiddenKidsDlg();return false">查看已隱藏的孩子（${D.kids.filter(k=>!k.active).length}）</a>`:''):pickItem==='on'?'點名字＝準時報到 +'+S.onPts:pickItem==='late'?'點名字＝晚到報到 +'+S.latePts:'點名字＝「'+h(S.items[pickItem].name)+'」，再點一次取消'+(exMates(S.items[pickItem].name).length?'（和「'+exMates(S.items[pickItem].name).map(h).join('、')+'」二擇一，點了會自動換掉）':'');
  return `<div class="stage"><div class="stephead"><h2>⭐ <span class="hide-m">${d} </span>點名加點</h2><span class="sp"></span><span class="muted" style="margin-right:10px;white-space:nowrap">報到 ${Object.keys(at).length} 人</span><button class="${manageKids?'blue':'ghost'}" style="white-space:nowrap" onclick="manageKids=!manageKids;render()">${manageKids?'✓ 完成管理':'👥 管理名單'}</button></div>
   <div class="fill"><div class="tbar items">
    <button class="${pickItem==='on'?'on':''}" onclick="pickItem='on';render()">準時 +${S.onPts}</button><button class="${pickItem==='late'?'on':''}" onclick="pickItem='late';render()">晚到 +${S.latePts}</button>
@@ -977,6 +977,9 @@ function giveCapped(id,pts,reason,zeroOk){if(pts<=0)return addPts(id,pts,reason)
  return addPts(id,Math.min(pts,left),reason)}
 let _capNote=false;
 function delLedger(lid){D.ledger=D.ledger.filter(x=>x.id!==lid);undoStack=undoStack.filter(u=>u.lid!==lid)}
+/* 二擇一的加分項目：同一組一天只能拿其中一項（朗誦／背誦英文經句；上台複寫／默寫金句） */
+const EX_GROUPS=[['朗誦英文經句','背誦英文經句'],['上台複寫經句','默寫金句']];
+function exMates(n){const g=EX_GROUPS.find(g=>g.includes(n));return g?g.filter(x=>x!==n):[]}
 function tapKid(id){
  const S=D.settings,d=today();D.attend[d]=D.attend[d]||{};const k=kid(id);
  if(pickItem===null||pickItem==='on'||pickItem==='late'){
@@ -985,6 +988,9 @@ function tapKid(id){
   else{if(old)delLedger(old.id);_capNote=false;const e=giveCapped(id,on?S.onPts:S.latePts,ciLabel(on),true);D.attend[d][id]=e.id;undoStack.push({lid:e.id,att:true,d});save();if(!_capNote)toast(k.name+' '+e.reason+' +'+e.pts)}
  }else{const it=S.items[pickItem];const old=todayOf(id).find(x=>x.reason===it.name);
   if(old){delLedger(old.id);save();toast('取消 '+k.name+' 的「'+it.name+'」')}
+  else if(exMates(it.name).some(n=>todayOf(id).some(x=>x.reason===n))){  // 二擇一的項目：換成這一項
+   todayOf(id).filter(x=>exMates(it.name).includes(x.reason)).forEach(x=>delLedger(x.id));
+   _capNote=false;const e=giveCapped(id,it.pts,it.name);if(e){undoStack.push({lid:e.id});save();if(!_capNote)toast(k.name+' 改成「'+it.name+'」+'+e.pts)}else save()}
   else{_capNote=false;const e=giveCapped(id,it.pts,it.name);if(e){undoStack.push({lid:e.id});save();if(!_capNote)toast(k.name+' '+it.name+' +'+e.pts)}}}
  render();const el=document.getElementById('k_'+id);el&&el.classList.add('pop');
 }
