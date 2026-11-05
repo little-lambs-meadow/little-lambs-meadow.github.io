@@ -1312,7 +1312,7 @@ function render() {
   hd.className = mode;
   if (mode === 'staff' && isHelper() && HELPER_TABS.indexOf(tab) < 0) tab = 'kids';
   var tabs = mode === 'teach' ? TEACH_TABS : isHelper() ? STAFF_TABS.filter(x => HELPER_TABS.includes(x[0])) : STAFF_TABS;
-  hd.innerHTML = `${mode === 'teach' ? '' : `<div class="hrow"><h1><img class="hlogo" src="icon-192.png" alt=""><span class="hname">${h(D.settings.church)}</span><span class="hdot"> · </span><span class="hsub">${h(user || '老師區')}</span></h1>
+  hd.innerHTML = `${mode === 'teach' ? '' : `<div class="hrow"><h1><img class="hlogo" src="icon-192.png" alt=""><span class="hname">小羊樂園</span><span class="hdot"> · </span><span class="hsub">${h(user || '老師區')}</span></h1>
 </div>`}
   <div class="nrow"><nav>${tabs.map(_ref7 => {
     var _ref8 = _slicedToArray(_ref7, 2),
@@ -1346,7 +1346,6 @@ function render() {
     pray: tPray,
     lesson: tLesson,
     verse: tVerse,
-    song: tSong,
     points: tPoints,
     rank: tRank,
     lessons: pLessons,
@@ -1790,77 +1789,6 @@ function pendingNotify() {
   if (n > _penSeen && n > 0) toast('🙋 有 ' + n + ' 位老師申請帳號，請到「☰ → 老師申請」核准');
   _penSeen = n;
 }
-function registerDlg() {
-  if (Cloud.needRebuild) cloudRebuild();
-  if (needCloud()) return;
-  openModal(`<h2>🐑 老師註冊</h2>
- <p class="muted">請輸入園長給你的驗證碼（6 碼，限用一次）。</p>
- <label class="f">驗證碼<input id="rg_c" style="text-transform:uppercase;letter-spacing:4px;font-size:20px" maxlength="8"></label>
- <label class="f">帳號（登入用，也是其他老師看到的名字，例如：陳老師）<input id="rg_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
- <label class="f">設定密碼（至少 6 碼）<input id="rg_p" type="password"></label>
- <label class="f">再輸入一次<input id="rg_p2" type="password"></label>
- <div class="actions"><button class="blue" onclick="doRegister()">註冊</button><button class="ghost" onclick="loginDlg()">返回登入</button></div>`);
-}
-function doRegister() {
-  return _doRegister.apply(this, arguments);
-}
-function _doRegister() {
-  _doRegister = _asyncToGenerator(function* () {
-    var code = val('rg_c').toUpperCase().replace(/\s/g, ''),
-      acc = val('rg_a'),
-      n = acc,
-      p = document.getElementById('rg_p').value;
-    var inv = D.invites.find(i => i.code === code);
-    if (!inv && Cloud.pw) {
-      toast('正在確認驗證碼…');
-      yield cloudNow();
-      inv = D.invites.find(i => i.code === code);
-    }
-    if (!inv || inv.revoked) {
-      toast('驗證碼不正確');
-      return;
-    }
-    if (inv.usedBy) {
-      toast('這組驗證碼已經被使用過');
-      return;
-    }
-    if (Date.now() > inv.expires) {
-      toast('驗證碼已過期，請向園長重新索取');
-      return;
-    }
-    if (!acc) {
-      toast('請填帳號');
-      return;
-    }
-    if (findAcc(acc) || D.teachers.some(t => normAcc(t.name) === normAcc(acc) && !t.account)) {
-      toast('這個帳號已經有人使用，請換一個');
-      return;
-    }
-    if (D.teachers.some(t => t.name === n)) {
-      toast('這個名字已經有人使用，請換一個');
-      return;
-    }
-    if (!pwOk(p, document.getElementById('rg_p2').value)) return;
-    D.teachers.push({
-      id: uid(),
-      account: acc,
-      name: n,
-      role: 'teacher',
-      active: true,
-      pwHash: yield hashPw(p),
-      created: today()
-    });
-    inv.usedBy = n;
-    inv.usedAt = today();
-    setUser(n);
-    save('用驗證碼 ' + code + ' 註冊');
-    closeModal();
-    setMode('staff');
-    toast('註冊完成，歡迎 ' + n);
-    cloudSoon();
-  });
-  return _doRegister.apply(this, arguments);
-}
 function logout() {
   setUser(null);
   setMode('teach');
@@ -1873,7 +1801,7 @@ function lessonBody(l) {
   var yt = ytId(l.video);
   var sec = (t, x) => x ? `<div class="sec"><h4>${t}</h4>${x}</div>` : '';
   var list = (a, tag) => a && a.length ? `<${tag}>${a.map(x => `<li>${linkify(x)}</li>`).join('')}</${tag}>` : '';
-  var songs = (l.songIds || []).map(id => D.songs.find(s => s.id === id)).filter(Boolean);
+  var songs = worshipList(l);
   return `<div class="muted">${h(l.season)} · 第 ${h(l.no)} 課${l.date ? ' · ' + h(l.date) : ''}</div><h2>${h(l.title)}</h2>
   ${l.scripture ? `<div class="muted">📜 ${h(l.scripture)}</div>` : ''}
   ${sbCode(l.video) && sbEp(sbCode(l.video)) ? `<div class="sec"><h4>影片</h4><div>📺 超級妙妙書官網 ${sbLabel(sbEp(sbCode(l.video)))}〈${h(sbEp(sbCode(l.video)).t)}〉</div><img src="${sbPoster(sbEp(sbCode(l.video)))}" style="width:100%;max-width:420px;border-radius:10px;margin-top:6px" alt=""></div>` : yt ? `<div class="sec"><h4>影片</h4><button class="pri" style="width:100%;font-size:17px;padding:12px;margin-bottom:8px" onclick="playFull('${yt}')">▶ 全螢幕播放</button>${ytBox(yt)}</div>` : sec('影片', l.video ? `<a href="${h(l.video)}" target="_blank" rel="noopener">▶ 開啟影片</a>` : '')}
@@ -1882,7 +1810,7 @@ function lessonBody(l) {
   ${sec('安全提醒', l.safety ? `<div class="notice">${h(l.safety)}</div>` : '')}
   ${sec('討論問題', list(l.questions, 'ol'))}
   ${sec('本課金句', l.verseZh || l.verseEn ? `<div>${h(l.verseZh)}</div><div class="muted">${h(l.verseEn)}</div><div class="muted">${h(l.verseRef)}</div>` : '')}
-  ${sec('本課詩歌', songs.map(s => `<button class="sm ghost" onclick="curSong='${s.id}';go('worship')">🎵 ${h(s.title)}</button>`).join(' '))}`;
+  ${sec('敬拜詩歌（' + songQ(l) + '）', songs.map(s => `<button class="sm ghost" onclick="curSong='${s.id}';go('worship')">🎵 ${h(s.title)}</button>`).join(' '))}`;
 }
 function lessonPicker(onchange) {
   var l = lessonById(curLesson) || thisWeek();
@@ -2114,9 +2042,6 @@ function worshipList(l) {
   }); // 這一課另外加的歌，也只顯示選定季度的
   return ids.map(i => D.songs.find(x => x.id === i)).filter(Boolean);
 }
-function hasLyrics(s) {
-  return s.lyrics && s.lyrics.trim() && s.lyrics.indexOf('貼上教會使用的歌詞') < 0;
-}
 function tWorship() {
   var l = cur();
   var list = worshipList(l);
@@ -2132,9 +2057,9 @@ function tWorship() {
   var box = yt || q;
   var bar = `<div class="tbar scroll">${l.id ? canPoint() ? `<select class="lsel" style="width:auto;font-size:16px;margin:0 6px 6px 0" title="這一課用哪一季的詩歌" onchange="setSongQ(this.value)">${QTRS.map(q => `<option value="${q}" ${q === songQ(l) ? 'selected' : ''}>🎵 ${QLAB[q]}詩歌</option>`).join('')}</select>` : `<span class="tag" style="font-size:15px">🎵 ${QLAB[songQ(l)]}詩歌</span>` : ''}${q ? `<button class="pri" style="font-size:18px" onclick="playFull('${box}','${q}')">▶ 全部連續播放（${vids.length} 首）</button>` : ''}
   ${list.map((x, i) => `<button class="${x.id === s.id ? 'blue' : 'ghost'}" onclick="curSong='${x.id}';showLyrics=false;render()">${i + 1}. ${x.theme ? '⭐ ' : ''}${h(x.title)}</button>`).join('')}
-  <span class="sp"></span>${yt ? `<button class="pri" onclick="playFull('${yt}')">▶ 全螢幕播放這首</button>` : ''}${s && hasLyrics(s) ? `<button class="ghost" onclick="showLyrics=!showLyrics;render()">${showLyrics ? '🎬 看影片' : '📝 歌詞'}</button>` : ''}<button class="ghost" onclick="quickSongDlg()">＋ 加歌</button>${s ? `<button class="ghost" onclick="songDelDlg('${s.id}')">🗑 移除</button>` : ''}</div>`;
+  <span class="sp"></span>${yt ? `<button class="pri" onclick="playFull('${yt}')">▶ 全螢幕播放這首</button>` : ''}${false && s ? `<button class="ghost" onclick="showLyrics=!showLyrics;render()">${showLyrics ? '🎬 看影片' : '📝 歌詞'}</button>` : ''}<button class="ghost" onclick="quickSongDlg()">＋ 加歌</button>${s ? `<button class="ghost" onclick="songDelDlg('${s.id}')">🗑 移除</button>` : ''}</div>`;
   if (!s) return stepPage(bar + '<div class="empty">這一課還沒有敬拜詩歌，按「＋ 加歌」貼上 YouTube 網址</div>');
-  var main = showLyrics ? `<div class="lyrics fit" data-max="40" id="lyr" style="padding:16px"><b>${h(s.title)}</b>\n${h(s.lyrics)}</div>` : box ? `<div class="vwrap">${ytBox(box)}</div>` : s.video ? `<div class="empty"><a href="${h(s.video)}" target="_blank" rel="noopener">▶ 開啟詩歌影片</a></div>` : '<div class="empty">這首詩歌還沒有 YouTube 網址，可以到「老師區 → 詩歌」補上</div>';
+  var main = false ? `<div class="lyrics fit" data-max="40" id="lyr" style="padding:16px"><b>${h(s.title)}</b>\n${h(s.lyrics)}</div>` : box ? `<div class="vwrap">${ytBox(box)}</div>` : s.video ? `<div class="empty"><a href="${h(s.video)}" target="_blank" rel="noopener">▶ 開啟詩歌影片</a></div>` : '<div class="empty">這首詩歌還沒有 YouTube 網址，可以到「老師區 → 詩歌」補上</div>';
   return stepPage(bar + main);
 }
 function snack(msg, fn) {
@@ -2239,9 +2164,7 @@ function quickSong() {
     title: t,
     season: songQ(l),
     theme: th,
-    video: u,
-    lyrics: '',
-    notes: ''
+    video: u
   };
   D.songs.push(sg);
   if (!th && l.id) {
@@ -2264,7 +2187,7 @@ function tIce() {
 }
 function tIntro() {
   var l = cur();
-  var t = l.intro || l.story;
+  var t = l.intro;
   return stepPage(`<div class="bigcard fit zy" data-max="40"><div style="font-size:1.25em;font-weight:700">${h(l.title)}</div><div style="color:#c2410c;font-size:.7em;margin-bottom:.4em">📜 ${h(l.scripture)}</div>
   <div class="pre">${h(t) || '（這一課還沒有寫前言）'}</div></div>`);
 }
@@ -2938,8 +2861,6 @@ function sbPick(c) {
   if (v) v.value = 'sb:' + c;
   var t = document.getElementById('f_title');
   if (t && !t.value.trim()) t.value = e.t;
-  var st = document.getElementById('f_story');
-  if (st && !st.value.trim()) st.value = e.d;
   toast('已選 ' + sbLabel(e) + ' ' + e.t);
 }
 function sbImport() {
@@ -2953,10 +2874,6 @@ function sbImport() {
       var ch = false;
       if (!ex.video || ytId(ex.video) || gtvUrl(ex.video)) {
         ex.video = 'sb:' + e.c;
-        ch = true;
-      }
-      if (!ex.story) {
-        ex.story = e.d;
         ch = true;
       }
       if (!ex.title) {
@@ -2973,8 +2890,7 @@ function sbImport() {
         title: e.t,
         scripture: '',
         video: 'sb:' + e.c,
-        story: e.d,
-        intro: '',
+        intro: e.d,
         iceName: '',
         expSteps: [],
         props: [],
@@ -3040,7 +2956,7 @@ function tQA() {
 }
 function tPray() {
   var l = cur();
-  return stepPage(`<div class="bigcard fit zy" data-max="36"><div style="text-align:center;font-size:1.4em">🙏</div><div class="pre">${h(l.prayer || D.settings.prayer)}</div>
+  return stepPage(`<div class="bigcard fit zy" data-max="36"><div style="text-align:center;font-size:1.4em">🙏</div><div class="pre">${h(l.prayer || '')}</div>
   <div style="text-align:center;margin-top:.6em;color:#d9541e">🐑 下課囉！我們下週見 👋</div></div>`);
 }
 function fsEl(sel) {
@@ -3229,17 +3145,6 @@ function hideMore() {
   var n = Math.max(1, Math.ceil(all.length * .3));
   for (var i = 0; i < n && all.length; i++) hidTok.add(all.splice(Math.floor(Math.random() * all.length), 1)[0]);
   render();
-}
-function tSong() {
-  if (!D.songs.length) return '<div class="empty">還沒有詩歌</div>';
-  var s = D.songs.find(x => x.id === curSong) || D.songs[0];
-  curSong = s.id;
-  var yt = ytId(s.video);
-  return `<div class="row" style="margin-bottom:10px"><select class="sp" onchange="curSong=this.value;render()">${D.songs.map(x => `<option value="${x.id}" ${x.id === s.id ? 'selected' : ''}>${h(x.season ? x.season + '｜' : '')}${h(x.title)}</option>`).join('')}</select>
-  <button class="ghost" onclick="fontSize=Math.max(16,fontSize-4);render()">A−</button><button class="ghost" onclick="fontSize+=4;render()">A＋</button>
-  <button class="ghost" onclick="document.getElementById('lyr').requestFullscreen&&document.getElementById('lyr').requestFullscreen()">⛶</button></div>
-  ${yt ? `<button class="pri" style="width:100%;margin-bottom:8px" onclick="playFull('${yt}')">▶ 全螢幕播放</button><div style="margin-bottom:10px">${ytBox(yt)}</div>` : s.video ? `<p><a href="${h(s.video)}" target="_blank" rel="noopener">▶ 開啟詩歌影片</a></p>` : ''}
-  <div class="lyrics" id="lyr" style="font-size:${fontSize}px"><b>${h(s.title)}</b>\n\n${h(s.lyrics)}</div>`;
 }
 function canPoint() {
   return !authOn() || !!user;
@@ -3500,13 +3405,13 @@ function tRank() {
 
 /* ============ 老師區：備課 ============ */
 /* 編輯已存在的課程：季、第幾課、課名、經文段落、影片固定不改（避免動到原本的妙妙書課程），日期放第一欄 */
-var LESSON_FIXED = ['season', 'no', 'title', 'scripture', 'video', 'songIds']; // 詩歌在「詩歌」頁編輯
+var LESSON_FIXED = ['season', 'no', 'title', 'scripture', 'video'];
 var LESSON_EDIT_FIELDS = () => {
   var f = LESSON_FIELDS().filter(x => !LESSON_FIXED.includes(x[0]));
   var d = f.find(x => x[0] === 'date');
   return [d].concat(f.filter(x => x !== d));
 };
-var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['songIds', '本課詩歌', 'checks', D.songs.map(s => s.title)], ['prayer', '⑧ 結束禱告', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
+var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['prayer', '⑧ 結束禱告', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
 /* 年度規劃：每個年度都是同樣的課，各自標記「要上／不上」、各自的上課日期
    isSkip(l,y)：y 年不上；dateIn(l,y)：y 年排的上課日期；taughtDate(l,y)：y 年已上（日期已過或有上課紀錄） */
 var curYear = () => today().slice(0, 4);
@@ -3604,21 +3509,15 @@ function editLesson(id) {
     songIds: []
   };
   var o = _objectSpread(_objectSpread({}, l), {}, {
-    date: id ? dateIn(l, planYear) || (mode === 'staff' ? '' : l.date) : l.date,
-    songIds: (l.songIds || []).map(i => (D.songs.find(s => s.id === i) || {}).title).filter(Boolean)
+    date: id ? dateIn(l, planYear) || (mode === 'staff' ? '' : l.date) : l.date
   });
   var sbSel = `<label class="f">📺 從超級妙妙書官網選一集<select onchange="sbPick(this.value)"><option value="">（選擇後會自動填入影片，課名和故事重點空白時也會一起填入）</option>${sbOptions(sbCode(l.video))}</select></label>`;
   var head = id ? `編輯課程<div class="muted" style="font-size:15px;font-weight:400;margin-top:4px">📖 ${h(l.season)} 第${h(l.no)}課〈${h(l.title)}〉${l.scripture ? ' · ' + h(l.scripture) : ''}${sbCode(l.video) ? ' · 妙妙書影片已設定' : ''}</div>` : '新增課程';
   form(head, id ? LESSON_EDIT_FIELDS() : LESSON_FIELDS(), o, v => {
-    if (v.songIds) v.songIds = v.songIds.map(t => (D.songs.find(s => s.title === t) || {}).id).filter(Boolean);
     if (!id && !v.title) {
       toast('請填課名');
       return false;
     }
-    if (!id && sbCode(v.video)) {
-      var e = sbEp(sbCode(v.video));
-      if (e) v.story = e.d;
-    } // 新增妙妙書課：內部保留官網劇情，前言空白時使用
     if (id && !v.date) {
       var ds = Object.assign({}, l.dates || {});
       if (l.date && !ds[l.date.slice(0, 4)]) ds[l.date.slice(0, 4)] = l.date;
@@ -3660,9 +3559,9 @@ var IMP_MAP = {
   '日期': 'date',
   '經文': 'scripture',
   '影片': 'video',
-  '故事': 'story',
-  '重點': 'story',
-  '故事重點': 'story',
+  '故事': 'intro',
+  '重點': 'intro',
+  '故事重點': 'intro',
   '體驗': 'expSteps',
   '體驗活動': 'expSteps',
   '道具': 'props',
@@ -4393,8 +4292,7 @@ function pSettings() {
   var open = D.invites.filter(i => !i.usedBy && !i.revoked && i.expires > now);
   var used = D.invites.filter(i => i.usedBy).slice(-5).reverse();
   var admins = D.teachers.filter(t => isAdminRole(t.role) && t.active !== false).length;
-  var authCard = authOn() ? '' : `<div class="card" style="border-color:#2a6fd6"><h3>🔐 老師帳號（尚未啟用）</h3><p class="muted">啟用後：老師用自己的帳號登入才能進老師區；新老師需要園長發的驗證碼才能註冊；刪除孩子、課程和修改設定只有園長能做。教學模式（上課畫面）不需要登入。</p>
-   <button class="blue" onclick="enableAuth()">啟用老師帳號</button></div>`;
+  var authCard = '';
   var cloudCard = Cloud.pw ? `<div class="card"><div class="row"><h3 class="sp">☁️ 教會密碼（雲端同步）</h3><button class="sm ghost" onclick="cloudChangePw()">更改教會密碼</button></div><p class="muted">每台裝置第一次打開 app 時要輸入的密碼。改了之後，所有裝置都要重新輸入新密碼。</p></div>` : '';
   return `<h2>設定${authOn() ? '（' + roleName(me()) + '）' : ''}</h2>${authCard}${cloudCard}${authOn() ? `
  ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t => !t.pending && (amDesigner() || t.role !== 'designer')).map(t => `<tr style="${t.active === false ? 'opacity:.5' : ''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role) ? 't' : 'o'}">${roleName(t)}</span> ${accOf(t) !== t.name ? `<span class="muted">帳號：${h(accOf(t))}</span>` : ''}${t.active === false ? ' <span class="tag">已停用</span>' : ''}<div class="muted">${h(t.created || '')} 加入</div></td>
@@ -4414,43 +4312,6 @@ function pSettings() {
  <div class="row"><button onclick="exportAll()">⬇ 匯出備份</button><label style="border:1px solid #e6ddd0;border-radius:8px;padding:7px 12px;cursor:pointer">⬆ 匯入備份<input type="file" accept=".json" style="display:none" onchange="importAll(this.files[0])"></label>
  ${Cloud.pw ? '' : `<button class="danger" onclick="if(confirm('清除所有資料（含老師帳號）並恢復範例？此動作無法復原')){D=demo();setUser(null);save();setMode('teach')}">重置</button>`}</div></div>
  <div class="card"><h3>最近異動</h3><table>${D.log.slice(0, 30).map(l => `<tr><td class="muted" style="white-space:nowrap">${h(l.ts)}</td><td>${h(l.by)}</td><td>${h(l.act)}</td></tr>`).join('') || '<tr><td class="muted">無</td></tr>'}</table></div>`;
-}
-function enableAuth() {
-  if (needCloud()) return;
-  if (!confirm('啟用老師帳號？之後進老師區需要登入，所有裝置都會套用。（可以隨時關閉）')) return;
-  if (!D.teachers.some(t => isAdminRole(t.role))) return setupDlg();
-  D.settings.auth = true;
-  setUser(null);
-  save('啟用老師帳號登入');
-  setMode('teach');
-  loginDlg();
-}
-function genInvite() {
-  var A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  var c;
-  do {
-    c = [...Array(6)].map(() => A[Math.floor(Math.random() * A.length)]).join('');
-  } while (D.invites.some(i => i.code === c));
-  D.invites.push({
-    code: c,
-    note: val('iv_note'),
-    by: user,
-    created: today(),
-    expires: Date.now() + 7 * 864e5
-  });
-  save('產生驗證碼 ' + c);
-  render();
-  copyInvite(c);
-}
-function copyInvite(c) {
-  var i = D.invites.find(x => x.code === c);
-  copy(`🐑 小羊樂園 老師註冊驗證碼：${c}\n打開小羊樂園 app → 老師登入 → 用驗證碼註冊。\n驗證碼限用一次，${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效。`);
-}
-function revokeInvite(c) {
-  if (!confirm('作廢驗證碼 ' + c + '？')) return;
-  D.invites.find(x => x.code === c).revoked = true;
-  save('作廢驗證碼 ' + c);
-  render();
 }
 function lastAdmin(t) {
   return isAdminRole(t.role) && t.active !== false && D.teachers.filter(x => isAdminRole(x.role) && x.active !== false).length <= 1;
@@ -4546,8 +4407,6 @@ function saveSettings() {
   S.church = '小羊樂園';
   S.rules = v('st_rules').split('\n').map(x => x.trim()).filter(Boolean);
   S.reasons = v('st_reasons').split('\n').map(x => x.trim()).filter(Boolean);
-  var r = document.getElementById('st_r');
-  if (r) S.requireLogin = r.checked;
   var tn = document.getElementById('st_tn');
   if (tn) S.teacherNames = tn.value.split('\n').map(x => x.trim()).filter(Boolean);
   S.cutoff = v('st_cut') || '10:30';

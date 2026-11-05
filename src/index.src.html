@@ -530,7 +530,7 @@ function render(){applyZy();applyStaffFs();setTimeout(pendingNotify,0);
  const hd=document.getElementById('hdr');hd.className=mode;
  if(mode==='staff'&&isHelper()&&HELPER_TABS.indexOf(tab)<0)tab='kids';
  const tabs=mode==='teach'?TEACH_TABS:isHelper()?STAFF_TABS.filter(x=>HELPER_TABS.includes(x[0])):STAFF_TABS;
- hd.innerHTML=`${mode==='teach'?'':`<div class="hrow"><h1><img class="hlogo" src="icon-192.png" alt=""><span class="hname">${h(D.settings.church)}</span><span class="hdot"> · </span><span class="hsub">${h(user||'老師區')}</span></h1>
+ hd.innerHTML=`${mode==='teach'?'':`<div class="hrow"><h1><img class="hlogo" src="icon-192.png" alt=""><span class="hname">小羊樂園</span><span class="hdot"> · </span><span class="hsub">${h(user||'老師區')}</span></h1>
 </div>`}
   <div class="nrow"><nav>${tabs.map(([k,n])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${n}</button>`).join('')}</nav>
   <button class="ricon" onclick="hardReload()" title="重新整理（載入最新版）">⟳</button><span class="nsp"></span>
@@ -539,7 +539,7 @@ function render(){applyZy();applyStaffFs();setTimeout(pendingNotify,0);
  {const m=document.getElementById('hmenu');if(m)m.innerHTML=menuHtml()}
  fitSel(hd.querySelector('.hsel'));fitSel(hd.querySelector('.vctl .lsel'),44);
  {const on=hd.querySelector('nav .on');if(on){const n=on.parentNode;n.scrollLeft=on.offsetLeft-(n.clientWidth-on.offsetWidth)/2}}
- const f={rules:tRules,worship:tWorship,ice:tIce,intro:tIntro,video:tVideo,qa:tQA,pray:tPray,lesson:tLesson,verse:tVerse,song:tSong,points:tPoints,rank:tRank,lessons:pLessons,songs:pSongs,shows:pShows,kids:pKids,sessions:pSessions,meetings:pMeetings,meeting:pMeeting,settings:pSettings}[tab];
+ const f={rules:tRules,worship:tWorship,ice:tIce,intro:tIntro,video:tVideo,qa:tQA,pray:tPray,lesson:tLesson,verse:tVerse,points:tPoints,rank:tRank,lessons:pLessons,songs:pSongs,shows:pShows,kids:pKids,sessions:pSessions,meetings:pMeetings,meeting:pMeeting,settings:pSettings}[tab];
  document.getElementById('app').innerHTML=f?f():'';
  if(mode==='staff'&&tab==='settings')settingsTabs();
  layout();
@@ -675,26 +675,6 @@ function rejectT(id){const t=D.teachers.find(x=>x.id===id);if(!t||!confirm('不�
 function pendingCard(){const ps=pendingT();if(!ps.length)return '';
  return `<div class="card" style="border-color:var(--pri)"><h3>🙋 待核准的老師申請（${ps.length}）</h3>${ps.map(t=>`<div class="row" style="margin:8px 0;flex-wrap:wrap"><div class="sp"><b>${h(t.name)}</b> <span class="tag">申請：${ROLES[t.role]||'老師'}</span> <span class="muted">${accOf(t)!==t.name?'帳號：'+h(accOf(t))+' · ':''}${h(t.applied||'')} 申請</span>${t.applyNote?`<div class="muted">「${h(t.applyNote)}」</div>`:''}</div><select id="apr_${t.id}" style="width:auto;padding:6px;margin:0 6px" title="核准後的身分"><option value="teacher" ${t.role==='teacher'?'selected':''}>身分：老師</option><option value="helper" ${t.role==='helper'?'selected':''}>身分：小助教（登記點數）</option>${hasPrincipal()?'':'<option value="admin">身分：園長（只能一位）</option>'}${amDesigner()?'<option value="designer">身分：園工</option>':''}</select><button class="blue" onclick="approveT('${t.id}')">✅ 核准</button><button class="ghost" onclick="rejectT('${t.id}')">不核准</button></div>`).join('')}</div>`}
 let _penSeen=-1;function pendingNotify(){if(!authOn()||!user||!isAdminRole((me()||{}).role))return;const n=pendingT().length;if(n>_penSeen&&n>0)toast('🙋 有 '+n+' 位老師申請帳號，請到「☰ → 老師申請」核准');_penSeen=n}
-function registerDlg(){if(Cloud.needRebuild)cloudRebuild();if(needCloud())return;openModal(`<h2>🐑 老師註冊</h2>
- <p class="muted">請輸入園長給你的驗證碼（6 碼，限用一次）。</p>
- <label class="f">驗證碼<input id="rg_c" style="text-transform:uppercase;letter-spacing:4px;font-size:20px" maxlength="8"></label>
- <label class="f">帳號（登入用，也是其他老師看到的名字，例如：陳老師）<input id="rg_a" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
- <label class="f">設定密碼（至少 6 碼）<input id="rg_p" type="password"></label>
- <label class="f">再輸入一次<input id="rg_p2" type="password"></label>
- <div class="actions"><button class="blue" onclick="doRegister()">註冊</button><button class="ghost" onclick="loginDlg()">返回登入</button></div>`)}
-async function doRegister(){
- const code=val('rg_c').toUpperCase().replace(/\s/g,''),acc=val('rg_a'),n=acc,p=document.getElementById('rg_p').value;
- let inv=D.invites.find(i=>i.code===code);
- if(!inv&&Cloud.pw){toast('正在確認驗證碼…');await cloudNow();inv=D.invites.find(i=>i.code===code)}
- if(!inv||inv.revoked){toast('驗證碼不正確');return}
- if(inv.usedBy){toast('這組驗證碼已經被使用過');return}
- if(Date.now()>inv.expires){toast('驗證碼已過期，請向園長重新索取');return}
- if(!acc){toast('請填帳號');return}
- if(findAcc(acc)||D.teachers.some(t=>normAcc(t.name)===normAcc(acc)&&!t.account)){toast('這個帳號已經有人使用，請換一個');return}
- if(D.teachers.some(t=>t.name===n)){toast('這個名字已經有人使用，請換一個');return}
- if(!pwOk(p,document.getElementById('rg_p2').value))return;
- D.teachers.push({id:uid(),account:acc,name:n,role:'teacher',active:true,pwHash:await hashPw(p),created:today()});
- inv.usedBy=n;inv.usedAt=today();setUser(n);save('用驗證碼 '+code+' 註冊');closeModal();setMode('staff');toast('註冊完成，歡迎 '+n);cloudSoon()}
 function logout(){setUser(null);setMode('teach');toast('已登出')}
 
 /* ============ 教學模式 ============ */
@@ -702,7 +682,7 @@ function lessonBody(l){
  if(!l)return '<div class="empty">還沒有課程，請老師登入後到「備課」新增或匯入</div>';
  const yt=ytId(l.video);const sec=(t,x)=>x?`<div class="sec"><h4>${t}</h4>${x}</div>`:'';
  const list=(a,tag)=>a&&a.length?`<${tag}>${a.map(x=>`<li>${linkify(x)}</li>`).join('')}</${tag}>`:'';
- const songs=(l.songIds||[]).map(id=>D.songs.find(s=>s.id===id)).filter(Boolean);
+ const songs=worshipList(l);
  return `<div class="muted">${h(l.season)} · 第 ${h(l.no)} 課${l.date?' · '+h(l.date):''}</div><h2>${h(l.title)}</h2>
   ${l.scripture?`<div class="muted">📜 ${h(l.scripture)}</div>`:''}
   ${sbCode(l.video)&&sbEp(sbCode(l.video))?`<div class="sec"><h4>影片</h4><div>📺 超級妙妙書官網 ${sbLabel(sbEp(sbCode(l.video)))}〈${h(sbEp(sbCode(l.video)).t)}〉</div><img src="${sbPoster(sbEp(sbCode(l.video)))}" style="width:100%;max-width:420px;border-radius:10px;margin-top:6px" alt=""></div>`:yt?`<div class="sec"><h4>影片</h4><button class="pri" style="width:100%;font-size:17px;padding:12px;margin-bottom:8px" onclick="playFull('${yt}')">▶ 全螢幕播放</button>${ytBox(yt)}</div>`:sec('影片',l.video?`<a href="${h(l.video)}" target="_blank" rel="noopener">▶ 開啟影片</a>`:'')}
@@ -711,7 +691,7 @@ function lessonBody(l){
   ${sec('安全提醒',l.safety?`<div class="notice">${h(l.safety)}</div>`:'')}
   ${sec('討論問題',list(l.questions,'ol'))}
   ${sec('本課金句',l.verseZh||l.verseEn?`<div>${h(l.verseZh)}</div><div class="muted">${h(l.verseEn)}</div><div class="muted">${h(l.verseRef)}</div>`:'')}
-  ${sec('本課詩歌',songs.map(s=>`<button class="sm ghost" onclick="curSong='${s.id}';go('worship')">🎵 ${h(s.title)}</button>`).join(' '))}`;
+  ${sec('敬拜詩歌（'+songQ(l)+'）',songs.map(s=>`<button class="sm ghost" onclick="curSong='${s.id}';go('worship')">🎵 ${h(s.title)}</button>`).join(' '))}`;
 }
 function lessonPicker(onchange){const l=lessonById(curLesson)||thisWeek();curLesson=l&&l.id;return D.lessons.length?`<select style="width:100%;margin-bottom:10px" onchange="curLesson=this.value;${onchange}render()">${lessonOpts(curLesson)}</select>`:''}
 /* ===== 上課流程（每頁一個畫面，不用捲動） ===== */
@@ -781,7 +761,6 @@ function worshipList(l){const ids=[];const q=songQ(l);
  D.songs.filter(x=>x.theme&&x.season===q).forEach(x=>ids.push(x.id));
  (l.songIds||[]).forEach(i=>{const x=D.songs.find(y=>y.id===i);if(x&&x.season===q&&!ids.includes(i))ids.push(i)});  // 這一課另外加的歌，也只顯示選定季度的
  return ids.map(i=>D.songs.find(x=>x.id===i)).filter(Boolean)}
-function hasLyrics(s){return s.lyrics&&s.lyrics.trim()&&s.lyrics.indexOf('貼上教會使用的歌詞')<0}
 function tWorship(){
  const l=cur();let list=worshipList(l);if(!list.length)list=D.songs.filter(x=>x.season===songQ(l));
  const vids=list.map(x=>{const m=String(x.video||'').match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/|live\/)([\w-]{11})/);return m&&!/[?&]list=/.test(x.video)?m[1]:null}).filter(Boolean);
@@ -789,9 +768,9 @@ function tWorship(){
  const s=list.find(x=>x.id===curSong)||list[0];if(s)curSong=s.id;const yt=s&&ytId(s.video);const box=yt||q;
  const bar=`<div class="tbar scroll">${l.id?(canPoint()?`<select class="lsel" style="width:auto;font-size:16px;margin:0 6px 6px 0" title="這一課用哪一季的詩歌" onchange="setSongQ(this.value)">${QTRS.map(q=>`<option value="${q}" ${q===songQ(l)?'selected':''}>🎵 ${QLAB[q]}詩歌</option>`).join('')}</select>`:`<span class="tag" style="font-size:15px">🎵 ${QLAB[songQ(l)]}詩歌</span>`):''}${q?`<button class="pri" style="font-size:18px" onclick="playFull('${box}','${q}')">▶ 全部連續播放（${vids.length} 首）</button>`:''}
   ${list.map((x,i)=>`<button class="${x.id===s.id?'blue':'ghost'}" onclick="curSong='${x.id}';showLyrics=false;render()">${i+1}. ${x.theme?'⭐ ':''}${h(x.title)}</button>`).join('')}
-  <span class="sp"></span>${yt?`<button class="pri" onclick="playFull('${yt}')">▶ 全螢幕播放這首</button>`:''}${s&&hasLyrics(s)?`<button class="ghost" onclick="showLyrics=!showLyrics;render()">${showLyrics?'🎬 看影片':'📝 歌詞'}</button>`:''}<button class="ghost" onclick="quickSongDlg()">＋ 加歌</button>${s?`<button class="ghost" onclick="songDelDlg('${s.id}')">🗑 移除</button>`:''}</div>`;
+  <span class="sp"></span>${yt?`<button class="pri" onclick="playFull('${yt}')">▶ 全螢幕播放這首</button>`:''}${false&&s?`<button class="ghost" onclick="showLyrics=!showLyrics;render()">${showLyrics?'🎬 看影片':'📝 歌詞'}</button>`:''}<button class="ghost" onclick="quickSongDlg()">＋ 加歌</button>${s?`<button class="ghost" onclick="songDelDlg('${s.id}')">🗑 移除</button>`:''}</div>`;
  if(!s)return stepPage(bar+'<div class="empty">這一課還沒有敬拜詩歌，按「＋ 加歌」貼上 YouTube 網址</div>');
- const main=showLyrics?`<div class="lyrics fit" data-max="40" id="lyr" style="padding:16px"><b>${h(s.title)}</b>\n${h(s.lyrics)}</div>`
+const main=false?`<div class="lyrics fit" data-max="40" id="lyr" style="padding:16px"><b>${h(s.title)}</b>\n${h(s.lyrics)}</div>`
   :box?`<div class="vwrap">${ytBox(box)}</div>`:s.video?`<div class="empty"><a href="${h(s.video)}" target="_blank" rel="noopener">▶ 開啟詩歌影片</a></div>`:'<div class="empty">這首詩歌還沒有 YouTube 網址，可以到「老師區 → 詩歌」補上</div>';
  return stepPage(bar+main)}
 function snack(msg,fn){let e=document.getElementById('snack');if(!e){e=document.createElement('div');e.id='snack';document.body.appendChild(e)}
@@ -819,7 +798,7 @@ function quickSongDlg(){if(!canPoint()){toast('請先登入帳號才能編輯');
  <div class="actions"><button class="blue" onclick="quickSong()">加入</button></div>`)}
 function quickSong(){const u=document.getElementById('ws_u').value.trim();if(!ytId(u)){toast('請貼上 YouTube 網址');return}
  const l=cur();const t=document.getElementById('ws_t').value.trim()||('敬拜詩歌 '+(worshipList(l).length+1));const th=document.getElementById('ws_theme').checked;
- const sg={id:uid(),title:t,season:songQ(l),theme:th,video:u,lyrics:'',notes:''};D.songs.push(sg);
+ const sg={id:uid(),title:t,season:songQ(l),theme:th,video:u};D.songs.push(sg);
  if(!th&&l.id){l.songIds=l.songIds||[];l.songIds.push(sg.id)}
  curSong=sg.id;save('新增敬拜詩歌 '+t);closeModal();render();toast('已加入 '+t)}
 function tIce(){const l=cur();const st=l.expSteps||[];
@@ -827,7 +806,7 @@ function tIce(){const l=cur();const st=l.expSteps||[];
   ${st.length?`<div class="bigcard fit" data-max="34"><ol>${st.map(x=>`<li>${h(x)}</li>`).join('')}</ol>
    ${l.props&&l.props.length?`<div style="color:#c2410c;margin-top:.4em;font-size:.75em">🧰 道具：${l.props.map(h).join('、')}</div>`:''}
    ${l.safety?`<div style="color:#b45309;font-size:.75em">⚠️ ${h(l.safety)}</div>`:''}</div>`:'<div class="empty">這一課還沒有寫破冰遊戲</div>'}`)}
-function tIntro(){const l=cur();const t=l.intro||l.story;
+function tIntro(){const l=cur();const t=l.intro;
  return stepPage(`<div class="bigcard fit zy" data-max="40"><div style="font-size:1.25em;font-weight:700">${h(l.title)}</div><div style="color:#c2410c;font-size:.7em;margin-bottom:.4em">📜 ${h(l.scripture)}</div>
   <div class="pre">${h(t)||'（這一課還沒有寫前言）'}</div></div>`)}
 /* ===== 超級妙妙書 67 集：雲端硬碟（主要）＋ 官網（備用，第一～四季） ===== */
@@ -871,13 +850,13 @@ function sbSrcBtn(e){const w=sbWhich(e),av=sbAvail(e);
  return `<select class="lsel" style="font-size:16px" title="切換影片來源" onchange="if(this.value==='open'){window.open('${sbOpenUrl(e,w)}','_blank');this.value='${w}'}else sbSetSrc(this.value)">${av.map((k,i)=>`<option value="${k}" ${k===w?'selected':''}>${i+1}. ${SB_SRC[k]}</option>`).join('')}<option value="open">↗ 在新分頁開啟</option></select>`}
 function sbOptions(sel){return SB_SEASONS.map((sn,i)=>`<optgroup label="${sn}">${SB_EPS.filter(e=>e.c[1]==String(i+1)).map(e=>`<option value="${e.c}" ${e.c===sel?'selected':''}>${sbLabel(e)}｜${h(e.t)}</option>`).join('')}</optgroup>`).join('')}
 function sbPick(c){if(!c)return;const e=sbEp(c);const v=document.getElementById('f_video');if(v)v.value='sb:'+c;
- const t=document.getElementById('f_title');if(t&&!t.value.trim())t.value=e.t;const st=document.getElementById('f_story');if(st&&!st.value.trim())st.value=e.d;toast('已選 '+sbLabel(e)+' '+e.t)}
+ const t=document.getElementById('f_title');if(t&&!t.value.trim())t.value=e.t;toast('已選 '+sbLabel(e)+' '+e.t)}
 function sbImport(){
  let add=0,upd=0;
  SB_EPS.forEach(e=>{const sn=SB_SEASONS[e.c[1]-1],no=Number(e.c.slice(3));
   const ex=D.lessons.find(l=>l.season===sn&&Number(l.no)===no);
-  if(ex){let ch=false;if(!ex.video||ytId(ex.video)||gtvUrl(ex.video)){ex.video='sb:'+e.c;ch=true}if(!ex.story){ex.story=e.d;ch=true}if(!ex.title){ex.title=e.t;ch=true}if(ch)upd++}
-  else{D.lessons.push({id:uid(),season:sn,no,date:'',title:e.t,scripture:'',video:'sb:'+e.c,story:e.d,intro:'',iceName:'',expSteps:[],props:[],safety:'',questions:[],verseRef:'',verseZh:'',verseEn:'',songIds:[],prayer:'',notes:''});add++}});
+  if(ex){let ch=false;if(!ex.video||ytId(ex.video)||gtvUrl(ex.video)){ex.video='sb:'+e.c;ch=true}if(!ex.title){ex.title=e.t;ch=true}if(ch)upd++}
+  else{D.lessons.push({id:uid(),season:sn,no,date:'',title:e.t,scripture:'',video:'sb:'+e.c,intro:e.d,iceName:'',expSteps:[],props:[],safety:'',questions:[],verseRef:'',verseZh:'',verseEn:'',songIds:[],prayer:'',notes:''});add++}});
  save('匯入超級妙妙書 67 集（新增 '+add+'、更新 '+upd+'）');return [add,upd]}
 function sbImportBtn(){if(!confirm('匯入超級妙妙書第一～五季共 67 集？\n影片從雲端硬碟播放。已有的課程只會把影片換成妙妙書版本、補上空白的故事重點，其他內容不會動。'))return;const r=sbImport();render();toast('匯入完成：新增 '+r[0]+' 課、更新 '+r[1]+' 課')}
 function gtvUrl(u){u=String(u||'').trim();return /^https?:\/\/(www\.)?goodtv\.tv\//i.test(u)?u.replace(/^http:/i,'https:'):null}
@@ -902,7 +881,7 @@ function tQA(){const l=cur();const q=l.questions||[];
  return stepPage(`<div class="tbar scroll"><b style="font-size:18px;white-space:nowrap">第 ${qIdx+1} 題 / 共 ${q.length} 題</b><span class="sp"></span><button class="ghost" ${qIdx?'':'disabled'} onclick="qIdx--;render()">← 上一題</button><button class="blue" ${qIdx<q.length-1?'':'disabled'} onclick="qIdx++;render()">下一題 →</button><button class="ghost" onclick="qAll=true;render()">全部列出</button></div>
   <div class="qcard fit zy" data-max="56">${h(q[qIdx])}</div>`)}
 function tPray(){const l=cur();
- return stepPage(`<div class="bigcard fit zy" data-max="36"><div style="text-align:center;font-size:1.4em">🙏</div><div class="pre">${h(l.prayer||D.settings.prayer)}</div>
+ return stepPage(`<div class="bigcard fit zy" data-max="36"><div style="text-align:center;font-size:1.4em">🙏</div><div class="pre">${h(l.prayer||'')}</div>
   <div style="text-align:center;margin-top:.6em;color:#d9541e">🐑 下課囉！我們下週見 👋</div></div>`)}
 function fsEl(sel){const e=document.querySelector(sel);if(!e)return;const f=e.requestFullscreen||e.webkitRequestFullscreen;if(f)f.call(e)}
 function tLesson(){const p=lessonPicker('');return `${p}<div class="card">${lessonBody(lessonById(curLesson))}</div>`}
@@ -956,16 +935,6 @@ function hideMore(){const l=cur();const all=[];
  if(verseLang!=='en'&&l.verseZh)tokens(l.verseZh,'zh').forEach((t,i)=>isWord(t)&&!hidTok.has('zh'+i)&&all.push('zh'+i));
  if(verseLang!=='zh'&&l.verseEn)tokens(l.verseEn,'en').forEach((t,i)=>isWord(t)&&!hidTok.has('en'+i)&&all.push('en'+i));
  const n=Math.max(1,Math.ceil(all.length*.3));for(let i=0;i<n&&all.length;i++)hidTok.add(all.splice(Math.floor(Math.random()*all.length),1)[0]);render()}
-function tSong(){
- if(!D.songs.length)return '<div class="empty">還沒有詩歌</div>';
- const s=D.songs.find(x=>x.id===curSong)||D.songs[0];curSong=s.id;const yt=ytId(s.video);
- return `<div class="row" style="margin-bottom:10px"><select class="sp" onchange="curSong=this.value;render()">${D.songs.map(x=>`<option value="${x.id}" ${x.id===s.id?'selected':''}>${h(x.season?x.season+'｜':'')}${h(x.title)}</option>`).join('')}</select>
-  <button class="ghost" onclick="fontSize=Math.max(16,fontSize-4);render()">A−</button><button class="ghost" onclick="fontSize+=4;render()">A＋</button>
-  <button class="ghost" onclick="document.getElementById('lyr').requestFullscreen&&document.getElementById('lyr').requestFullscreen()">⛶</button></div>
-  ${yt?`<button class="pri" style="width:100%;margin-bottom:8px" onclick="playFull('${yt}')">▶ 全螢幕播放</button><div style="margin-bottom:10px">${ytBox(yt)}</div>`:s.video?`<p><a href="${h(s.video)}" target="_blank" rel="noopener">▶ 開啟詩歌影片</a></p>`:''}
-  <div class="lyrics" id="lyr" style="font-size:${fontSize}px"><b>${h(s.title)}</b>\n\n${h(s.lyrics)}</div>`;
-}
-
 function canPoint(){return !authOn()||!!user}  // 上課畫面的新增、刪除、加點：一定要登入帳號
 function nowHM(){const t=new Date();return String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')}
 function ciLabel(on){return D.settings.cutoff+(on?'前報到':'後報到')}
@@ -1042,11 +1011,11 @@ function tRank(){
 
 /* ============ 老師區：備課 ============ */
 /* 編輯已存在的課程：季、第幾課、課名、經文段落、影片固定不改（避免動到原本的妙妙書課程），日期放第一欄 */
-const LESSON_FIXED=['season','no','title','scripture','video','songIds'];  // 詩歌在「詩歌」頁編輯
+const LESSON_FIXED=['season','no','title','scripture','video'];
 const LESSON_EDIT_FIELDS=()=>{const f=LESSON_FIELDS().filter(x=>!LESSON_FIXED.includes(x[0]));const d=f.find(x=>x[0]==='date');return [d].concat(f.filter(x=>x!==d))};
 const LESSON_FIELDS=()=>[['season','季'],['no','第幾課','number'],['date','上課日期','date'],['title','課名'],['scripture','經文段落'],['video','影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'],['intro','④ 妙妙書前言（老師講解這一課要看什麼）','textarea'],
  ['iceName','③ 破冰遊戲名稱'],['expSteps','③ 破冰體驗遊戲流程（一行一步）','lines'],['props','道具清單（一行一項）','lines'],['safety','安全提醒','textarea'],['questions','⑥ 影片看後問答（一行一題）','lines'],
- ['verseRef','金句出處'],['verseZh','中文金句','textarea'],['verseEn','英文金句','textarea'],['songIds','本課詩歌','checks',D.songs.map(s=>s.title)],['prayer','⑧ 結束禱告','textarea'],['notes','備課備註（只有老師看得到）','textarea']];
+ ['verseRef','金句出處'],['verseZh','中文金句','textarea'],['verseEn','英文金句','textarea'],['prayer','⑧ 結束禱告','textarea'],['notes','備課備註（只有老師看得到）','textarea']];
 /* 年度規劃：每個年度都是同樣的課，各自標記「要上／不上」、各自的上課日期
    isSkip(l,y)：y 年不上；dateIn(l,y)：y 年排的上課日期；taughtDate(l,y)：y 年已上（日期已過或有上課紀錄） */
 const curYear=()=>today().slice(0,4);
@@ -1074,13 +1043,11 @@ function pLessons(){
 function viewLesson(id){const l=lessonById(id);openModal(lessonBody(l)+(l.notes?`<div class="sec"><h4>備課備註</h4><div class="pre">${h(l.notes)}</div></div>`:'')+`<div class="actions"><button onclick="editLesson('${id}')">編輯</button><button onclick="window.print()">🖨 列印</button><button class="pri" onclick="curLesson='${id}';closeModal();setMode('teach')">在教學模式開啟</button></div>`)}
 function editLesson(id){
  const l=id?lessonById(id):{season:(seasonSorted().slice(-1)[0]||{}).season||'第一季',no:D.lessons.length+1,expSteps:[],props:[],questions:[],songIds:[]};
- const o={...l,date:id?(dateIn(l,planYear)||(mode==='staff'?'':l.date)):l.date,songIds:(l.songIds||[]).map(i=>(D.songs.find(s=>s.id===i)||{}).title).filter(Boolean)};
+ const o={...l,date:id?(dateIn(l,planYear)||(mode==='staff'?'':l.date)):l.date};
  const sbSel=`<label class="f">📺 從超級妙妙書官網選一集<select onchange="sbPick(this.value)"><option value="">（選擇後會自動填入影片，課名和故事重點空白時也會一起填入）</option>${sbOptions(sbCode(l.video))}</select></label>`;
  const head=id?`編輯課程<div class="muted" style="font-size:15px;font-weight:400;margin-top:4px">📖 ${h(l.season)} 第${h(l.no)}課〈${h(l.title)}〉${l.scripture?' · '+h(l.scripture):''}${sbCode(l.video)?' · 妙妙書影片已設定':''}</div>`:'新增課程';
  form(head,id?LESSON_EDIT_FIELDS():LESSON_FIELDS(),o,v=>{
-  if(v.songIds)v.songIds=v.songIds.map(t=>(D.songs.find(s=>s.title===t)||{}).id).filter(Boolean);
   if(!id&&!v.title){toast('請填課名');return false}
-  if(!id&&sbCode(v.video)){const e=sbEp(sbCode(v.video));if(e)v.story=e.d}  // 新增妙妙書課：內部保留官網劇情，前言空白時使用
   if(id&&!v.date){const ds=Object.assign({},l.dates||{});if(l.date&&!ds[l.date.slice(0,4)])ds[l.date.slice(0,4)]=l.date;delete ds[planYear];v.dates=ds;v.date=Object.values(ds).sort().pop()||''}  // 清掉這一年的日期
   if(v.date){const y=v.date.slice(0,4);D.lessons.filter(o=>o.id!==id&&dateIn(o,y)===v.date).forEach(o=>{  // 同一天原本排給別的課：自動把那一課的日期清掉
    const od=Object.assign({},o.dates||{});if(o.date&&!od[o.date.slice(0,4)])od[o.date.slice(0,4)]=o.date;delete od[y];o.dates=od;o.date=Object.values(od).sort().pop()||'';
@@ -1089,7 +1056,7 @@ function editLesson(id){
   if(id)Object.assign(l,v);else D.lessons.push({id:uid(),...v});save((id?'修改':'新增')+'課程 '+(v.title||l.title));
  },(id?'':sbSel)+(id&&isAdmin()&&(!sbCode(l.video)||D.lessons.filter(x=>x.video===l.video).length>1)?`<div class="actions"><button class="danger" onclick="if(confirm('刪除這一課？')){D.lessons=D.lessons.filter(x=>x.id!=='${id}');save('刪除課程');closeModal();render()}">刪除這一課</button></div>`:''));
 }
-const IMP_MAP={'前言':'intro','妙妙書前言':'intro','破冰':'expSteps','破冰遊戲':'iceName','問答':'questions','禱告':'prayer','日期':'date','經文':'scripture','影片':'video','故事':'story','重點':'story','故事重點':'story','體驗':'expSteps','體驗活動':'expSteps','道具':'props','安全':'safety','安全提醒':'safety','討論':'questions','討論問題':'questions','金句出處':'verseRef','中文金句':'verseZh','金句':'verseZh','英文金句':'verseEn','備註':'notes'};
+const IMP_MAP={'前言':'intro','妙妙書前言':'intro','破冰':'expSteps','破冰遊戲':'iceName','問答':'questions','禱告':'prayer','日期':'date','經文':'scripture','影片':'video','故事':'intro','重點':'intro','故事重點':'intro','體驗':'expSteps','體驗活動':'expSteps','道具':'props','安全':'safety','安全提醒':'safety','討論':'questions','討論問題':'questions','金句出處':'verseRef','中文金句':'verseZh','金句':'verseZh','英文金句':'verseEn','備註':'notes'};
 const IMP_LISTS=['expSteps','props','questions'];
 function parseLessons(txt){
  const out=[];let season='第一季',L=null,sec=null;
@@ -1343,9 +1310,7 @@ function pSettings(){const S=D.settings;
  if(authOn()&&!isAdmin())return `<h2>設定</h2>${myAccount()}<div class="card"><h3>資料備份</h3><button onclick="exportAll()">⬇ 匯出備份</button></div><p class="muted">系統設定與老師帳號由園長管理。</p>`;
  const now=Date.now();const open=D.invites.filter(i=>!i.usedBy&&!i.revoked&&i.expires>now);const used=D.invites.filter(i=>i.usedBy).slice(-5).reverse();
  const admins=D.teachers.filter(t=>isAdminRole(t.role)&&t.active!==false).length;
- const authCard=authOn()?''
-  :`<div class="card" style="border-color:var(--blue)"><h3>🔐 老師帳號（尚未啟用）</h3><p class="muted">啟用後：老師用自己的帳號登入才能進老師區；新老師需要園長發的驗證碼才能註冊；刪除孩子、課程和修改設定只有園長能做。教學模式（上課畫面）不需要登入。</p>
-   <button class="blue" onclick="enableAuth()">啟用老師帳號</button></div>`;
+ const authCard='';
  const cloudCard=Cloud.pw?`<div class="card"><div class="row"><h3 class="sp">☁️ 教會密碼（雲端同步）</h3><button class="sm ghost" onclick="cloudChangePw()">更改教會密碼</button></div><p class="muted">每台裝置第一次打開 app 時要輸入的密碼。改了之後，所有裝置都要重新輸入新密碼。</p></div>`:'';
  return `<h2>設定${authOn()?'（'+roleName(me())+'）':''}</h2>${authCard}${cloudCard}${authOn()?`
  ${pendingCard()}<div class="card"><h3>👥 老師帳號</h3><table>${D.teachers.filter(t=>!t.pending&&(amDesigner()||t.role!=='designer')).map(t=>`<tr style="${t.active===false?'opacity:.5':''}"><td><b>${h(t.name)}</b> <span class="tag ${isAdminRole(t.role)?'t':'o'}">${roleName(t)}</span> ${accOf(t)!==t.name?`<span class="muted">帳號：${h(accOf(t))}</span>`:''}${t.active===false?' <span class="tag">已停用</span>':''}<div class="muted">${h(t.created||'')} 加入</div></td>
@@ -1365,11 +1330,6 @@ function pSettings(){const S=D.settings;
  <div class="row"><button onclick="exportAll()">⬇ 匯出備份</button><label style="border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer">⬆ 匯入備份<input type="file" accept=".json" style="display:none" onchange="importAll(this.files[0])"></label>
  ${Cloud.pw?'':`<button class="danger" onclick="if(confirm('清除所有資料（含老師帳號）並恢復範例？此動作無法復原')){D=demo();setUser(null);save();setMode('teach')}">重置</button>`}</div></div>
  <div class="card"><h3>最近異動</h3><table>${D.log.slice(0,30).map(l=>`<tr><td class="muted" style="white-space:nowrap">${h(l.ts)}</td><td>${h(l.by)}</td><td>${h(l.act)}</td></tr>`).join('')||'<tr><td class="muted">無</td></tr>'}</table></div>`}
-function enableAuth(){if(needCloud())return;if(!confirm('啟用老師帳號？之後進老師區需要登入，所有裝置都會套用。（可以隨時關閉）'))return;if(!D.teachers.some(t=>isAdminRole(t.role)))return setupDlg();D.settings.auth=true;setUser(null);save('啟用老師帳號登入');setMode('teach');loginDlg()}
-function genInvite(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c;do{c=[...Array(6)].map(()=>A[Math.floor(Math.random()*A.length)]).join('')}while(D.invites.some(i=>i.code===c));
- D.invites.push({code:c,note:val('iv_note'),by:user,created:today(),expires:Date.now()+7*864e5});save('產生驗證碼 '+c);render();copyInvite(c)}
-function copyInvite(c){const i=D.invites.find(x=>x.code===c);copy(`🐑 小羊樂園 老師註冊驗證碼：${c}\n打開小羊樂園 app → 老師登入 → 用驗證碼註冊。\n驗證碼限用一次，${new Date(i.expires).toLocaleDateString('zh-TW')} 前有效。`)}
-function revokeInvite(c){if(!confirm('作廢驗證碼 '+c+'？'))return;D.invites.find(x=>x.code===c).revoked=true;save('作廢驗證碼 '+c);render()}
 function lastAdmin(t){return isAdminRole(t.role)&&t.active!==false&&D.teachers.filter(x=>isAdminRole(x.role)&&x.active!==false).length<=1}
 /* 刪除帳號（例如測試帳號）：過去紀錄上的名字會保留；不能刪自己，也要保留至少一位園長 */
 /* 設計師身分保護：只有設計師能修改設計師（園長不能改設計師的身分、停用、刪除或重設密碼，也不能把人設成設計師） */
@@ -1387,7 +1347,7 @@ function setRole(id,r){const t=D.teachers.find(x=>x.id===id);if(!guardT(t))retur
 async function resetPw(id){const t=D.teachers.find(x=>x.id===id);if(!guardT(t))return;const p=prompt(`替「${t.name}」設定臨時密碼（至少 6 碼），請對方登入後自己修改`);if(p===null)return;
  if(p.length<6){toast('密碼至少 6 碼');return}t.pwHash=await hashPw(p);save('重設 '+t.name+' 的密碼');toast('已重設')}
 function saveSettings(){const v=k=>document.getElementById(k).value;const S=D.settings;
- S.church='小羊樂園';S.rules=v('st_rules').split('\n').map(x=>x.trim()).filter(Boolean);S.reasons=v('st_reasons').split('\n').map(x=>x.trim()).filter(Boolean);const r=document.getElementById('st_r');if(r)S.requireLogin=r.checked;const tn=document.getElementById('st_tn');if(tn)S.teacherNames=tn.value.split('\n').map(x=>x.trim()).filter(Boolean);S.cutoff=v('st_cut')||'10:30';S.onPts=Number(v('st_on'))||2;S.latePts=Number(v('st_late'))||1;
+ S.church='小羊樂園';S.rules=v('st_rules').split('\n').map(x=>x.trim()).filter(Boolean);S.reasons=v('st_reasons').split('\n').map(x=>x.trim()).filter(Boolean);const tn=document.getElementById('st_tn');if(tn)S.teacherNames=tn.value.split('\n').map(x=>x.trim()).filter(Boolean);S.cutoff=v('st_cut')||'10:30';S.onPts=Number(v('st_on'))||2;S.latePts=Number(v('st_late'))||1;
  S.dailyCap=Math.max(0,Number(v('st_cap'))||0);S.items=pairs(v('st_i').split('\n')).map(p=>({name:p[0],pts:Number(p[1])||1}));
  S.rewards=pairs(v('st_w').split('\n')).map(p=>({name:p[0],cost:Number(p[1])||1}));
  save('修改設定');render();toast('設定已儲存')}
