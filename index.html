@@ -2109,8 +2109,9 @@ function worshipList(l) {
   var q = songQ(l);
   D.songs.filter(x => x.theme && x.season === q).forEach(x => ids.push(x.id));
   (l.songIds || []).forEach(i => {
-    if (!ids.includes(i)) ids.push(i);
-  });
+    var x = D.songs.find(y => y.id === i);
+    if (x && x.season === q && !ids.includes(i)) ids.push(i);
+  }); // 這一課另外加的歌，也只顯示選定季度的
   return ids.map(i => D.songs.find(x => x.id === i)).filter(Boolean);
 }
 function hasLyrics(s) {

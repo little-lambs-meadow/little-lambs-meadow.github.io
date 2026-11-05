@@ -779,7 +779,7 @@ const songQ=l=>l.songQ||qOf(dateIn(l,curYear())||today());
 function setSongQ(q){const l=cur();if(!l.id)return;if(!canPoint()){toast('請先登入帳號才能編輯');render();return}if(q===qOf(dateIn(l,curYear())||today()))delete l.songQ;else l.songQ=q;curSong=null;save(l.title+' 敬拜改用'+q+'詩歌');render()}
 function worshipList(l){const ids=[];const q=songQ(l);
  D.songs.filter(x=>x.theme&&x.season===q).forEach(x=>ids.push(x.id));
- (l.songIds||[]).forEach(i=>{if(!ids.includes(i))ids.push(i)});
+ (l.songIds||[]).forEach(i=>{const x=D.songs.find(y=>y.id===i);if(x&&x.season===q&&!ids.includes(i))ids.push(i)});  // 這一課另外加的歌，也只顯示選定季度的
  return ids.map(i=>D.songs.find(x=>x.id===i)).filter(Boolean)}
 function hasLyrics(s){return s.lyrics&&s.lyrics.trim()&&s.lyrics.indexOf('貼上教會使用的歌詞')<0}
 function tWorship(){
