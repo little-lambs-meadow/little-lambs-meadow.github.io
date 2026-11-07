@@ -1014,7 +1014,26 @@ function ytBox(key) {
 }
 function ytSrc(key) {
   var s = YTMAP[key].src;
-  return s + (s.indexOf('?') >= 0 ? '&' : '?') + 'autoplay=1&rel=0';
+  return s + (s.indexOf('?') >= 0 ? '&' : '?') + 'autoplay=1&rel=0&playsinline=1&enablejsapi=1';
+}
+function ytKick(f) {
+  var go = () => {
+    try {
+      f.contentWindow.postMessage(JSON.stringify({
+        event: 'command',
+        func: 'playVideo',
+        args: []
+      }), '*');
+    } catch (e) {}
+  };
+  f.addEventListener('load', () => {
+    go();
+    setTimeout(go, 800);
+    setTimeout(go, 2000);
+    setTimeout(go, 4000);
+  }, {
+    once: true
+  });
 }
 function ensureFrame(key) {
   var box = document.getElementById('vid_' + key);
@@ -1027,7 +1046,9 @@ function ensureFrame(key) {
   return f;
 }
 function playInline(key) {
-  ensureFrame(key).src = ytSrc(key);
+  var f = ensureFrame(key);
+  ytKick(f);
+  f.src = ytSrc(key);
 }
 function playFull(key, srcKey) {
   srcKey = srcKey || key;
@@ -1042,6 +1063,7 @@ function playFull(key, srcKey) {
     var r = fs.call(box);
     r && r.catch && r.catch(() => {});
   } catch (e) {}
+  ytKick(f);
   f.src = ytSrc(srcKey);
 }
 function toast(t) {

@@ -433,17 +433,18 @@ function ytQueue(ids){if(!ids.length)return null;const key='Q_'+ids.join('').sli
  return ytReg(key,'https://www.youtube.com/embed/'+ids[0]+(ids.length>1?'?playlist='+ids.join(','):''),'https://i.ytimg.com/vi/'+ids[0]+'/hqdefault.jpg','https://www.youtube.com/watch_videos?video_ids='+ids.join(','))}
 function ytBox(key){const y=YTMAP[key]||{};
  return `<div class="video" id="vid_${key}" onclick="playInline('${key}')">${y.thumb?`<img src="${y.thumb}" alt="">`:'<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:#1f1b2e"></div>'}<div class="play">▶</div></div>`}
-function ytSrc(key){const s=YTMAP[key].src;return s+(s.indexOf('?')>=0?'&':'?')+'autoplay=1&rel=0'}
+function ytSrc(key){const s=YTMAP[key].src;return s+(s.indexOf('?')>=0?'&':'?')+'autoplay=1&rel=0&playsinline=1&enablejsapi=1'}
+function ytKick(f){const go=()=>{try{f.contentWindow.postMessage(JSON.stringify({event:'command',func:'playVideo',args:[]}),'*')}catch(e){}};f.addEventListener('load',()=>{go();setTimeout(go,800);setTimeout(go,2000);setTimeout(go,4000)},{once:true})}
 function ensureFrame(key){const box=document.getElementById('vid_'+key);let f=box.querySelector('iframe');
  if(!f){box.innerHTML='<iframe allow="autoplay; fullscreen" allowfullscreen></iframe>';f=box.querySelector('iframe');box.onclick=null}return f}
-function playInline(key){ensureFrame(key).src=ytSrc(key)}
+function playInline(key){const f=ensureFrame(key);ytKick(f);f.src=ytSrc(key)}
 function playFull(key,srcKey){
  srcKey=srcKey||key;const box=document.getElementById('vid_'+key);
  const fs=box&&(box.requestFullscreen||box.webkitRequestFullscreen);
  if(!fs){window.open(YTMAP[srcKey].watch,'_blank');return}   // iPhone 不支援網頁全螢幕 → 交給 YouTube App
  const f=ensureFrame(key);
  try{const r=fs.call(box);r&&r.catch&&r.catch(()=>{})}catch(e){}
- f.src=ytSrc(srcKey);
+ ytKick(f);f.src=ytSrc(srcKey);
 }
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),1600)}
 function bal(id){return D.ledger.reduce((a,x)=>x.kidId===id?a+x.pts:a,0)}
