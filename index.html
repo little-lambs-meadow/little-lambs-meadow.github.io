@@ -4509,6 +4509,19 @@ document.addEventListener('keydown', e => {
 document.getElementById('modal').addEventListener('click', e => {
   if (e.target.id === 'modal') closeModal();
 });
+/* 過了半夜 12 點（或把休眠的頁面叫醒）日期變了，就自動重畫，點名畫面才會歸零 */
+var _day = today();
+function dayCheck() {
+  if (today() === _day) return;
+  var m = document.getElementById('modal');
+  if (m && m.classList.contains('on')) return;
+  _day = today();
+  render();
+}
+setInterval(dayCheck, 20000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) dayCheck();
+});
 render();
 /* ===== 開場動畫：打開 app 時先播放（按「重新整理」回來時不播） ===== */
 (function () {
