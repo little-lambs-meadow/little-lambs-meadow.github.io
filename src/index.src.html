@@ -845,6 +845,7 @@ function sbBox(e,id){const w=sbWhich(e);return `<div class="vwrap"><div class="$
 function sbPlayFull(c){const e=sbEp(c),box=document.getElementById('sbbox');if(!e||!box)return;
  const f=box.querySelector('iframe');const fs=box.requestFullscreen||box.webkitRequestFullscreen;
  const w=sbWhich(e);
+ if(w==='gtv'){window.open(sbOpenUrl(e,w),'_blank');return}   // GOODTV 不能內嵌 → 直接開新分頁
  if(fs){try{const r=fs.call(box);r&&r.catch&&r.catch(()=>{})}catch(x){}}else{window.open(sbOpenUrl(e,w),'_blank');return}
  if(f&&(w==='cf'||w==='yt'||w==='drv'))f.src=sbUrl(e,w,true)}  // 全螢幕後自動開始播放
 function sbSrcBtn(e){const w=sbWhich(e),av=sbAvail(e);

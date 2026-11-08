@@ -2857,6 +2857,10 @@ function sbPlayFull(c) {
   var f = box.querySelector('iframe');
   var fs = box.requestFullscreen || box.webkitRequestFullscreen;
   var w = sbWhich(e);
+  if (w === 'gtv') {
+    window.open(sbOpenUrl(e, w), '_blank');
+    return;
+  } // GOODTV 不能內嵌 → 直接開新分頁
   if (fs) {
     try {
       var r = fs.call(box);
