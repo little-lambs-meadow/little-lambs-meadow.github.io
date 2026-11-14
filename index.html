@@ -2945,6 +2945,11 @@ function gtvUrl(u) {
   u = String(u || '').trim();
   return /^https?:\/\/(www\.)?goodtv\.tv\//i.test(u) ? u.replace(/^http:/i, 'https:') : null;
 }
+function cvUrl(u) {
+  u = String(u || '').trim();
+  var m = u.match(/^https?:\/\/(?:www\.)?canva\.com\/design\/([\w-]+)\/([\w-]+)\/(?:view|watch|edit)/i);
+  return m ? 'https://www.canva.com/design/' + m[1] + '/' + m[2] + '/view?embed' : null;
+} /* Canva 簡報：轉成嵌入網址 */
 function gtvBox(u, id) {
   return `<div class="vwrap"><div class="webbox" id="${id}"><iframe src="${h(u)}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></div></div>`;
 }
@@ -2964,9 +2969,11 @@ function tVideo() {
   var l = cur();
   var yt = ytId(l.video);
   var gt = gtvUrl(l.video);
+  var cv = cvUrl(l.video);
   var sc = sbCode(l.video),
     se = sc && sbEp(sc);
   if (se) return stepPage(`${sbBox(se, 'sbbox')}`);
+  if (cv) return stepPage(`<div class="tbar scroll"><button class="pri" style="flex:1;font-size:20px;padding:12px" onclick="fsEl('#cvbox')">⛶ 全螢幕簡報〈${h(l.title)}〉</button><a class="ghost" style="padding:10px 12px;border:1px solid #e6ddd0;border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="${h(String(l.video).trim())}" target="_blank" rel="noopener">在 Canva 開啟 ↗</a></div>${gtvBox(cv, 'cvbox')}`);
   if (gt) return stepPage(`<div class="tbar scroll"><button class="pri" style="flex:1;font-size:20px;padding:12px" onclick="fsEl('#gtvbox')">⛶ 全螢幕〈${h(l.title)}〉</button><a class="ghost" style="padding:10px 12px;border:1px solid #e6ddd0;border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap" href="${h(gt)}" target="_blank" rel="noopener">在 GOODTV 開啟 ↗</a></div>
   <div class="muted" style="flex-shrink:0;margin-bottom:6px">GOODTV 影片：按下方畫面裡的播放鍵開始；全螢幕後若影片沒有放大，再按播放器右下角的全螢幕鍵。</div>${gtvBox(gt, 'gtvbox')}`);
   return stepPage(yt ? `<div class="vwrap">${ytBox(yt)}</div>` : l.video ? `<div class="empty"><a class="pri" style="display:inline-block;padding:16px 30px;border-radius:10px;background:#e2572a;color:#fff;font-size:22px;text-decoration:none" href="${h(l.video)}" target="_blank" rel="noopener">▶ 開啟影片〈${h(l.title)}〉</a></div>` : '<div class="empty">這一課還沒有影片網址</div>');
@@ -3437,7 +3444,7 @@ var LESSON_EDIT_FIELDS = l => {
   var d = f.find(x => x[0] === 'date');
   return [d].concat(f.filter(x => x !== d));
 };
-var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV 網址）'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['prayer', '⑧ 結束禱告', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
+var LESSON_FIELDS = () => [['season', '季'], ['no', '第幾課', 'number'], ['date', '上課日期', 'date'], ['title', '課名'], ['scripture', '經文段落'], ['video', '影片（用最下方「從超級妙妙書官網選一集」選，或貼 YouTube／GOODTV／Canva 簡報網址）'], ['intro', '④ 妙妙書前言（老師講解這一課要看什麼）', 'textarea'], ['iceName', '③ 破冰遊戲名稱'], ['expSteps', '③ 破冰體驗遊戲流程（一行一步）', 'lines'], ['props', '道具清單（一行一項）', 'lines'], ['safety', '安全提醒', 'textarea'], ['questions', '⑥ 影片看後問答（一行一題）', 'lines'], ['verseRef', '金句出處'], ['verseZh', '中文金句', 'textarea'], ['verseEn', '英文金句', 'textarea'], ['prayer', '⑧ 結束禱告', 'textarea'], ['notes', '備課備註（只有老師看得到）', 'textarea']];
 /* 年度規劃：每個年度都是同樣的課，各自標記「要上／不上」、各自的上課日期
    isSkip(l,y)：y 年不上；dateIn(l,y)：y 年排的上課日期；taughtDate(l,y)：y 年已上（日期已過或有上課紀錄） */
 var curYear = () => today().slice(0, 4);
