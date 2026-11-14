@@ -3432,8 +3432,8 @@ function tRank() {
 /* ============ 老師區：備課 ============ */
 /* 編輯已存在的課程：季、第幾課、課名、經文段落、影片固定不改（避免動到原本的妙妙書課程），日期放第一欄 */
 var LESSON_FIXED = ['season', 'no', 'title', 'scripture', 'video'];
-var LESSON_EDIT_FIELDS = () => {
-  var f = LESSON_FIELDS().filter(x => !LESSON_FIXED.includes(x[0]));
+var LESSON_EDIT_FIELDS = l => {
+  var f = LESSON_FIELDS().filter(x => !LESSON_FIXED.includes(x[0]) || x[0] === 'video' && l && !sbCode(l.video)); /* 不是妙妙書的課：影片欄位開放，可以改或清空 */
   var d = f.find(x => x[0] === 'date');
   return [d].concat(f.filter(x => x !== d));
 };
@@ -3539,7 +3539,7 @@ function editLesson(id) {
   });
   var sbSel = `<label class="f">📺 從超級妙妙書官網選一集<select onchange="sbPick(this.value)"><option value="">（選擇後會自動填入影片，課名和故事重點空白時也會一起填入）</option>${sbOptions(sbCode(l.video))}</select></label>`;
   var head = id ? `編輯課程<div class="muted" style="font-size:15px;font-weight:400;margin-top:4px">📖 ${h(l.season)} 第${h(l.no)}課〈${h(l.title)}〉${l.scripture ? ' · ' + h(l.scripture) : ''}${sbCode(l.video) ? ' · 妙妙書影片已設定' : ''}</div>` : '新增課程';
-  form(head, id ? LESSON_EDIT_FIELDS() : LESSON_FIELDS(), o, v => {
+  form(head, id ? LESSON_EDIT_FIELDS(l) : LESSON_FIELDS(), o, v => {
     if (!id && !v.title) {
       toast('請填課名');
       return false;
