@@ -4525,6 +4525,22 @@ function dayCheck() {
   _day = today();
   render();
 }
+/* 一次性設定（2026-11-15）：每日上限改 12、新增加分項目「回答問題 +1」；等有老師／園長登入時自動套用，只做一次 */
+function applyMig() {
+  if (!user || isHelper() || D.settings.mig1115) return;
+  var S = D.settings;
+  S.dailyCap = 12;
+  if (!(S.items || []).some(i => i.name === '回答問題')) S.items = (S.items || []).concat([{
+    name: '回答問題',
+    pts: 1
+  }]);
+  S.mig1115 = true;
+  save('設定：每日上限 12、新增加分項目「回答問題 +1」');
+  render();
+  toast('已新增「回答問題 +1」，每日上限改為 12');
+}
+setInterval(applyMig, 4000);
+setTimeout(applyMig, 1500);
 setInterval(dayCheck, 20000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) dayCheck();
